@@ -1,0 +1,53 @@
+
+/* --- Estilos b�sicos para el carrito --- */
+.cart-container {
+    width: 90%;
+    margin: 30px auto;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 15px;
+    background: #fff;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    table th, table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+    }
+
+    table th {
+        background: #f4f4f4;
+    }
+
+.cart-buttons button {
+    margin: 0 2px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+    .cart-buttons button:hover {
+        opacity: 0.8;
+    }
+
+.btn-plus {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-minus {
+    background: #f39c12;
+    color: white;
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+}
+

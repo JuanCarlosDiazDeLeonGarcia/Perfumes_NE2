@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<<<<<<< HEAD
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfumes & Aromas</title>
+    <link rel="stylesheet" href="../css/base.css">
+</head>
+<body>
+    <div id="navbar-container"></div>
+    <script>
+        // Cargar navbar
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('navbar-container').innerHTML = data;
+                initializeDropdown(); // ← Inicializar dropdown después de cargar
+            })
+            .catch(error => console.error('Error loading navbar:', error));
+
+        // Función para inicializar el dropdown
+        function initializeDropdown() {
+            const dropdownBtn = document.querySelector('.dropdown-btn');
+            const dropdownContent = document.querySelector('.dropdown-content');
+
+            if (dropdownBtn && dropdownContent) {
+                dropdownBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dropdownContent.classList.toggle('show');
+                });
+
+                // Cerrar dropdown al hacer click fuera
+                document.addEventListener('click', function() {
+                    dropdownContent.classList.remove('show');
+                });
+
+                // Prevenir que se cierre al hacer click dentro del dropdown
+                dropdownContent.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+        }
+    </script>
+
+    <script>
+        // Cerrar aviso de privacidad
+        document.getElementById("cerrarAviso").addEventListener("click", () => {
+            document.getElementById("avisoPrivacidad").style.display = "none";
+        });
+
+        // Cargar productos desde JSON
+        fetch('../src/data/products.json')
+            .then(response => response.json())
+            .then(data => {
+                const grid = document.getElementById('productGrid');
+
+                data.productos.forEach(producto => {
+                    // Tarjeta
+                    const card = document.createElement('div');
+                    card.classList.add('product-card');
+
+                    // Imagen
+                    const img = document.createElement('img');
+                    img.src = `../assets/ejemplo.png`;
+                    img.alt = producto.nombre;
+                    card.appendChild(img);
+
+                    // Nombre
+                    const nombre = document.createElement('h3');
+                    nombre.textContent = producto.nombre;
+                    card.appendChild(nombre);
+
+                    // Precio base
+                    const precio = document.createElement('p');
+                    precio.classList.add('price');
+                    precio.textContent = `$${producto.precio}`;
+                    card.appendChild(precio);
+
+                    // NUEVO: Precio con envío / sin envío
+                    const costoEnvio = 99; // puedes modificarlo
+                    const envio = document.createElement('p');
+                    envio.classList.add('envio-info');
+                    envio.textContent = `Precio con envío: $${producto.precio + costoEnvio} | Sin envío: $${producto.precio}`;
+                    card.appendChild(envio);
+
+                    // Descripción oculta
+                    const descripcion = document.createElement('div');
+                    descripcion.classList.add('descripcion');
+                    descripcion.textContent = producto.descripcion;
+                    card.appendChild(descripcion);
+
+                    // Botón ver más
+                    const btnVerMas = document.createElement('button');
+                    btnVerMas.classList.add('btn-vermas');
+                    btnVerMas.textContent = 'Ver más';
+                    btnVerMas.addEventListener('click', () => {
+                        descripcion.style.display =
+                            descripcion.style.display === 'block' ? 'none' : 'block';
+                    });
+                    card.appendChild(btnVerMas);
+
+                    // Botón agregar carrito
+                    const btnCarrito = document.createElement('button');
+                    btnCarrito.classList.add('btn-carrito');
+                    btnCarrito.textContent = 'Agregar al carrito';
+                    card.appendChild(btnCarrito);
+
+                    grid.appendChild(card);
+                });
+            })
+            .catch(error => console.error('Error al cargar productos:', error));
+    </script>
+
+    <div class="content">
+        <div class="product-grid">
+            <div class="product-card">
+                <img src="https://cdn5.coppel.com/mkp/103020481-1.jpg" alt="Perfume Floral" />
+                <h3>NAVIGO</h3>
+                <p class="price">$25.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">Aromas frescos y delicados con notas de jazmín y rosa.</p>
+            </div>
+
+            <div class="product-card">
+                <img src="https://cazanovaonline.mx/cdn/shop/files/ANUNNCIO_Amazon_37.jpg?v=1747758258&width=1946" alt="Perfume Amaderado" />
+                <h3>ODYYSEY</h3>
+                <p class="price">$30.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
+            </div>
+            <div class="product-card">
+                <img src="https://perfumes-arabes.mx/wp-content/uploads/2023/10/Perfume-Lattafa-Khamrah-Perfumes-Arabes-Mexico.jpeg" alt="Perfume Amaderado" />
+                <h3>KHALAF LATFTAFFA </h3>
+                <p class="price">$35.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
+            </div>
+            <div class="product-card">
+                <img src="https://m.media-amazon.com/images/I/41ZQdV659VL.jpg" alt="Perfume Amaderado" />
+                <h3>9PM</h3>
+                <p class="price">$45.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
+            </div>
+            <div class="product-card">
+                <img src="https://beautyfreeshop.com.mx/cdn/shop/files/perfume-9am-dive-unisex-de-afnan-edp-100ml-arome-mexico-1_800x_255077d6-54df-4360-b1ed-c9d48edb8a13.jpg?v=1727982720" alt="Perfume Amaderado" />
+                <h3>9AM</h3>
+                <p class="price">$28.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
+            </div>
+            <div class="product-card">
+                <img src="https://fraganciasfiord.com.mx/wp-content/uploads/2024/06/Decant-o-muestra-del-perfume-Invictus-PARFUM-original-de-Rabanne-en-Fragancias-Fiord.jpg" alt="Perfume Amaderado" />
+                <h3>INVICTUS</h3>
+                <p class="price">$30.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
+            </div>
+            <div class="product-card">
+                <img src="https://www.versace.com/dw/image/v2/BGWN_PRD/on/demandware.static/-/Sites-ver-master-catalog/default/dw74626350/original/90_R741010-R100MLS_RNUL_20_Eros~Flame~EDP~100~ml-Accessories-Versace-online-store_0_1.jpg?sw=1200&q=85&strip=true" alt="Perfume Amaderado" />
+                <h3>VERSACE EROS FLAME</h3>
+                <p class="price">$38.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
+            </div>
+            <div class="product-card">
+                <img src="https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_webp,s_webp/nuestrasfragancias.com/wp-content/uploads/2022/06/Le-Beau-Le-Parfum-125ml-EDP.webp" alt="Perfume Amaderado" />
+                <h3>JPG LE MAU LA PERFUM</h3>
+                <p class="price">$50.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
+            </div>
+            <div class="product-card">
+                <img src="https://m.media-amazon.com/images/I/91xkVmTPE3L._UF350,350_QL80_.jpg" alt="Perfume Amaderado" />
+                <h3>cool water</h3>
+                <p class="price">$34.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">un aroma intenso.</p>
+            </div>
+            <div class="product-card">
+                <img src="https://www.dior.com/dw/image/v2/BGXS_PRD/on/demandware.static/-/Library-Sites-DiorSharedLibrary/default/dwf80880b6/images/beauty/01-FRAGRANCES/2025/PDP-REVAMP/SAUVAGE/Y0785220/POSTER_DIOR_SAUVAGE_CAPSULE_EDP_VA_916.jpg?sw=800" alt="Perfume Amaderado" />
+                <h3>savage dior</h3>
+                <p class="price">$30.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">Notas cálidas de sándalo .</p>
+            </div>
+            <div class="product-card">
+                <img src="https://perfumerica.mx/cdn/shop/files/HC3A.png?v=1708969297&width=2048" alt="Perfume Amaderado" />
+                <h3>Perfume Amaderado</h3>
+                <p class="price">$39.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
+            </div>
+
+            <div class="product-card">
+                <img src="https://m.media-amazon.com/images/I/71-w3x3BP-L._AC_SX522_.jpg" alt="Perfume Cítrico" />
+                <h3>Perfume Cítrico</h3>
+                <p class="price">$22.00</p>
+                <button class="btn-carrito">Comprar</button>
+                <button class="btn-vermas">Ver más</button>
+                <p class="descripcion">Frescura vibrante con notas de limón y bergamota.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Mostrar/ocultar descripción al hacer click en "Ver más"
+        document.querySelectorAll('.btn-vermas').forEach(button => {
+            button.addEventListener('click', () => {
+                const descripcion = button.nextElementSibling;
+                if (descripcion.style.display === 'block') {
+                    descripcion.style.display = 'none';
+                    button.textContent = 'Ver más';
+                } else {
+                    descripcion.style.display = 'block';
+                    button.textContent = 'Ver menos';
+                }
+            });
+        });
+    </script>
+
+    <a href="https://wa.me/524494389825?text=Hola%2C%20me%20interesa%20una%20fragancia%20personalizada"
+       class="btn-whatsapp-fixed"
+       target="_blank"
+       rel="noopener"
+       aria-label="Chatea con nosotros en WhatsApp">
+        💬
+
+</body>
+
+</html>

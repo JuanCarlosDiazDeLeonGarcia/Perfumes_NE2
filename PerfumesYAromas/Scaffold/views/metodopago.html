@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Métodos de Pago - PerfumeShop</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <style>
+        /* Estilos adicionales para los nuevos métodos */
+        .payment-instructions {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #25D366;
+        }
+
+            .payment-instructions h4 {
+                margin-top: 0;
+                color: #333;
+            }
+
+        .bank-details {
+            background: #e8f4ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #cce5ff;
+        }
+
+            .bank-details p {
+                margin: 8px 0;
+                font-family: monospace;
+                font-size: 0.95rem;
+            }
+
+        .reference-code {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .store-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .store-option {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .store-option:hover {
+                border-color: #25D366;
+                background: #f0fff4;
+            }
+
+            .store-option.selected {
+                border-color: #25D366;
+                background: #e8f5e9;
+            }
+
+        .store-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h2>🌸 PerfumeShop</h2>
+        <nav>
+            <a href="usuariomenu.html">🏠 Inicio</a>
+            <a href="miscompras.html">🛍️ Mis Compras</a>
+            <a href="#" class="active">💳 Métodos de Pago</a>
+            <a href="seguimiento.html">📦 Seguimiento</a>
+            <a href="#">⚙️ Configuración</a>
+            <a href="#">📩 Soporte</a>
+            <a href="catalog.html">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="admin-header">
+            <h1>Métodos de Pago</h1>
+        </header>
+
+        <section class="cards">
+            <div class="card"><h3>Tarjetas Registradas</h3><p>2</p></div>
+            <div class="card"><h3>Último Pago</h3><p>$180 - 20/10/2025</p></div>
+            <div class="card"><h3>Método Principal</h3><p>Visa terminación 4512</p></div>
+            <div class="card"><h3>Pagos Recurrentes</h3><p>Activo ✅</p></div>
+        </section>
+
+        <!-- NUEVA SECCIÓN: TIPOS DE MÉTODO DE PAGO -->
+        <section class="tabla-admin" style="margin-top:20px;">
+            <div class="titulo-tabla">
+                <h2>💰 Formas de Pago Disponibles</h2>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:15px; max-width:700px; margin:auto;">
+                <button class="btn-agregar" onclick="mostrarTarjetas()">💳 Pago con Tarjeta</button>
+                <button class="btn-agregar" onclick="mostrarMonedero()">👛 Pago con Monedero Digital</button>
+                <button class="btn-agregar" onclick="mostrarTransferencia()">🏦 Transferencia Bancaria</button>
+                <button class="btn-agregar" onclick="mostrarEfectivo()">💵 Pago en Efectivo</button>
+                <button class="btn-agregar" onclick="mostrarCheque()">📄 Transferencia</button>
+                <button class="btn-agregar" onclick="mostrarCajero()">🏧 Pago en efectivo</button>
+            </div>
+        </section>
+
+        <!-- Ya existente: tarjetas guardadas -->
+        <section class="tabla-admin" id="tarjetas-guardadas">
+            <div class="titulo-tabla">
+                <h2>💳 Mis Tarjetas Guardadas</h2>
+                <button class="btn-agregar" onclick="mostrarFormulario()">+ Agregar Tarjeta</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr><th>Tipo</th><th>Titular</th><th>Número</th><th>Expiración</th><th>Predeterminada</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>💳 Visa</td>
+                        <td>Ana López</td>
+                        <td>**** **** **** 4512</td>
+                        <td>06/27</td>
+                        <td>✅ Sí</td>
+                        <td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td>
+                    </tr>
+                    <tr>
+                        <td>💳 Mastercard</td>
+                        <td>Ana López</td>
+                        <td>**** **** **** 9921</td>
+                        <td>11/25</td>
+                        <td>❌ No</td>
+                        <td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Formulario nueva tarjeta -->
+        <section class="tabla-admin" id="formulario-tarjeta" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>➕ Registrar Nueva Tarjeta</h2></div>
+
+            <form id="formTarjeta" style="max-width:600px; margin:auto; text-align:left;">
+                <label><strong>Nombre del titular:</strong></label>
+                <input type="text" id="titular" required>
+
+                <label><strong>Número de tarjeta:</strong></label>
+                <input type="text" id="numero" maxlength="19" required>
+
+                <label><strong>Fecha de expiración:</strong></label>
+                <input type="month" id="expiracion" required>
+
+                <label><strong>Código CVV:</strong></label>
+                <input type="password" id="cvv" maxlength="4" required>
+
+                <label style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+                    <input type="checkbox" id="predeterminada"> Establecer como método principal
+                </label>
+
+                <div style="display:flex;justify-content:space-between;margin-top:20px;">
+                    <button type="submit" class="btn-agregar">💾 Guardar</button>
+                    <button type="button" class="btn-sesion" style="background:gray;" onclick="cancelarFormulario()">Cancelar</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECCIÓN: Monedero digital -->
+        <section class="tabla-admin" id="monedero" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>👛 Pago con Monedero Digital</h2></div>
+            <p style="text-align:center;">Saldo disponible: <strong>$500 MXN</strong></p>
+            <div style="text-align:center; margin-top:15px;">
+                <button class="btn-agregar" onclick="alert('Pago realizado con monedero digital ✔️')">Pagar con monedero</button>
+            </div>
+        </section>
+
+        <!-- NUEVA SECCIÓN: Transferencia Bancaria -->
+        <section class="tabla-admin" id="transferencia" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>🏦 Transferencia Bancaria</h2></div>
+
+            <div class="payment-instructions">
+                <h4>📋 Instrucciones:</h4>
+                <p>1. Realiza una transferencia desde tu banca en línea o aplicación móvil</p>
+                <p>2. Utiliza los datos bancarios proporcionados a continuación</p>
+                <p>3. Envía el comprobante de transferencia por WhatsApp o email</p>
+                <p>4. Tu pedido se procesará en 1-2 horas hábiles después de la confirmación</p>
+            </div>
+
+            <div class="bank-details">
+                <h4>📊 Datos Bancarios:</h4>
+                <p><strong>Banco:</strong> BBVA</p>
+                <p><strong>Beneficiario:</strong> PERFUMES & AROMAS S.A. DE C.V.</p>
+                <p><strong>CLABE Interbancaria:</strong> 012 180 00123456789 1</p>
+                <p><strong>Número de Cuenta:</strong> 1234 5678 9012 3456</p>
+                <p><strong>RFC:</strong> PFA250301ABC</p>
+                <p><strong>Concepto de pago:</strong> PEDIDO <span id="transferReference">#PFA-0000</span></p>
+            </div>
+
+            <form style="max-width:600px; margin:auto; margin-top:20px;">
+                <label><strong>Número de comprobante:</strong></label>
+                <input type="text" id="comprobante" placeholder="Ej: TRF2025123456789" required>
+
+                <label><strong>Fecha de transferencia:</strong></label>
+                <input type="date" id="fechaTransferencia" required>
+
+                <label><strong>Monto transferido:</strong></label>
+                <input type="number" id="montoTransferencia" placeholder="$148.00" required>
+
+                <label><strong>Banco origen:</strong></label>
+                <select id="bancoOrigen" class="form-input" style="width:100%; padding:10px; border-radius:8px;">
+                    <option value="">Selecciona tu banco</option>
+                    <option value="bbva">BBVA</option>
+                    <option value="banamex">Citibanamex</option>
+                    <option value="santander">Santander</option>
+                    <option value="hsbc">HSBC</option>
+                    <option value="scotiabank">Scotiabank</option>
+                    <option value="banorte">Banorte</option>
+                    <option value="inbursa">Inbursa</option>
+                    <option value="otro">Otro</option>
+                </select>
+
+                <div style="text-align:center; margin-top:20px;">
+                    <button class="btn-agregar" onclick="alert('Comprobante de transferencia registrado ✔️\nTe contactaremos para confirmar.'); return false;">📤 Enviar Comprobante</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- NUEVA SECCIÓN: Pago en Efectivo -->
+        <section class="tabla-admin" id="efectivo" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>💵 Pago en Efectivo</h2></div>
+
+            <div class="payment-instructions">
+                <h4>📋 Instrucciones:</h4>
+                <p>1. Selecciona la tienda donde realizarás el pago</p>
+                <p>2. Genera tu código de referencia</p>
+                <p>3. Acude a la tienda seleccionada con el código</p>
+                <p>4. Realiza el pago en efectivo</p>
+                <p>5. Guarda tu comprobante</p>
+            </div>
+
+            <div class="reference-code">
+                Tu código de referencia: <span id="cashReference">PFA-EF-0000</span>
+            </div>
+
+            <h4 style="text-align:center; margin:20px 0 10px 0;">🏪 Selecciona una tienda:</h4>
+            <div class="store-options">
+                <div class="store-option" onclick="selectStore(this, 'oxxo')">
+                    <div class="store-icon">🏪</div>
+                    <strong>OXXO</strong>
+                    <p style="font-size:0.8rem; margin:5px 0 0 0;">Comisión: $10 MXN</p>
+                </div>
+                <div class="store-option" onclick="selectStore(this, 'seven')">
+                    <div class="store-icon">🏪</div>
+                    <strong>7-Eleven</strong>
+                    <p style="font-size:0.8rem; margin:5px 0 0 0;">Comisión: $12 MXN</p>
+                </div>
+                <div class="store-option" onclick="selectStore(this, 'farmacia')">
+                    <div class="store-icon">💊</div>
+                    <strong>Farmacias Guadalajara</strong>
+                    <p style="font-size:0.8rem; margin:5px 0 0 0;">Comisión: $8 MXN</p>
+                </div>
+                <div class="store-option" onclick="selectStore(this, 'soriana')">
+                    <div class="store-icon">🛒</div>
+                    <strong>Soriana</strong>
+                    <p style="font-size:0.8rem; margin:5px 0 0 0;">Comisión: $15 MXN</p>
+                </div>
+            </div>
+
+            <div style="max-width:600px; margin:20px auto; text-align:center;">
+                <label><strong>Monto a pagar:</strong></label>
+                <input type="text" id="montoEfectivo" value="$148.00" readonly style="text-align:center; font-weight:bold; font-size:1.2rem;">
+
+                <div style="margin-top:20px;">
+                    <button class="btn-agregar" onclick="alert('Código generado: ' + document.getElementById('cashReference').textContent + '\nGuarda este código para realizar tu pago en la tienda seleccionada.');">🖨️ Generar Código</button>
+                    <button class="btn-agregar" style="background:#4CAF50;" onclick="alert('Pago en efectivo registrado ✔️\nTu pedido se procesará al confirmar el pago en tienda.');">✅ Confirmar Pago</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: Cheque electrónico -->
+        <section class="tabla-admin" id="cheque" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>📄 Transferencia electrónica</h2></div>
+
+            <ul style="max-width:600px; margin:auto; margin-bottom:20px;">
+                <li>✔ Usados principalmente en empresas</li>
+                <li>✔ Permiten registrar un pago formal</li>
+                <li>✔ Ofrecen respaldo como comprobante</li>
+                <li>✔ Son rastreables y verificables</li>
+                <li>✔ No es un cheque físico, sino un documento digital con validez</li>
+            </ul>
+
+            <form style="max-width:600px; margin:auto;">
+                <label>Número de cheque:</label>
+                <input type="text" id="numCheque" required>
+
+                <label>Monto:</label>
+                <input type="number" id="montoCheque" required>
+
+                <label>Banco:</label>
+                <input type="text" id="bancoCheque" required>
+
+                <button class="btn-agregar" style="margin-top:15px;" onclick="alert('Cheque electrónico enviado ✔️'); return false;">Enviar</button>
+            </form>
+        </section>
+
+        <!-- SECCIÓN: Pago desde cajero -->
+        <section class="tabla-admin" id="cajero" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>🏧 Pago en efectivo</h2></div>
+            <p style="text-align:center;">Sigue las instrucciones:</p>
+            <ol style="max-width:600px; margin:auto;">
+                <li>Ve a un cajero autorizado.</li>
+                <li>Selecciona "Pago de servicios".</li>
+                <li>Ingresa el código de empresa: <strong>84293</strong></li>
+                <li>Ingresa tu referencia: <strong>GENERADA AUTOMÁTICAMENTE</strong></li>
+                <li>Realiza el depósito y guarda tu comprobante.</li>
+            </ol>
+            <div style="text-align:center; margin-top:15px;">
+                <button class="btn-agregar" onclick="alert('Pago registrado en el sistema ✔️')">Confirmar pago</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        function mostrarTarjetas() { ocultarTodo(); document.getElementById('tarjetas-guardadas').style.display = 'block'; }
+        function mostrarMonedero() { ocultarTodo(); document.getElementById('monedero').style.display = 'block'; }
+        function mostrarTransferencia() { ocultarTodo(); document.getElementById('transferencia').style.display = 'block'; generarReferencia(); }
+        function mostrarEfectivo() { ocultarTodo(); document.getElementById('efectivo').style.display = 'block'; generarCodigoEfectivo(); }
+        function mostrarCheque() { ocultarTodo(); document.getElementById('cheque').style.display = 'block'; }
+        function mostrarCajero() { ocultarTodo(); document.getElementById('cajero').style.display = 'block'; }
+
+        function ocultarTodo() {
+            document.getElementById('tarjetas-guardadas').style.display = 'none';
+            document.getElementById('monedero').style.display = 'none';
+            document.getElementById('transferencia').style.display = 'none';
+            document.getElementById('efectivo').style.display = 'none';
+            document.getElementById('cheque').style.display = 'none';
+            document.getElementById('cajero').style.display = 'none';
+            document.getElementById('formulario-tarjeta').style.display = 'none';
+        }
+
+        function mostrarFormulario() { ocultarTodo(); document.getElementById('formulario-tarjeta').style.display = 'block'; }
+        function cancelarFormulario() { document.getElementById('formulario-tarjeta').style.display = 'none'; }
+
+        // Función para generar referencia de transferencia
+        function generarReferencia() {
+            const ref = 'PFA-' + Math.floor(Math.random() * 9000 + 1000);
+            document.getElementById('transferReference').textContent = ref;
+        }
+
+        // Función para generar código de efectivo
+        function generarCodigoEfectivo() {
+            const codigo = 'PFA-EF-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            document.getElementById('cashReference').textContent = codigo;
+        }
+
+        // Función para seleccionar tienda de pago en efectivo
+        function selectStore(element, storeType) {
+            // Remover selección anterior
+            document.querySelectorAll('.store-option').forEach(store => {
+                store.classList.remove('selected');
+            });
+
+            // Agregar selección actual
+            element.classList.add('selected');
+
+            // Actualizar comisión según tienda
+            let commission = 0;
+            switch (storeType) {
+                case 'oxxo': commission = 10; break;
+                case 'seven': commission = 12; break;
+                case 'farmacia': commission = 8; break;
+                case 'soriana': commission = 15; break;
+            }
+
+            // Calcular total con comisión
+            const total = 148 + commission;
+            document.getElementById('montoEfectivo').value = `$${total}.00 MXN (incluye $${commission} comisión)`;
+        }
+
+        // Generar códigos al cargar la página
+        document.addEventListener('DOMContentLoaded', function () {
+            generarReferencia();
+            generarCodigoEfectivo();
+        });
+    </script>
+
+</body>
+</html>

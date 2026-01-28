@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura - PerfumeShop</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <style>
+        body {
+            background-color: #f3f3f3;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Espacio para el navbar */
+        .navbar-space {
+            height: 70px; /* Ajusta según la altura de tu navbar */
+        }
+
+        .factura-container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            font-family: Arial, sans-serif;
+        }
+
+        .factura-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+            .factura-header h1 {
+                margin: 0;
+            }
+
+        .factura-datos {
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+
+            .factura-datos strong {
+                font-weight: bold;
+            }
+
+        .factura-section-title {
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 1.05rem;
+        }
+
+        .factura-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+            .factura-table thead {
+                background: linear-gradient(90deg, purple, blue);
+                color: #fff;
+            }
+
+            .factura-table th,
+            .factura-table td {
+                padding: 8px 10px;
+                border: 1px solid #ddd;
+                text-align: center;
+            }
+
+        .totales {
+            margin-top: 10px;
+            text-align: right;
+            font-size: 1rem;
+        }
+
+            .totales p {
+                margin: 2px 0;
+            }
+
+        .sello-digital {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f9f9f9;
+            border: 1px dashed #777;
+            font-size: 0.9rem;
+        }
+
+        .acciones-factura {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .btn-descargar {
+            background: linear-gradient(90deg, purple, blue);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+            .btn-descargar:hover {
+                background: linear-gradient(90deg, darkmagenta, darkblue);
+            }
+
+        @media print {
+            /* Ocultar navbar al imprimir */
+            #navbar-container, .navbar-space {
+                display: none;
+            }
+
+            .acciones-factura {
+                display: none;
+            }
+
+            body {
+                background-color: #ffffff;
+            }
+
+            .factura-container {
+                margin: 0;
+                box-shadow: none;
+                border-radius: 0;
+            }
+        }
+
+        /* Estilos para la factura dinámica */
+        .invoice-status {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            border-left: 4px solid #4caf50;
+        }
+
+        .customer-info-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #e0e0e0;
+        }
+
+            .customer-info-box p {
+                margin: 8px 0;
+            }
+
+        .payment-details {
+            background: #e8f4ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #cce5ff;
+        }
+
+        /* Mejorar diseño para móviles */
+        @media (max-width: 768px) {
+            .factura-container {
+                margin: 20px 15px;
+                padding: 20px;
+            }
+
+            .factura-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .factura-table {
+                font-size: 0.85rem;
+            }
+
+                .factura-table th,
+                .factura-table td {
+                    padding: 6px 8px;
+                }
+
+            .acciones-factura {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <div id="navbar-container"></div>
+
+    <!-- Espacio para que el contenido no quede debajo del navbar -->
+    <div class="navbar-space"></div>
+
+    <div class="factura-container">
+        <!-- ENCABEZADO -->
+        <div class="factura-header">
+            <div>
+                <h1>Factura Electrónica</h1>
+                <p>🌸 <strong>Perfumes & Aromas</strong></p>
+                <p style="color: #666; font-size: 0.9rem;">RFC: PFA250301ABC</p>
+            </div>
+            <div class="factura-datos">
+                <p><strong>Folio:</strong> <span id="invoiceFolio">FCT-001</span></p>
+                <p><strong>Fecha:</strong> <span id="invoiceDate">2025-05-20</span></p>
+                <p><strong>Orden N°:</strong> <span id="orderNumber">ORD-0000</span></p>
+                <p><strong>Transacción:</strong> <span id="transactionId">TXN-000000</span></p>
+            </div>
+        </div>
+
+        <!-- Estado de la factura -->
+        <div class="invoice-status" id="invoiceStatus">
+            ✅ FACTURA VÁLIDA • PAGO CONFIRMADO • CFDI EMITIDO
+        </div>
+
+        <!-- INFORMACIÓN DEL CLIENTE (dinámica) -->
+        <div class="customer-info-box" id="customerInfo">
+            <p><strong>👤 Cliente:</strong> <span id="customerName">Cliente de demostración</span></p>
+            <p><strong>📧 Correo:</strong> <span id="customerEmail">cliente@email.com</span></p>
+            <p><strong>📞 Teléfono:</strong> <span id="customerPhone">449 000 0000</span></p>
+            <p><strong>🏠 Dirección:</strong> <span id="customerAddress">Calle Ficticia 123, Ciudad Demo, MX</span></p>
+        </div>
+
+        <!-- DETALLES DE PAGO -->
+        <div class="payment-details">
+            <p><strong>💳 Método de Pago:</strong> <span id="paymentMethod">Tarjeta Visa terminación 4512</span></p>
+            <p><strong>📅 Fecha de Pago:</strong> <span id="paymentDate">02/12/2025</span></p>
+            <p><strong>📍 Forma de Pago:</strong> Pago en una sola exhibición</p>
+            <p><strong>🏢 Uso CFDI:</strong> Adquisición de mercancías</p>
+        </div>
+
+        <!-- DETALLE DE COMPRA -->
+        <div class="factura-section-title">📦 Detalle de Productos</div>
+
+        <table class="factura-table" id="productsTable">
+            <thead>
+                <tr>
+                    <th>Cantidad</th>
+                    <th>Producto</th>
+                    <th>Descripción</th>
+                    <th>Precio Unitario</th>
+                    <th>Importe</th>
+                </tr>
+            </thead>
+            <tbody id="productsBody">
+                <!-- Los productos se cargarán dinámicamente -->
+                <tr>
+                    <td>1</td>
+                    <td>NAVIGO</td>
+                    <td>Aromas frescos y delicados con notas de jazmín y rosa</td>
+                    <td>$25.00</td>
+                    <td>$25.00</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>9PM</td>
+                    <td>Perfume nocturno con notas intensas</td>
+                    <td>$45.00</td>
+                    <td>$90.00</td>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>VERSACE EROS FLAME</td>
+                    <td>Fragancia intensa y elegante</td>
+                    <td>$38.00</td>
+                    <td>$38.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- TOTALES -->
+        <div class="totales">
+            <p><strong>Subtotal:</strong> <span id="subtotal">$153.00</span></p>
+            <p><strong>Envío:</strong> <span id="shipping">$5.00</span></p>
+            <p><strong>Descuento:</strong> <span id="discount" style="color: #4caf50;">-$10.00</span></p>
+            <p><strong>IVA (16%):</strong> <span id="iva">$23.68</span></p>
+            <p style="font-size: 1.2rem; font-weight: bold; margin-top: 10px;">
+                <strong>Total:</strong> <span id="totalAmount">$171.68 MXN</span>
+            </p>
+        </div>
+
+        <!-- SELLO DIGITAL -->
+        <div class="sello-digital">
+            <strong>🔏 Sello Digital del SAT </strong><br>
+            Certificado de Sello Digital: 00001000000506667777<br>
+            Número de Certificado: 30001000000400002333<br>
+            Fecha y hora de certificación: <span id="certificationDate">2025-05-20T14:30:00</span><br>
+            Cadena Original del Complemento: ABCDEF1234567890ABCDEF1234567890<br>
+        </div>
+
+        <!-- BOTÓN PARA "DESCARGAR" -->
+        <div class="acciones-factura">
+            <button class="btn-descargar" onclick="descargarFacturaSimulada()">
+                🧾 Descargar Factura (PDF)
+            </button>
+            <button class="btn-descargar" style="background: linear-gradient(90deg, #25D366, #1da851); margin-left: 10px;" onclick="window.location.href='catalog.html'">
+                🛍️ Continuar Comprando
+            </button>
+        </div>
+
+        <!-- Información adicional -->
+        <div style="margin-top: 30px; font-size: 0.85rem; color: #666; text-align: center;">
+            <p>Esta factura cumple con los requisitos del Código Fiscal de la Federación</p>
+            <p>Para cualquier aclaración, contactar al área de facturación: facturacion@perfumesyaromas.com</p>
+            <p>© 2024 Perfumes & Aromas S.A. de C.V. Todos los derechos reservados.</p>
+        </div>
+    </div>
+
+    <script>
+        // Cargar navbar
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('navbar-container').innerHTML = data;
+                initializeDropdown();
+            })
+            .catch(error => console.error('Error loading navbar:', error));
+
+        // Función para inicializar el dropdown
+        function initializeDropdown() {
+            const dropdownBtn = document.querySelector('.dropdown-btn');
+            const dropdownContent = document.querySelector('.dropdown-content');
+            if (dropdownBtn && dropdownContent) {
+                dropdownBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    dropdownContent.classList.toggle('show');
+                });
+                document.addEventListener('click', function () {
+                    dropdownContent.classList.remove('show');
+                });
+                dropdownContent.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+            }
+        }
+
+        // Cargar datos dinámicos
+        document.addEventListener('DOMContentLoaded', function () {
+            // Obtener datos del localStorage
+            const invoiceData = JSON.parse(localStorage.getItem('invoiceData')) || {};
+            const customerData = invoiceData.customerData || {};
+            const orderNumber = invoiceData.orderNumber || 'ORD-' + Math.floor(Math.random() * 9000 + 1000);
+            const transactionId = invoiceData.transactionId || 'TXN-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+
+            // Obtener fecha actual
+            const now = new Date();
+            const dateString = now.toISOString().split('T')[0];
+            const formattedDate = now.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            // Generar folio único
+            const folio = 'FCT-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+
+            // Calcular IVA (16%)
+            const subtotal = 153.00;
+            const shipping = 5.00;
+            const discount = 10.00;
+            const totalSinIVA = subtotal + shipping - discount;
+            const iva = totalSinIVA * 0.16;
+            const totalConIVA = totalSinIVA + iva;
+
+            // Actualizar elementos en la página
+            document.getElementById('invoiceFolio').textContent = folio;
+            document.getElementById('invoiceDate').textContent = formattedDate;
+            document.getElementById('orderNumber').textContent = orderNumber;
+            document.getElementById('transactionId').textContent = transactionId;
+
+            // Información del cliente
+            document.getElementById('customerName').textContent =
+                (customerData.firstName || 'Cliente') + ' ' + (customerData.lastName || 'Perfumes & Aromas');
+            document.getElementById('customerEmail').textContent = customerData.email || 'cliente@perfumesyaromas.com';
+            document.getElementById('customerPhone').textContent = customerData.phone || '449 438 9825';
+            document.getElementById('customerAddress').textContent =
+                (customerData.address || 'Dirección no especificada') + ', ' +
+                (customerData.city || 'Ciudad no especificada') + ', ' +
+                (customerData.state || 'Estado no especificado') + ', CP: ' +
+                (customerData.zipCode || '00000');
+
+            // Información de pago
+            document.getElementById('paymentMethod').textContent = customerData.paymentMethod || 'Tarjeta de Crédito';
+            document.getElementById('paymentDate').textContent = formattedDate;
+
+            // Totales
+            document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('shipping').textContent = `$${shipping.toFixed(2)}`;
+            document.getElementById('discount').textContent = `-$${discount.toFixed(2)}`;
+            document.getElementById('iva').textContent = `$${iva.toFixed(2)}`;
+            document.getElementById('totalAmount').textContent = `$${totalConIVA.toFixed(2)} MXN`;
+
+            // Fecha de certificación
+            document.getElementById('certificationDate').textContent = now.toISOString().replace('T', ' ').substring(0, 19);
+
+            // Guardar datos de la factura para futuras referencias
+            const completeInvoiceData = {
+                ...invoiceData,
+                folio: folio,
+                date: formattedDate,
+                totals: {
+                    subtotal: subtotal,
+                    shipping: shipping,
+                    discount: discount,
+                    iva: iva,
+                    total: totalConIVA
+                }
+            };
+            localStorage.setItem('completeInvoiceData', JSON.stringify(completeInvoiceData));
+
+            // Mostrar en consola para debugging
+            console.log('Factura generada:', completeInvoiceData);
+
+            // Resaltar el botón del carrito en el navbar (si existe)
+            setTimeout(() => {
+                const cartBtn = document.querySelector('.cart-btn');
+                if (cartBtn) {
+                    cartBtn.style.background = 'rgba(155, 93, 229, 0.2)';
+                    cartBtn.style.border = '2px solid #9b5de5';
+                }
+            }, 500);
+        });
+
+        function descargarFacturaSimulada() {
+            // Usamos la impresión del navegador, el usuario puede elegir "Guardar como PDF"
+            window.print();
+
+            // Opcional: Mostrar mensaje de éxito
+            alert('La factura se ha generado correctamente. Selecciona "Guardar como PDF" en las opciones de impresión.');
+        }
+    </script>
+</body>
+</html>

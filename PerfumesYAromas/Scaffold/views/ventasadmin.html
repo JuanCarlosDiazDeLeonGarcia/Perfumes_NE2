@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Historial de Ventas - Perfumería</title>
+  <link rel="stylesheet" href="../css/base.css">
+</head>
+<body>
+
+  <!-- Menú lateral -->
+  <aside class="sidebar">
+    <h2>🌸 PerfumeShop</h2>
+    <nav>
+      <a href="menuadmin.html">📊 Dashboard</a>
+      <a href="perfumesadmin.html">🧴 Perfumes</a>
+      <a href="#" class="active">🛍️ Ventas</a>
+      <a href="clientesadmin.html">👥 Clientes</a>
+      <a href="metricasadmin.html" >📊 Métricas</a>
+      <a href="configuracionadmin.html">⚙️ Configuración</a>
+    </nav>
+  </aside>
+
+  <!-- Contenido principal -->
+  <main class="main-content">
+    <header class="admin-header">
+      <h1>Historial de Ventas</h1>
+      <div class="admin-actions">
+        <a href="admin.html" style="text-decoration:none; color: inherit;">
+          <button class="btn-sesion">Cerrar Sesión</button>
+        </a>
+      </div>
+    </header>
+
+    <!-- Tarjetas resumen -->
+    <section class="cards">
+      <div class="card">
+        <h3>Ventas Hoy</h3>
+        <p>$ 2,350</p>
+      </div>
+      <div class="card">
+        <h3>Ventas Totales</h3>
+        <p>$ 45,320</p>
+      </div>
+      <div class="card">
+        <h3>Pedidos Completados</h3>
+        <p>156</p>
+      </div>
+      <div class="card">
+        <h3>Clientes Satisfechos</h3>
+        <p>97%</p>
+      </div>
+    </section>
+
+    <!-- Tabla de historial de ventas -->
+    <section class="tabla-admin">
+      <div class="titulo-tabla">
+        <h2>💳 Historial de Ventas</h2>
+        <button class="btn-agregar">📅 Exportar Reporte</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID Venta</th>
+            <th>Fecha</th>
+            <th>Cliente</th>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>#V001</td>
+            <td>24/10/2025</td>
+            <td>Ana López</td>
+            <td>Floral Dream</td>
+            <td>2</td>
+            <td>$240.00</td>
+            <td>✅ Completado</td>
+            <td>
+              <button class="btn-editar">👁️</button>
+              <button class="btn-eliminar">🗑️</button>
+            </td>
+          </tr>
+          <tr>
+            <td>#V002</td>
+            <td>23/10/2025</td>
+            <td>Carlos Pérez</td>
+            <td>Midnight Musk</td>
+            <td>1</td>
+            <td>$150.00</td>
+            <td>✅ Completado</td>
+            <td>
+              <button class="btn-editar">👁️</button>
+              <button class="btn-eliminar">🗑️</button>
+            </td>
+          </tr>
+          <tr>
+            <td>#V003</td>
+            <td>22/10/2025</td>
+            <td>Laura Gómez</td>
+            <td>Vanilla Breeze</td>
+            <td>3</td>
+            <td>$285.00</td>
+            <td>🕓 Pendiente</td>
+            <td>
+              <button class="btn-editar">👁️</button>
+              <button class="btn-eliminar">🗑️</button>
+            </td>
+          </tr>
+          <tr>
+            <td>#V004</td>
+            <td>21/10/2025</td>
+            <td>Daniel Ruiz</td>
+            <td>Ocean Spirit</td>
+            <td>1</td>
+            <td>$110.00</td>
+            <td>❌ Cancelado</td>
+            <td>
+              <button class="btn-editar">👁️</button>
+              <button class="btn-eliminar">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    // Acción para exportar reporte
+    document.querySelector('.btn-agregar').addEventListener('click', () => {
+      alert('El reporte de ventas se descargará en formato Excel o PDF.');
+    });
+
+    // Ver detalles
+    document.querySelectorAll('.btn-editar').forEach(btn => {
+      btn.addEventListener('click', () => {
+        alert('Aquí se mostrarán los detalles completos de la venta.');
+      });
+    });
+
+    // Eliminar registro
+    document.querySelectorAll('.btn-eliminar').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const confirmar = confirm('¿Deseas eliminar este registro de venta?');
+        if (confirmar) alert('Venta eliminada del historial ✅');
+      });
+    });
+  </script>
+
+</body>
+</html>

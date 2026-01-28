@@ -1,0 +1,204 @@
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f3f3f3;
+}
+
+/* Navbar */
+.navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 70px;
+    background: linear-gradient(90deg, purple, blue);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    color: white;
+    z-index: 1000;
+}
+
+    .navbar label {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+.search-bar {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 20px;
+    position: relative;
+}
+
+    .search-bar input {
+        width: 50%;
+        padding: 8px 35px 8px 12px;
+        border-radius: 20px;
+        border: none;
+        outline: none;
+        font-size: 1rem;
+    }
+
+    .search-bar img {
+        position: absolute;
+        right: 24%;
+        width: 18px;
+        height: 18px;
+        opacity: 0.6;
+        cursor: pointer;
+    }
+
+.buttons {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-right: 50px;
+}
+
+    .buttons button {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        padding: 8px 12px;
+        border-radius: 10px;
+        color: white;
+        font-size: 1.05rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: background 0.3s;
+    }
+
+        .buttons button:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+    .buttons img {
+        width: 20px;
+        height: 20px;
+        filter: brightness(0) invert(1);
+    }
+
+/* Content */
+.content {
+    padding-top: 90px;
+    text-align: center;
+}
+
+/* Tarjetas de productos */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    padding: 20px 40px;
+}
+
+.product-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+    .product-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .product-card img {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+
+    .product-card h3 {
+        margin: 10px 0 5px 0;
+    }
+
+    .product-card p.price {
+        font-weight: bold;
+        margin: 5px 0;
+    }
+
+    .product-card button {
+        margin: 5px 0;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 80%;
+        font-weight: bold;
+        transition: background 0.3s;
+    }
+
+.btn-vermas {
+    background-color: purple;
+    color: white;
+}
+
+    .btn-vermas:hover {
+        background-color: darkmagenta;
+    }
+
+.btn-carrito {
+    background-color: blue;
+    color: white;
+}
+
+    .btn-carrito:hover {
+        background-color: darkblue;
+    }
+
+/* Descripci�n emergente */
+.descripcion {
+    display: none;
+    margin-top: 5px;
+    padding: 8px;
+    background-color: #f3f3f3;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+/* Barra inferior horizontal */
+.navbar-submenu {
+    display: flex;
+    justify-content: center; /* centra horizontalmente */
+    background: linear-gradient(90deg, purple, blue);
+    padding: 10px 0;
+    gap: 40px; /* espacio entre opciones */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    font-family: Arial, sans-serif;
+    position: sticky; /* se queda al hacer scroll */
+    top: 70px; /* justo debajo de la navbar principal */
+    z-index: 999;
+}
+
+    .navbar-submenu a {
+        color: white;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 1rem;
+        padding: 5px 10px;
+        border-radius: 8px;
+        transition: background 0.3s, color 0.3s;
+    }
+
+        .navbar-submenu a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+

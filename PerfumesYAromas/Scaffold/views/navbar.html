@@ -1,0 +1,63 @@
+<!-- NAVBAR -->
+<div class="navbar">
+    <label class="navbar-logo">Perfumes & Aromas</label>
+
+    <div class="search-bar">
+        <input type="text" placeholder="Buscar perfumes..." id="searchInput">
+        <img src="https://cdn-icons-png.flaticon.com/512/54/54481.png" alt="Buscar" id="searchIcon">
+    </div>
+
+    <div class="buttons">
+        <button class="nav-btn">
+            <a href="index.html" style="color:#fff; text-decoration:none;">Inicio</a>
+        </button>
+        <div class="buttons">
+            <button class="nav-btn">
+                <img src="https://cdn-icons-png.flaticon.com/512/2331/2331965.png" alt="Catalogo">
+                <a href="catalog.html" style="color:#fff; text-decoration:none;">Catalogo</a>
+            </button>
+            <button class="nav-btn cart-btn">
+                <img src="https://cdn-icons-png.flaticon.com/512/107/107831.png" alt="Carrito">
+                <a href="cart.html" style="color:#fff; text-decoration:none;">Carrito</a>
+            </button>
+            <!-- Botón desplegable nuevo -->
+            <div class="dropdown">
+                <button class="nav-btn dropdown-btn">
+                    <img src="https://cdn-icons-png.flaticon.com/512/709/709612.png" alt="Informacion">
+                    Mas información
+                </button>
+                <div class="dropdown-content">
+                    <a href="status.html" class="dropdown-item">Status</a>
+                    <a href="tecnologias.html" class="dropdown-item">Tecnologías</a>
+                    <a href="infraestructura.html" class="dropdown-item">Infraestructura</a>
+                    <a href="disponibilidad.html" class="dropdown-item">Disponibilidad</a>
+                    <a href="certificacion.html" class="dropdown-item">Certificación</a>
+                    <a href="admin.html" class="dropdown-item">Administrador</a>
+                </div>
+            </div>
+            <button class="nav-btn user-btn">
+                <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="Usuario">
+                <a href="usuario.html" style="color:#fff; text-decoration:none;">Usuario</a>
+            </button>
+        </div>
+    </div>
+
+    <script>
+    // JavaScript para el dropdown
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropdownBtn = document.querySelector('.dropdown-btn');
+            const dropdownContent = document.querySelector('.dropdown-content');
+
+            dropdownBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                dropdownContent.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function () {
+                dropdownContent.classList.remove('show');
+            });
+
+            dropdownContent.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        });</script>

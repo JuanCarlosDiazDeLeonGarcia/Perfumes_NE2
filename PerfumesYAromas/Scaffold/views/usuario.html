@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio de Sesión - Perfumes & Aromas</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/menuusuario.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://via.placeholder.com/32?text=P&A" type="image/x-icon">
+    <style>
+        /* ESTILOS ESPECÍFICOS PARA LA PÁGINA DE LOGIN */
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f3f3f3;
+        }
+
+        .content {
+            padding-top: 90px;
+            text-align: center;
+        }
+
+        /* Estilos del formulario de login */
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+            .login-container h2 {
+                margin-bottom: 20px;
+                color: #333;
+            }
+
+            .login-container input {
+                width: 100%;
+                padding: 12px;
+                margin: 10px 0;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                font-size: 1rem;
+                box-sizing: border-box;
+            }
+
+            .login-container button {
+                width: 100%;
+                background: linear-gradient(90deg, purple, blue);
+                color: white;
+                padding: 12px;
+                font-size: 1rem;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: background 0.3s;
+                font-weight: bold;
+            }
+
+                .login-container button:hover {
+                    background: linear-gradient(90deg, darkmagenta, darkblue);
+                }
+
+            .login-container p {
+                margin-top: 15px;
+                font-size: 0.9rem;
+            }
+
+            .login-container a {
+                color: blue;
+                text-decoration: none;
+                font-weight: bold;
+            }
+
+                .login-container a:hover {
+                    text-decoration: underline;
+                }
+
+        /* Asegurar que el navbar importado se vea bien */
+        #navbar-container .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenedor para el navbar importado -->
+    <div id="navbar-container"></div>
+
+    <!-- Contenido principal -->
+    <div class="content">
+        <div class="login-container">
+            <h2>Iniciar Sesión</h2>
+            <form id="loginForm">
+                <input type="text" placeholder="Usuario o Email" id="username">
+                <input type="password" placeholder="Contraseña" id="password">
+                <button type="button" id="loginBtn">Entrar</button>
+            </form>
+            <p>¿No tienes cuenta? <a href="#">Regístrate</a></p>
+            <p><a href="usuariomenu.html">¿Olvidaste tu contraseña?</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Cargar navbar
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('navbar-container').innerHTML = data;
+                initializeDropdown(); // ← Inicializar dropdown después de cargar
+            })
+            .catch(error => console.error('Error loading navbar:', error));
+
+        // Función para inicializar el dropdown
+        function initializeDropdown() {
+            const dropdownBtn = document.querySelector('.dropdown-btn');
+            const dropdownContent = document.querySelector('.dropdown-content');
+
+            if (dropdownBtn && dropdownContent) {
+                dropdownBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    dropdownContent.classList.toggle('show');
+                });
+
+                // Cerrar dropdown al hacer click fuera
+                document.addEventListener('click', function () {
+                    dropdownContent.classList.remove('show');
+                });
+
+                // Prevenir que se cierre al hacer click dentro del dropdown
+                dropdownContent.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+            }
+        }
+
+        // Función para manejar el inicio de sesión
+        document.addEventListener('DOMContentLoaded', function () {
+            const loginBtn = document.getElementById('loginBtn');
+
+            loginBtn.addEventListener('click', function () {
+                // Obtener valores de los campos (opcional - solo para mostrar en consola)
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                // Mostrar en consola los valores (opcional)
+                console.log('Intento de login:');
+                console.log('Usuario:', username || '(campo vacío)');
+                console.log('Contraseña:', password || '(campo vacío)');
+
+                // Redireccionar a la página de pago
+                window.location.href = 'pago.html';
+
+                // Opcional: Mostrar mensaje de redirección
+                console.log('Redirigiendo a pago.html...');
+
+                // Prevenir comportamiento por defecto (no necesario para type="button")
+                return false;
+            });
+
+            // También permitir enviar el formulario con Enter (opcional)
+            document.getElementById('loginForm').addEventListener('submit', function (e) {
+                e.preventDefault(); // Prevenir envío real del formulario
+                window.location.href = 'pago.html';
+                return false;
+            });
+        });
+    </script>
+</body>
+</html>

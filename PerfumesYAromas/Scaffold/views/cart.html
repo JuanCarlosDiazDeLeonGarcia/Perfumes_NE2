@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrito de Compras - Perfumes & Aromas</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://via.placeholder.com/32?text=P&A" type="image/x-icon">
+    <style>
+        :root {
+            --primary-color: #25D366;
+            --secondary-color: #9b5de5;
+            --light-bg: #f8f9fa;
+            --dark-text: #333;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: var(--dark-text);
+        }
+
+        .cart-container {
+            max-width: 1200px;
+            margin: 100px auto 50px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .cart-header {
+            text-align: center;
+            margin-bottom: 40px;
+            grid-column: 1 / -1;
+        }
+
+            .cart-header h1 {
+                font-family: 'Playfair Display', serif;
+                font-size: 2.5rem;
+                color: #333;
+                margin-bottom: 10px;
+            }
+
+            .cart-header p {
+                color: #666;
+                font-size: 1.1rem;
+            }
+
+        .cart-items {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            padding: 25px;
+        }
+
+        .cart-item {
+            display: grid;
+            grid-template-columns: 100px 1fr auto;
+            gap: 20px;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+        }
+
+            .cart-item:last-child {
+                border-bottom: none;
+            }
+
+        .item-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .item-details h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            color: #333;
+        }
+
+        .item-details p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .item-price {
+            font-weight: bold;
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+        }
+
+        .quantity-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .quantity-box {
+            width: 40px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .cart-summary {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            padding: 25px;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+            .cart-summary h2 {
+                margin-top: 0;
+                font-family: 'Playfair Display', serif;
+                color: #333;
+                border-bottom: 2px solid var(--border-color);
+                padding-bottom: 15px;
+            }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .summary-total {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .checkout-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            width: 90%;
+            margin-top: 20px;
+        }
+
+            .checkout-btn:hover {
+                background: #1da851;
+                transform: translateY(-2px);
+            }
+
+        .continue-btn {
+            background: white;
+            color: #333;
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: 0.3s;
+            text-decoration: none;
+            display: block;
+            margin-top: 15px;
+        }
+
+            .continue-btn:hover {
+                background: var(--light-bg);
+            }
+
+        .micro-payment {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+            .micro-payment h3 {
+                margin-top: 0;
+                color: #555;
+            }
+
+        .micro-btn {
+            background: #9b5de5;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+
+            .micro-btn:hover {
+                background: #8a4bd1;
+                transform: translateY(-2px);
+            }
+
+        @media (max-width: 768px) {
+            .cart-container {
+                grid-template-columns: 1fr;
+                margin-top: 80px;
+            }
+
+            .cart-item {
+                grid-template-columns: 80px 1fr;
+                grid-template-rows: auto auto;
+            }
+
+            .item-controls {
+                grid-column: 1 / -1;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .cart-summary {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="navbar-container"></div>
+
+    <div class="cart-container">
+        <div class="cart-header">
+            <h1>Carro de Compras</h1>
+            <p>Revisa tus productos antes de continuar</p>
+        </div>
+
+        <!-- ITEMS -->
+        <div class="cart-items">
+            <!-- Producto 1 -->
+            <div class="cart-item">
+                <img src="https://cdn5.coppel.com/mkp/103020481-1.jpg" class="item-image">
+                <div class="item-details">
+                    <h3>NAVIGO</h3>
+                    <p>Aromas frescos y delicados con notas de jazmín y rosa</p>
+                    <p class="item-price">$25.00</p>
+                    <div class="quantity-display">
+                        <span>Cantidad:</span>
+                        <div class="quantity-box">1</div>
+                    </div>
+                </div>
+                <div class="item-controls">
+                    <button class="remove-btn" style="background: none; border: none; color: #ff4444; cursor: pointer;">
+                        🗑️ Eliminar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Producto 2 -->
+            <div class="cart-item">
+                <img src="https://m.media-amazon.com/images/I/41ZQdV659VL.jpg" class="item-image">
+                <div class="item-details">
+                    <h3>9PM</h3>
+                    <p>Perfume nocturno con notas intensas</p>
+                    <p class="item-price">$45.00</p>
+                    <div class="quantity-display">
+                        <span>Cantidad:</span>
+                        <div class="quantity-box">2</div>
+                    </div>
+                </div>
+                <div class="item-controls">
+                    <button class="remove-btn" style="background: none; border: none; color: #ff4444; cursor: pointer;">
+                        🗑️ Eliminar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Producto 3 -->
+            <div class="cart-item">
+                <img src="https://www.versace.com/dw/image/v2/BGWN_PRD/on/demandware.static/-/Sites-ver-master-catalog/default/dw74626350/original/90_R741010-R100MLS_RNUL_20_Eros~Flame~EDP~100~ml-Accessories-Versace-online-store_0_1.jpg?sw=1200&q=85&strip=true" class="item-image">
+                <div class="item-details">
+                    <h3>VERSACE EROS FLAME</h3>
+                    <p>Fragancia intensa y elegante</p>
+                    <p class="item-price">$38.00</p>
+                    <div class="quantity-display">
+                        <span>Cantidad:</span>
+                        <div class="quantity-box">1</div>
+                    </div>
+                </div>
+                <div class="item-controls">
+                    <button class="remove-btn" style="background: none; border: none; color: #ff4444; cursor: pointer;">
+                        🗑️ Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESUMEN -->
+        <div class="cart-summary">
+            <h2>Resumen del Pedido</h2>
+
+            <div class="summary-item">
+                <span>Subtotal (4 productos):</span>
+                <span>$153.00</span>
+            </div>
+
+            <div class="summary-item">
+                <span>Envío estándar:</span>
+                <span>$5.00</span>
+            </div>
+
+            <div class="summary-item">
+                <span>Descuento:</span>
+                <span style="color: #4caf50;">-$10.00</span>
+            </div>
+
+            <div class="summary-total">
+                <span>Total a pagar:</span>
+                <span>$148.00</span>
+            </div>
+
+            <!-- MICROPAGOS -->
+            <div class="micro-payment">
+                <h3>Apoya nuestro negocio</h3>
+                <button class="micro-btn" onclick="mockPayment(10)">
+                    Donar $10
+                </button>
+                <button class="micro-btn" onclick="mockPayment(20)">
+                    Donar $20
+                </button>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN -->
+            <a href="usuario.html" class="checkout-btn">
+                Continuar al Pago
+            </a>
+
+            <a href="catalog.html" class="continue-btn">
+                ← Seguir Comprando
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Cargar navbar
+        fetch('navbar.html')
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById('navbar-container').innerHTML = html;
+                // Inicializar dropdown si existe
+                const dropdownBtn = document.querySelector('.dropdown-btn');
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownBtn && dropdownContent) {
+                    dropdownBtn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        dropdownContent.classList.toggle('show');
+                    });
+                }
+            });
+
+        // 🔥 FUNCIÓN MICROPAGO
+        function mockPayment(amount) {
+            alert("¡Gracias por tu apoyo de $" + amount + "!");
+            localStorage.setItem("mockSupport", "$" + amount);
+        }
+
+        // Botones eliminar redirigen a error
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Integración Tecnológica (Simulada) — Proyecto NE I - Perfumes & Aromas</title>
+    <link rel="stylesheet" href="../css/base.css"> <!-- Incluir base.css para el navbar -->
+    <style>
+        :root {
+            --bg: #b642f5; /* gris-azul oscuro */
+            --panel: #111827; /* panel oscuro */
+            --card: #4c3df5; /* tarjeta */
+            --muted: #94a3b8; /* texto secundario */
+            --text: #e5e7eb; /* texto principal */
+            --primary: #22d3ee; /* acento */
+            --ok: #10b981; /* verde */
+            --warn: #f59e0b; /* amarillo */
+            --danger: #ef4444; /* rojo */
+            --radius: 16px;
+            --gap: 16px;
+            --shadow: 0 10px 30px rgba(0,0,0,.25);
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+            background: radial-gradient(1200px 800px at 10% 10%, #172554 0%, var(--bg) 50%);
+            color: var(--text);
+            line-height: 1.5;
+            padding-top: 70px; /* ESPACIO PARA EL NAVBAR FIJO */
+        }
+
+        /* Asegurar que el navbar se vea bien con el tema oscuro */
+        #navbar-container .navbar {
+            background: rgba(17,24,39,.95) !important;
+            backdrop-filter: saturate(140%) blur(6px);
+            border-bottom: 1px solid #1f2937;
+        }
+
+        /* Ocultar el header original ya que tendremos el navbar */
+        header {
+            display: none; /* OCULTAMOS EL HEADER ORIGINAL */
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 0 auto; /* Cambiado de 24px a 0 */
+            padding: 24px 16px 64px;
+        }
+
+        .section {
+            background: linear-gradient(180deg, rgba(34,211,238,.06), rgba(34,211,238,0) 50%), var(--panel);
+            border: 1px solid #1f2937;
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+
+            .section h2 {
+                margin: 0 0 12px;
+                font-size: 1.25rem
+            }
+
+        .muted {
+            color: var(--muted);
+            font-size: .95rem
+        }
+
+        .grid {
+            display: grid;
+            gap: var(--gap)
+        }
+
+        @media (min-width: 780px) {
+            .grid.cols-2 {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid #334155;
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: .8rem;
+            background: #0b1324;
+            border: 1px solid #334155
+        }
+
+            .badge.primary {
+                border-color: var(--primary);
+                color: var(--primary)
+            }
+
+        .list {
+            margin: .25rem 0 0 .75rem;
+            padding: 0
+        }
+
+            .list li {
+                margin: .15rem 0
+            }
+
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            border: 1px solid #1f2937;
+            background: linear-gradient(180deg, rgba(34,211,238,.12), rgba(34,211,238,0));
+            color: var(--text);
+            transition: transform .06s ease, box-shadow .2s ease;
+        }
+
+            .cta:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 8px 20px rgba(34,211,238,.15)
+            }
+
+        .ok {
+            color: var(--ok)
+        }
+
+        .warn {
+            color: var(--warn)
+        }
+
+        .danger {
+            color: var(--danger)
+        }
+
+        details {
+            border: 1px solid #334155;
+            border-radius: 12px;
+            background: #0b1324;
+            padding: 12px
+        }
+
+        summary {
+            cursor: pointer;
+            font-weight: 600
+        }
+
+        .kpis {
+            display: grid;
+            gap: 12px;
+            margin-top: 12px
+        }
+
+        @media (min-width:680px) {
+            .kpis {
+                grid-template-columns: repeat(4,1fr)
+            }
+        }
+
+        .kpi {
+            background: #0f172a;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center
+        }
+
+            .kpi .n {
+                font-size: 1.25rem;
+                font-weight: 700
+            }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid #334155;
+            background: #0b1324;
+            font-size: .85rem
+        }
+
+        .checklist {
+            display: grid;
+            gap: 8px;
+            margin-top: 8px
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary)
+        }
+
+        .footnote {
+            font-size: .85rem;
+            color: #94a3b8
+        }
+
+        .code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            background: #0b1324;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 10px
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR IMPORTADO -->
+    <div id="navbar-container"></div>
+
+    <!-- HEADER ORIGINAL (ahora oculto porque el navbar lo reemplaza) -->
+    <header style="display: none;">
+        <h1>Integración Tecnológica (Simulada) — Proyecto Negocios Electrónicos I - Perfumes & Aromas</h1>
+    </header>
+
+    <main>
+
+        <section class="section" aria-labelledby="plataformas">
+            <div class="grid cols-2" role="list">
+                <!-- Opción abierta A -->
+                <article class="card" role="listitem" aria-label="Plataforma abierta">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <h3 style="margin:0;">Opción A — WordPress</h3>
+                        <span class="badge primary">Abierta</span>
+                    </div>
+                    <p class="muted">Tienda y contenido administrables, gran ecosistema de plugins, bajo costo inicial.</p>
+                    <ul class="list">
+                        <li>✔ Integración por REST API (JSON).</li>
+                        <li>✔ Personalización alta (temas/plantillas).</li>
+                        <li>⚠ Requiere mantenimiento y actualizaciones.</li>
+                    </ul>
+                    <a class="cta" href="#demo-admin" aria-describedby="nota1">Ver "Admin (simulado)"</a>
+                </article>
+
+                <!-- Opción abierta B -->
+                <article class="card" role="listitem" aria-label="Plataforma abierta">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <h3 style="margin:0;">Opción B — Wix</h3>
+                        <span class="badge">Abierta</span>
+                    </div>
+                    <p class="muted">Ofrece una interfaz de arrastrar y soltar fácil de usar, plantillas profesionales y no requiere conocimientos de programación, ideal para crear sitios web rápidamente.</p>
+                    <ul class="list">
+                        <li>✔ Constructor visual drag-and-drop</li>
+                        <li>✔ Wix App Market (Extensiones y aplicaciones).</li>
+                        <li>⚠ Dependencia de proveedor (lock-in).</li>
+                    </ul>
+                    <a class="cta" href="#demo-admin" aria-describedby="nota2">Ver "Admin (simulado)"</a>
+                </article>
+            </div>
+        </section>
+
+        <section class="section" aria-labelledby="flujos">
+            <h2 id="flujos">Flujos ya simulados en el Front</h2>
+            <p class="muted">Estos flujos funcionan sin back-end, usando datos de ejemplo y navegación entre pantallas.</p>
+
+            <div class="grid cols-2">
+                <div class="card">
+                    <h3 style="margin-top:0;">Cara al cliente (E-commerce)</h3>
+                    <div class="checklist">
+                        <label class="row"><input type="checkbox" checked disabled> Catálogo desde JSON</label>
+                        <label class="row"><input type="checkbox" checked disabled> Detalle de producto</label>
+                        <label class="row"><input type="checkbox" checked disabled> Carrito (localStorage)</label>
+                        <label class="row"><input type="checkbox" checked disabled> Checkout con confirmación (simulado)</label>
+                        <label class="row"><input type="checkbox" checked disabled> Ofertas o kits disponibles</label>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-top:0;">Back-office (E-business, simulado)</h3>
+                    <div class="checklist">
+                        <label class="row"><input type="checkbox" checked disabled> Dashboard con KPIs mock</label>
+                        <label class="row"><input type="checkbox" checked disabled> Inventario (tabla editable ficticia)</label>
+                        <label class="row"><input type="checkbox" checked disabled> Pedidos (lista mock + detalle)</label>
+                        <label class="row"><input type="checkbox" checked disabled> Soporte (botón con redireccionamiento a WhatsApp)</label>
+                        <label class="row"><input type="checkbox" checked disabled> Perfil de usuario</label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="demo-admin" class="section" aria-labelledby="admin">
+            <h2 id="admin">Vistas de "Administración" (Simuladas, sin back)</h2>
+            <p class="muted">Estas pantallas sólo demuestran cómo sería la interfaz si se conectara a una plataforma (abierta o cerrada). No guardan cambios.</p>
+            <!-- Inventario -->
+            <section class="section">
+                <h2>Inventario (Simulado)</h2>
+                <p class="muted">Así se vería la gestión de inventario en cada plataforma:</p>
+
+                <div class="grid cols-2">
+                    <!-- WordPress WooCommerce -->
+                    <div class="code">
+                        <strong>WooCommerce (WordPress)</strong><br>
+                        SKU-001 | Camiseta NE | Stock: 12 | <span class="pill">Editar en WP</span><br>
+                        SKU-002 | Taza Logo | Stock: 5  | <span class="pill">Editar en WP</span><br>
+                        SKU-003 | Hoodie | Stock: 0  | <span class="pill danger">Reabastecer</span>
+                    </div>
+
+                    <!-- Wix Stores -->
+                    <div class="code">
+                        <strong>Wix Stores</strong><br>
+                        SKU-001 | Camiseta NE | Stock: 12 | <span class="pill">Actualizar</span><br>
+                        SKU-002 | Taza Logo | Stock: 5  | <span class="pill">Actualizar</span><br>
+                        SKU-003 | Hoodie | Stock: 0  | <span class="pill danger">Reabastecer</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Órdenes -->
+            <section class="section">
+                <h2>Órdenes (Simulado)</h2>
+                <p class="muted">Vista comparativa de pedidos en cada plataforma:</p>
+
+                <div class="grid cols-2">
+                    <!-- WooCommerce -->
+                    <div class="code">
+                        <strong>WooCommerce (WordPress)</strong><br>
+                        ORD-9842 — <strong>$1,299</strong> — 2 artículos — <span class="ok">Pagada</span><br>
+                        ORD-9843 — <strong>$299</strong> — 1 artículo — <span class="warn">Pendiente</span><br>
+                        ORD-9844 — <strong>$450</strong> — 3 artículos — <span class="danger">Cancelada</span>
+                    </div>
+
+                    <!-- Wix -->
+                    <div class="code">
+                        <strong>Wix Stores</strong><br>
+                        Pedido #1001 — <strong>$1,299</strong> — 2 artículos — <span class="ok">Pagada</span><br>
+                        Pedido #1002 — <strong>$299</strong> — 1 artículo — <span class="warn">Pendiente</span><br>
+                        Pedido #1003 — <strong>$450</strong> — 3 artículos — <span class="danger">Cancelada</span>
+                    </div>
+                </div>
+            </section>
+    </main>
+
+    <script>// Cargar navbar
+    fetch('navbar.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('navbar-container').innerHTML = data;
+            initializeDropdown();
+        })
+        .catch(error => console.error('Error loading navbar:', error));
+
+    // Función para inicializar el dropdown
+    function initializeDropdown() {
+        const dropdownBtn = document.querySelector('.dropdown-btn');
+        const dropdownContent = document.querySelector('.dropdown-content');
+
+        if (dropdownBtn && dropdownContent) {
+            dropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownContent.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function() {
+                dropdownContent.classList.remove('show');
+            });
+
+            dropdownContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+    }</script>
+</body>
+</html>

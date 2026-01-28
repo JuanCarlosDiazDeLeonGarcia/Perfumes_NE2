@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfumes & Aromas - Estado del Servicio</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <style>
+        /* Estilos del mockup de estado */
+        .service-status {
+            width: 90%;
+            max-width: 900px;
+            margin: 40px auto;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+            .service-status h2 {
+                margin-bottom: 30px;
+            }
+
+        .status-grid {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .status-card {
+            flex: 1 1 200px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f1f1f1;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+
+            .status-card h3 {
+                margin-bottom: 15px;
+            }
+
+            .status-card .status-value {
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+
+        .status-online {
+            color: #28a745;
+        }
+
+        .status-offline {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+    <script>// Cargar navbar
+    fetch('navbar.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('navbar-container').innerHTML = data;
+            initializeDropdown(); // ← Inicializar dropdown después de cargar
+        })
+        .catch(error => console.error('Error loading navbar:', error));
+
+    // Función para inicializar el dropdown
+    function initializeDropdown() {
+        const dropdownBtn = document.querySelector('.dropdown-btn');
+        const dropdownContent = document.querySelector('.dropdown-content');
+
+        if (dropdownBtn && dropdownContent) {
+            dropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownContent.classList.toggle('show');
+            });
+
+            // Cerrar dropdown al hacer click fuera
+            document.addEventListener('click', function() {
+                dropdownContent.classList.remove('show');
+            });
+
+            // Prevenir que se cierre al hacer click dentro del dropdown
+            dropdownContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+    }</script>
+
+    <div><</div>>
+    <div></div>
+
+    <!-- Mockup Estado del Servicio -->
+    <section class="service-status">
+        <h2>Estado del Servicio - Tienda en Línea</h2>
+        <div class="status-grid">
+            <div class="status-card">
+                <h3>Uptime</h3>
+                <p class="status-value">99.98%</p>
+            </div>
+            <div class="status-card">
+                <h3>Latencia</h3>
+                <p class="status-value">120 ms</p>
+            </div>
+            <div class="status-card">
+                <h3>Estado Operativo</h3>
+                <p class="status-value status-online">Activo</p>
+            </div>
+            <div class="status-card">
+                <h3>Servidor Web</h3>
+                <p class="status-value status-offline">Inactivo</p>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

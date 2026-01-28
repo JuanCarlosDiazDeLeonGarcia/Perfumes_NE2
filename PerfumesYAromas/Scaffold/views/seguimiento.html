@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Seguimiento de Pedidos - PerfumeShop</title>
+  <link rel="stylesheet" href="../css/base.css">
+
+  <!-- Librerías jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+  <!-- Menú lateral -->
+  <aside class="sidebar">
+    <h2>🌸 PerfumeShop</h2>
+    <nav>
+      <a href="usuariomenu.html">🏠 Inicio</a>
+      <a href="miscompras.html">🛍️ Mis Compras</a>
+      <a href="metodopago.html">💳 Métodos de Pago</a>
+      <a href="#" class="active">📦 Seguimiento</a>
+      <a href="#">⚙️ Configuración</a>
+      <a href="#">📩 Soporte</a>
+      <a href="catalog.html">🚪 Cerrar Sesión</a>
+    </nav>
+  </aside>
+
+  <!-- Contenido principal -->
+  <main class="main-content">
+    <header class="admin-header">
+      <h1>Seguimiento de Pedidos</h1>
+      <div class="admin-actions">
+      
+      </div>
+    </header>
+
+    <!-- Tarjetas resumen -->
+    <section class="cards">
+      <div class="card"><h3>Pedidos Activos</h3><p>3</p></div>
+      <div class="card"><h3>Entregados</h3><p>12</p></div>
+      <div class="card"><h3>Cancelados</h3><p>2</p></div>
+      <div class="card"><h3>Último Movimiento</h3><p>24/10/2025</p></div>
+    </section>
+
+    <!-- Buscador -->
+    <div style="text-align:center; margin: 20px 0;">
+      <input type="text" id="buscarPedido" placeholder="🔍 Buscar por ID o producto..." 
+        style="width:50%; padding:8px; border-radius:10px; border:1px solid #ccc;">
+    </div>
+
+    <!-- Tabla de seguimiento -->
+    <section class="tabla-admin">
+      <div class="titulo-tabla">
+        <h2>🚚 Estado de mis Pedidos</h2>
+        <button class="btn-agregar" onclick="descargarSeguimiento()">⬇️ Descargar PDF</button>
+      </div>
+
+      <table id="tabla-seguimiento">
+        <thead>
+          <tr>
+            <th>ID Pedido</th>
+            <th>Producto</th>
+            <th>Fecha de Compra</th>
+            <th>Estado</th>
+            <th>Última Actualización</th>
+            <th>Ubicación Actual</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>#S001</td><td>Floral Dream</td><td>22/10/2025</td><td>🚚 En tránsito</td><td>24/10/2025</td><td>Centro de distribución CDMX</td><td><button class="btn-editar" onclick="verDetalle()">👁️</button></td></tr>
+          <tr><td>#S002</td><td>Midnight Musk</td><td>20/10/2025</td><td>📦 En preparación</td><td>23/10/2025</td><td>Almacén Guadalajara</td><td><button class="btn-editar" onclick="verDetalle()">👁️</button></td></tr>
+          <tr><td>#S003</td><td>Vanilla Breeze</td><td>18/10/2025</td><td>✅ Entregado</td><td>21/10/2025</td><td>Domicilio del cliente</td><td><button class="btn-editar" onclick="verDetalle()">👁️</button></td></tr>
+          <tr><td>#S004</td><td>Ocean Spirit</td><td>15/10/2025</td><td>✅ Entregado</td><td>18/10/2025</td><td>Domicilio del cliente</td><td><button class="btn-editar" onclick="verDetalle()">👁️</button></td></tr>
+          <tr><td>#S005</td><td>Amber Touch</td><td>13/10/2025</td><td>❌ Cancelado</td><td>14/10/2025</td><td>Centro de devolución</td><td><button class="btn-editar" onclick="verDetalle()">👁️</button></td></tr>
+          <tr><td>#S006</td><td>Sweet Jasmine</td><td>10/10/2025</td><td>🚚 En tránsito</td><td>24/10/2025</td><td>En ruta hacia León</td><td><button class="btn-editar" onclick="verDetalle()">👁️</button></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    // Cerrar sesión
+    function cerrarSesion() {
+      if (confirm('¿Deseas cerrar sesión?')) {
+        alert('Sesión cerrada correctamente ✅');
+        window.location.href = "login.html";
+      }
+    }
+
+    // Buscar pedido
+    document.getElementById('buscarPedido').addEventListener('keyup', function() {
+      const filtro = this.value.toLowerCase();
+      const filas = document.querySelectorAll('#tabla-seguimiento tbody tr');
+      filas.forEach(fila => {
+        const texto = fila.innerText.toLowerCase();
+        fila.style.display = texto.includes(filtro) ? '' : 'none';
+      });
+    });
+
+    // Ver detalles
+    function verDetalle() {
+      alert('📦 Detalle del pedido: número de guía, estado y ubicación actual.');
+    }
+
+    // Descargar seguimiento en PDF
+    function descargarSeguimiento() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text("Seguimiento de Pedidos - PerfumeShop", 14, 20);
+      doc.setFontSize(12);
+      doc.text("Fecha de generación: " + new Date().toLocaleDateString(), 14, 30);
+
+      doc.autoTable({
+        startY: 40,
+        html: '#tabla-seguimiento',
+        headStyles: { fillColor: [128, 0, 128] },
+        theme: 'striped'
+      });
+
+      doc.save('Seguimiento_Pedidos_PerfumeShop.pdf');
+    }
+  </script>
+
+</body>
+</html>

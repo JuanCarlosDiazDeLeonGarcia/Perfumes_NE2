@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Historial de Compras - PerfumeShop</title>
+  <link rel="stylesheet" href="../css/base.css">
+</head>
+<body>
+
+  <!-- Menú lateral -->
+  <aside class="sidebar">
+    <h2>🌸 PerfumeShop</h2>
+    <nav>
+      <a href="usuariomenu.html">🏠 Inicio</a>
+      <a href="#" class="active">🛍️ Mis Compras</a>
+      <a href="metodopago.html">💳 Métodos de Pago</a>
+      <a href="seguimiento.html">📦 Seguimiento</a>
+      <a href="#">⚙️ Configuración</a>
+      <a href="#">📩 Soporte</a>
+      <a href="catalog.html">🚪 Cerrar Sesión</a>
+    </nav>
+  </aside>
+
+  <!-- Contenido principal -->
+  <main class="main-content">
+    <header class="admin-header">
+      <h1>Historial de Compras</h1>
+      <div class="admin-actions">
+       
+      </div>
+    </header>
+
+    <!-- Tarjetas informativas -->
+    <section class="cards">
+      <div class="card">
+        <h3>Compras Totales</h3>
+        <p>24</p>
+      </div>
+      <div class="card">
+        <h3>Última Compra</h3>
+        <p>22/10/2025</p>
+      </div>
+      <div class="card">
+        <h3>Gasto Total</h3>
+        <p>$2,480</p>
+      </div>
+      <div class="card">
+        <h3>Promedio por Pedido</h3>
+        <p>$413</p>
+      </div>
+    </section>
+
+    <!-- Tabla de historial -->
+    <section class="tabla-admin">
+      <div class="titulo-tabla">
+        <h2>🛍️ Mis Compras Recientes</h2>
+        <button class="btn-agregar" onclick="descargarHistorial()">⬇️ Descargar Historial</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID Pedido</th>
+            <th>Fecha</th>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Método de Pago</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>#P001</td>
+            <td>22/10/2025</td>
+            <td>Floral Dream</td>
+            <td>1</td>
+            <td>💳 Visa</td>
+            <td>$120</td>
+            <td>✅ Entregado</td>
+            <td><button class="btn-editar" onclick="verDetalle()">👁️</button></td>
+          </tr>
+          <tr>
+            <td>#P002</td>
+            <td>20/10/2025</td>
+            <td>Vanilla Breeze</td>
+            <td>2</td>
+            <td>💳 Mastercard</td>
+            <td>$190</td>
+            <td>✅ Entregado</td>
+            <td><button class="btn-editar" onclick="verDetalle()">👁️</button></td>
+          </tr>
+          <tr>
+            <td>#P003</td>
+            <td>18/10/2025</td>
+            <td>Midnight Musk</td>
+            <td>1</td>
+            <td>💳 Visa</td>
+            <td>$150</td>
+            <td>🕓 En tránsito</td>
+            <td><button class="btn-editar" onclick="verDetalle()">👁️</button></td>
+          </tr>
+          <tr>
+            <td>#P004</td>
+            <td>15/10/2025</td>
+            <td>Ocean Spirit</td>
+            <td>1</td>
+            <td>💳 PayPal</td>
+            <td>$110</td>
+            <td>✅ Entregado</td>
+            <td><button class="btn-editar" onclick="verDetalle()">👁️</button></td>
+          </tr>
+          <tr>
+            <td>#P005</td>
+            <td>12/10/2025</td>
+            <td>Amber Touch</td>
+            <td>1</td>
+            <td>💳 Visa</td>
+            <td>$140</td>
+            <td>❌ Cancelado</td>
+            <td><button class="btn-editar" onclick="verDetalle()">👁️</button></td>
+          </tr>
+          <tr>
+            <td>#P006</td>
+            <td>10/10/2025</td>
+            <td>Pink Blossom</td>
+            <td>3</td>
+            <td>💳 Mastercard</td>
+            <td>$390</td>
+            <td>✅ Entregado</td>
+            <td><button class="btn-editar" onclick="verDetalle()">👁️</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    function cerrarSesion() {
+      if (confirm('¿Deseas cerrar sesión?')) {
+        alert('Sesión cerrada correctamente ✅');
+        window.location.href = "login.html";
+      }
+    }
+
+    function descargarHistorial() {
+      alert('📦 El historial se descargará en formato PDF o Excel.');
+    }
+
+    function verDetalle() {
+      alert('🛍️ Aquí se mostrarán los detalles completos de la compra seleccionada.');
+    }
+  </script>
+
+</body>
+</html>

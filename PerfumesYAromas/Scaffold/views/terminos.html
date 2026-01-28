@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Términos y Condiciones de Perfumes & Aromas: Información sobre uso del sitio, compras, envíos, devoluciones y derechos ARCO conforme a las leyes mexicanas." />
+    <title>Términos y Condiciones - Perfumes & Aromas</title>
+
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/terminos.css" />
+
+    <link rel="icon" href="https://via.placeholder.com/32?text=P&A" type="image/x-icon" />
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <script>
+    fetch('navbar.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('navbar-container').innerHTML = data;
+            initializeDropdown();
+        })
+        .catch(error => console.error('Error loading navbar:', error));
+
+    function initializeDropdown() {
+        const dropdownBtn = document.querySelector('.dropdown-btn');
+        const dropdownContent = document.querySelector('.dropdown-content');
+
+        if (dropdownBtn && dropdownContent) {
+            dropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownContent.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function() {
+                dropdownContent.classList.remove('show');
+            });
+
+            dropdownContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+    }
+    </script>
+
+    <!-- HERO -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1>Términos y Condiciones</h1>
+            <p>Al utilizar nuestro sitio aceptas estos términos conforme a la legislación mexicana vigente.</p>
+        </div>
+    </div>
+
+    <section class="terms-section">
+
+        <h2>Introducción</h2>
+        <p>
+            Bienvenido a <strong>Perfumes & Aromas</strong>. Estos Términos y Condiciones regulan el uso de nuestro sitio
+            (www.perfumesyaromas.com). Al usar el sitio aceptas estos términos, aplicables bajo las leyes federales de los
+            <strong>Estados Unidos Mexicanos</strong>.
+        </p>
+
+        <p>
+            Cumplimos también con la <strong>NOM-030-SCFI-2006</strong> (información comercial), la
+            <strong>NOM-151-SCFI-2016</strong> (mensajes de datos y comercio electrónico), y demás regulaciones relacionadas
+            con comercio, publicidad e información al consumidor.
+        </p>
+
+        <p>Fecha de última actualización: <strong>01 de diciembre de 2025</strong>.</p>
+
+        <!-- USO DEL SITIO -->
+        <h3>1. Uso del Sitio Web</h3>
+        <p>No puedes:</p>
+        <ul>
+            <li>Reproducir o distribuir contenido sin autorización.</li>
+            <li>Usar el sitio para actividades ilegales.</li>
+            <li>Intentar acceder a sistemas no autorizados o saturar el servidor.</li>
+        </ul>
+
+        <p>
+            Conforme al <strong>Código de Comercio</strong> y la <strong>Ley Federal de Protección al Consumidor (LFPC)</strong>,
+            todas tus interacciones deben realizarse con buena fe y sin prácticas abusivas.
+        </p>
+
+        <!-- COMPRAS -->
+        <h3>2. Compras, Pagos e Impuestos</h3>
+        <p>
+            Al comprar declaras ser mayor de edad. Precios incluyen el <strong>IVA del 16%</strong>.
+            Todas las operaciones cumplen con la <strong>Ley Federal de Protección al Consumidor</strong>.
+        </p>
+
+        <ul>
+            <li><strong>Métodos de pago:</strong> Tarjetas, PayPal, transferencias bancarias.</li>
+            <li><strong>Seguridad:</strong> Todas las transacciones utilizan encriptación SSL.</li>
+            <li><strong>Inventario:</strong> Si un producto no está disponible, se notifica para reembolso o cambio.</li>
+        </ul>
+
+        <p>
+            En caso de controversias, el consumidor puede acudir a <strong>PROFECO</strong> según los artículos 92 al 98 de la LFPC.
+        </p>
+
+        <!-- ENVIOS -->
+        <h3>3. Envíos y Entregas</h3>
+        <p>Envíos en México entre 3–7 días hábiles.</p>
+
+        <ul>
+            <li>El riesgo de daño o pérdida pasa a la paquetería una vez enviado.</li>
+            <li>Se proporciona número de guía.</li>
+        </ul>
+
+        <p>
+            Cumplimos con la <strong>NOM-051-SCFI/SSA1-2010</strong> sobre información y etiquetado de productos,
+            y con el artículo 76 Bis de la <strong>LFPC</strong> para comercio electrónico.
+        </p>
+
+        <!-- DEVOLUCIONES -->
+        <h3>4. Política de Devoluciones (Higiene y Garantía)</h3>
+        <ul>
+            <li><strong>Productos sellados:</strong> 5 días hábiles para devolución si el sello está intacto.</li>
+            <li><strong>No se aceptan devoluciones</strong> de perfumes abiertos por higiene.</li>
+            <li><strong>Defectos de fábrica:</strong> Se reemplazan sin costo mostrando evidencia.</li>
+        </ul>
+
+        <!-- PRIVACIDAD -->
+        <h3>5. Privacidad y Derechos ARCO</h3>
+        <p>
+            Cumplimos con la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)</strong>.
+            Puedes ejercer tus derechos <strong>ARCO</strong> (Acceso, Rectificación, Cancelación y Oposición).
+        </p>
+
+        <p>
+            También observamos la <strong>Ley Federal de Protección al Consumidor</strong> y la
+            <strong>NMX-I-019-NYCE-2019</strong> referentes a la seguridad de información personal.
+        </p>
+
+        <p>
+            Para consentimientos y operaciones digitales aplicamos la
+            <strong>Ley de Firma Electrónica Avanzada (LFEA)</strong>.
+        </p>
+
+        <!-- NUEVA SECCIÓN: INFORMACIÓN REQUERIDA PARA REGISTRO Y COMPRAS -->
+        <h3>6. Registro de Cuenta y Datos Requeridos</h3>
+        <p>Para crear una cuenta en nuestro sitio web se requiere proporcionar la siguiente información:</p>
+        <ul>
+            <li>Correo electrónico</li>
+            <li>Contraseña</li>
+            <li>Nombre de usuario (puede ser nombre real completo)</li>
+            <li>Número fijo o celular</li>
+            <li>Dirección</li>
+            <li>Código postal</li>
+        </ul>
+
+        <p>Para realizar compras dentro del sitio se requiere la siguiente información adicional:</p>
+        <ul>
+            <li>Número de tarjeta de crédito o débito</li>
+            <li>Fecha de caducidad</li>
+            <li>Código CVV/CVC</li>
+            <li>Nombre del titular de la tarjeta</li>
+        </ul>
+
+        <!-- PROPIEDAD INTELECTUAL -->
+        <h3>7. Propiedad Intelectual</h3>
+        <p>
+            Todo contenido está protegido por el <strong>IMPI</strong> y leyes de derechos de autor mexicanas.
+        </p>
+
+        <!-- COOKIES -->
+        <h3>8. Uso de Cookies</h3>
+        <p>
+            Este sitio utiliza cookies necesarias y analíticas.
+            El manejo de datos se apega a la <strong>NOM-151-SCFI-2016</strong> para integridad de mensajes electrónicos.
+        </p>
+
+        <!-- LEY APLICABLE -->
+        <h3>9. Ley Aplicable y Jurisdicción</h3>
+        <p>
+            Cualquier disputa se regirá por las leyes federales de México y tribunales de
+            <strong>Aguascalientes, Aguascalientes</strong>.
+        </p>
+
+        <!-- CONTACTO -->
+        <h3>10. Contacto</h3>
+        <ul>
+            <li>Email General: info@perfumesyaromas.com</li>
+            <li>Privacidad/ARCO: privacidad@perfumesyaromas.com</li>
+            <li>Teléfono: +52 (449) 123 4567</li>
+            <li>Dirección: Av. Ficticia 123, Centro, 20000, Aguascalientes, Ags., México</li>
+        </ul>
+
+        <p><em>Última actualización: 01 de diciembre de 2025.</em></p>
+
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 Perfumes & Aromas | Todos los derechos reservados</p>
+        </div>
+    </footer>
+
+</body>
+</html>

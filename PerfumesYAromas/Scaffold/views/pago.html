@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Perfumes & Aromas</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://via.placeholder.com/32?text=P&A" type="image/x-icon">
+    <style>
+        :root {
+            --primary-color: #25D366;
+            --secondary-color: #9b5de5;
+            --light-bg: #f8f9fa;
+            --dark-text: #333;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: var(--dark-text);
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .checkout-container {
+            max-width: 1000px;
+            margin: 100px auto 50px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 40px;
+        }
+
+        .checkout-header {
+            text-align: center;
+            margin-bottom: 40px;
+            grid-column: 1 / -1;
+        }
+
+            .checkout-header h1 {
+                font-family: 'Playfair Display', serif;
+                font-size: 2.5rem;
+                color: #333;
+                margin-bottom: 10px;
+            }
+
+            .checkout-header p {
+                color: #666;
+                font-size: 1.1rem;
+            }
+
+        .progress-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin: 30px 0;
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ddd;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+            .step-number.active {
+                background: var(--primary-color);
+                color: white;
+            }
+
+        .step-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+            .step-label.active {
+                color: var(--primary-color);
+                font-weight: bold;
+            }
+
+        /* Formulario principal */
+        .checkout-form {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+            .form-section:last-child {
+                border-bottom: none;
+            }
+
+            .form-section h2 {
+                font-family: 'Playfair Display', serif;
+                font-size: 1.5rem;
+                color: #333;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 500;
+                color: #555;
+            }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #333;
+            box-sizing: border-box;
+        }
+
+            .form-input:focus {
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.1);
+            }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Métodos de pago específicos */
+        .payment-method-details {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .payment-method-details.active {
+            display: block;
+        }
+
+        /* Estilos específicos para Transferencia */
+        .bank-details-box {
+            background: #e8f4ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #cce5ff;
+        }
+
+            .bank-details-box p {
+                margin: 8px 0;
+                font-family: monospace;
+                font-size: 0.95rem;
+            }
+
+        .reference-code {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        /* Estilos específicos para Efectivo */
+        .store-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .store-option {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .store-option:hover {
+                border-color: var(--primary-color);
+                background: #f0fff4;
+            }
+
+            .store-option.selected {
+                border-color: var(--primary-color);
+                background: #e8f5e9;
+            }
+
+        .store-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .commission-info {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        /* Instrucciones de pago */
+        .payment-instructions {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid var(--primary-color);
+        }
+
+            .payment-instructions h4 {
+                margin-top: 0;
+                color: #333;
+            }
+
+        /* Resumen del pedido */
+        .order-summary {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            padding: 25px;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+            .order-summary h2 {
+                font-family: 'Playfair Display', serif;
+                color: #333;
+                border-bottom: 2px solid var(--border-color);
+                padding-bottom: 15px;
+                margin-top: 0;
+            }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .summary-total {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        /* Botones */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .back-btn {
+            background: white;
+            color: #333;
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            flex: 1;
+            transition: all 0.3s;
+        }
+
+            .back-btn:hover {
+                background: var(--light-bg);
+            }
+
+        .pay-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            flex: 2;
+            transition: all 0.3s;
+        }
+
+            .pay-btn:hover {
+                background: #1da851;
+                transform: translateY(-2px);
+            }
+
+        @media (max-width: 768px) {
+            .checkout-container {
+                grid-template-columns: 1fr;
+                margin-top: 80px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .order-summary {
+                position: static;
+                order: -1;
+            }
+
+            .progress-bar {
+                gap: 20px;
+            }
+
+            .step-label {
+                font-size: 0.8rem;
+            }
+
+            .store-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="navbar-container"></div>
+
+    <div class="checkout-container">
+        <div class="checkout-header">
+            <h1>Finalizar Compra</h1>
+            <p>Completa tus datos para procesar el pedido</p>
+
+            <!-- Barra de progreso -->
+            <div class="progress-bar">
+                <div class="progress-step">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Carrito</div>
+                </div>
+                <div style="width: 40px; height: 2px; background: var(--primary-color);"></div>
+                <div class="progress-step">
+                    <div class="step-number active">2</div>
+                    <div class="step-label active">Datos y Pago</div>
+                </div>
+                <div style="width: 40px; height: 2px; background: #ddd;"></div>
+                <div class="progress-step">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Confirmación</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORMULARIO PRINCIPAL -->
+        <div class="checkout-form">
+            <!-- Sección 1: Información personal -->
+            <div class="form-section">
+                <h2>👤 Información Personal</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">Nombre(s)</label>
+                        <input type="text" id="firstName" class="form-input" placeholder="Juan Carlos">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastName">Apellidos</label>
+                        <input type="text" id="lastName" class="form-input" placeholder="Díaz de León García">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Correo electrónico</label>
+                    <input type="email" id="email" class="form-input" placeholder="tu@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Teléfono</label>
+                    <input type="tel" id="phone" class="form-input" placeholder="449 123 4567">
+                </div>
+            </div>
+
+            <!-- Sección 2: Dirección de envío -->
+            <div class="form-section">
+                <h2>🏠 Dirección de Envío</h2>
+
+                <div class="form-group">
+                    <label for="address">Dirección completa</label>
+                    <input type="text" id="address" class="form-input" placeholder="Calle, número, colonia">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">Ciudad</label>
+                        <input type="text" id="city" class="form-input" placeholder="Aguascalientes">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="state">Estado</label>
+                        <input type="text" id="state" class="form-input" placeholder="Aguascalientes">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="zipCode">Código Postal</label>
+                        <input type="text" id="zipCode" class="form-input" placeholder="20000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="country">País</label>
+                        <input type="text" id="country" class="form-input" value="México" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="instructions">Instrucciones especiales de entrega</label>
+                    <textarea id="instructions" class="form-input" rows="3" placeholder="Opcional: Referencias, horario preferido, etc."></textarea>
+                </div>
+            </div>
+
+            <!-- Sección 3: Método de pago -->
+            <div class="form-section">
+                <h2>💳 Método de Pago</h2>
+
+                <div class="form-group">
+                    <label for="paymentMethod">Selecciona tu método de pago</label>
+                    <select id="paymentMethod" class="form-input" onchange="showPaymentDetails()">
+                        <option value="">-- Selecciona un método --</option>
+                        <option value="card">💳 Tarjeta de Crédito/Débito</option>
+                        <option value="digital">📱 Monedero Digital (PayPal, Mercado Pago)</option>
+                        <option value="transfer">🏦 Transferencia Bancaria</option>
+                        <option value="cash">💵 Pago en Efectivo</option>
+                        <option value="check">🧾 Cheque Electrónico</option>
+                        <option value="cajero">🏧 Pago en Cajero</option>
+                    </select>
+                </div>
+
+                <!-- Detalles para Tarjeta -->
+                <div id="cardDetails" class="payment-method-details">
+                    <div class="form-group">
+                        <label for="cardNumber">Número de tarjeta</label>
+                        <input type="text" id="cardNumber" class="form-input" placeholder="1234 5678 9012 3456">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cardExpiry">Fecha de expiración</label>
+                            <input type="text" id="cardExpiry" class="form-input" placeholder="MM/AA">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cardCVV">CVV</label>
+                            <input type="text" id="cardCVV" class="form-input" placeholder="123" maxlength="3">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cardName">Nombre en la tarjeta</label>
+                        <input type="text" id="cardName" class="form-input" placeholder="Como aparece en la tarjeta">
+                    </div>
+                </div>
+
+                <!-- Detalles para Monedero Digital -->
+                <div id="digitalDetails" class="payment-method-details">
+                    <div class="form-group">
+                        <label for="digitalEmail">Correo del monedero digital</label>
+                        <input type="email" id="digitalEmail" class="form-input" placeholder="ejemplo@paypal.com">
+                    </div>
+
+                    <div class="form-group">
+                        <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">
+                            Serás redirigido a la plataforma de pago seleccionada para completar la transacción de forma segura.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- NUEVA SECCIÓN: Detalles para Transferencia -->
+                <div id="transferDetails" class="payment-method-details">
+                    <div class="payment-instructions">
+                        <h4>📋 Instrucciones para transferencia:</h4>
+                        <p>1. Realiza la transferencia desde tu banca en línea o aplicación móvil</p>
+                        <p>2. Utiliza los datos bancarios proporcionados</p>
+                        <p>3. Guarda el comprobante de transferencia</p>
+                    </div>
+
+                    <div class="bank-details-box">
+                        <h4>📊 Datos Bancarios:</h4>
+                        <p><strong>Banco:</strong> BBVA</p>
+                        <p><strong>Beneficiario:</strong> PERFUMES & AROMAS S.A. DE C.V.</p>
+                        <p><strong>CLABE:</strong> 012 180 00123456789 1</p>
+                        <p><strong>Cuenta:</strong> 1234 5678 9012 3456</p>
+                        <p><strong>Concepto:</strong> PEDIDO <span id="transferReference">#PFA-0000</span></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transferComprobante">Número de comprobante (opcional)</label>
+                        <input type="text" id="transferComprobante" class="form-input" placeholder="TRF2025123456789">
+                    </div>
+                </div>
+
+                <!-- NUEVA SECCIÓN: Detalles para Efectivo -->
+                <div id="cashDetails" class="payment-method-details">
+                    <div class="payment-instructions">
+                        <h4>📋 Instrucciones para pago en efectivo:</h4>
+                        <p>1. Selecciona la tienda donde pagarás</p>
+                        <p>2. Acude con tu código de referencia</p>
+                        <p>3. Realiza el pago en efectivo</p>
+                        <p>4. Guarda tu comprobante</p>
+                    </div>
+
+                    <div class="reference-code">
+                        Tu código de referencia: <span id="cashReference">PFA-EF-0000</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Selecciona una tienda:</label>
+                        <div class="store-options">
+                            <div class="store-option" onclick="selectStore(this, 'oxxo')">
+                                <div class="store-icon">🏪</div>
+                                <strong>OXXO</strong>
+                                <div class="commission-info">+$10 comisión</div>
+                            </div>
+                            <div class="store-option" onclick="selectStore(this, 'seven')">
+                                <div class="store-icon">🏪</div>
+                                <strong>7-Eleven</strong>
+                                <div class="commission-info">+$12 comisión</div>
+                            </div>
+                            <div class="store-option" onclick="selectStore(this, 'farmacia')">
+                                <div class="store-icon">💊</div>
+                                <strong>Farmacias Guadalajara</strong>
+                                <div class="commission-info">+$8 comisión</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Monto a pagar en tienda:</label>
+                        <input type="text" id="cashAmount" class="form-input" value="$148.00" readonly style="font-weight: bold; text-align: center;">
+                    </div>
+                </div>
+
+                <!-- Detalles para Cheque -->
+                <div id="checkDetails" class="payment-method-details">
+                    <div class="form-group">
+                        <label for="numCheque">Número de cheque</label>
+                        <input type="text" id="numCheque" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="montoCheque">Monto</label>
+                        <input type="number" id="montoCheque" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bancoCheque">Banco</label>
+                        <input type="text" id="bancoCheque" class="form-input" required>
+                    </div>
+                </div>
+
+                <!-- Detalles para Cajero -->
+                <div id="cajeroDetails" class="payment-method-details">
+                    <div class="payment-instructions">
+                        <h4>📋 Instrucciones para pago en cajero:</h4>
+                        <p>1. Acude a cualquier cajero automático</p>
+                        <p>2. Selecciona "Pago de servicios"</p>
+                        <p>3. Busca "Perfumes & Aromas"</p>
+                        <p>4. Ingresa tu referencia: <strong id="cajeroReference">PFA-CJ-0000</strong></p>
+                        <p>5. Realiza el depósito</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="action-buttons">
+                <a href="cart.html" class="back-btn">← Volver al Carrito</a>
+                <button class="pay-btn" onclick="processCheckout()">🔒 Proceder al Pago</button>
+            </div>
+        </div>
+
+        <!-- RESUMEN DEL PEDIDO -->
+        <div class="order-summary">
+            <h2>Resumen del Pedido</h2>
+
+            <div class="summary-item">
+                <span>NAVIGO (x1)</span>
+                <span>$25.00</span>
+            </div>
+
+            <div class="summary-item">
+                <span>9PM (x2)</span>
+                <span>$90.00</span>
+            </div>
+
+            <div class="summary-item">
+                <span>VERSACE EROS FLAME (x1)</span>
+                <span>$38.00</span>
+            </div>
+
+            <div class="summary-item">
+                <span>Subtotal:</span>
+                <span>$153.00</span>
+            </div>
+
+            <div class="summary-item">
+                <span>Envío:</span>
+                <span>$5.00</span>
+            </div>
+
+            <div class="summary-item">
+                <span>Descuento:</span>
+                <span style="color: #4caf50;">-$10.00</span>
+            </div>
+
+            <div class="summary-total">
+                <span>Total:</span>
+                <span>$148.00</span>
+            </div>
+
+            <div style="margin-top: 20px; font-size: 0.9rem; color: #666;">
+                <p>
+                    ✅ Pago seguro<br>
+                    📦 Envío en 24-48h<br>
+                    🔄 30 días para devolución
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar navbar
+        fetch('navbar.html')
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById('navbar-container').innerHTML = html;
+                // Inicializar dropdown
+                const dropdownBtn = document.querySelector('.dropdown-btn');
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownBtn && dropdownContent) {
+                    dropdownBtn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        dropdownContent.classList.toggle('show');
+                    });
+                }
+            });
+
+        // Generar códigos de referencia
+        document.addEventListener('DOMContentLoaded', function () {
+            // Referencia para transferencia
+            const transferRef = 'PFA-TRF-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            document.getElementById('transferReference').textContent = transferRef;
+
+            // Referencia para efectivo
+            const cashRef = 'PFA-EF-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            document.getElementById('cashReference').textContent = cashRef;
+
+            // Referencia para cajero
+            const cajeroRef = 'PFA-CJ-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            document.getElementById('cajeroReference').textContent = cajeroRef;
+
+            // Actualizar resumen con valor por defecto
+            updateCashAmount('oxxo');
+        });
+
+        // Mostrar detalles del método de pago seleccionado
+        function showPaymentDetails() {
+            const method = document.getElementById('paymentMethod').value;
+
+            // Ocultar todos los detalles primero
+            document.querySelectorAll('.payment-method-details').forEach(detail => {
+                detail.classList.remove('active');
+            });
+
+            // Mostrar los detalles correspondientes
+            if (method === 'card') {
+                document.getElementById('cardDetails').classList.add('active');
+            } else if (method === 'digital') {
+                document.getElementById('digitalDetails').classList.add('active');
+            } else if (method === 'transfer') {
+                document.getElementById('transferDetails').classList.add('active');
+            } else if (method === 'cash') {
+                document.getElementById('cashDetails').classList.add('active');
+            } else if (method === 'check') {
+                document.getElementById('checkDetails').classList.add('active');
+            } else if (method === 'cajero') {
+                document.getElementById('cajeroDetails').classList.add('active');
+            }
+        }
+
+        // Función para seleccionar tienda de pago en efectivo
+        function selectStore(element, storeType) {
+            // Remover selección anterior
+            document.querySelectorAll('.store-option').forEach(store => {
+                store.classList.remove('selected');
+            });
+
+            // Agregar selección actual
+            element.classList.add('selected');
+
+            // Actualizar monto según tienda seleccionada
+            updateCashAmount(storeType);
+        }
+
+        // Actualizar monto de efectivo según tienda seleccionada
+        function updateCashAmount(storeType) {
+            let commission = 0;
+            switch (storeType) {
+                case 'oxxo': commission = 10; break;
+                case 'seven': commission = 12; break;
+                case 'farmacia': commission = 8; break;
+            }
+
+            const total = 148 + commission;
+            document.getElementById('cashAmount').value = `$${total}.00 (incluye $${commission} comisión)`;
+        }
+
+        // Procesar checkout - SIN VALIDACIÓN DE CAMPOS VACÍOS
+        function processCheckout() {
+            // Obtener datos del formulario (pueden estar vacíos)
+            const firstName = document.getElementById('firstName').value || "";
+            const lastName = document.getElementById('lastName').value || "";
+            const email = document.getElementById('email').value || "";
+            const phone = document.getElementById('phone').value || "";
+            const address = document.getElementById('address').value || "";
+            const city = document.getElementById('city').value || "";
+            const state = document.getElementById('state').value || "";
+            const zipCode = document.getElementById('zipCode').value || "";
+            const paymentMethod = document.getElementById('paymentMethod').value || "No seleccionado";
+            const paymentText = document.getElementById('paymentMethod').options[document.getElementById('paymentMethod').selectedIndex]?.text || "No seleccionado";
+
+            // Obtener datos específicos según método de pago
+            let paymentDetails = {};
+            if (paymentMethod === 'transfer') {
+                paymentDetails.reference = document.getElementById('transferReference').textContent;
+                paymentDetails.comprobante = document.getElementById('transferComprobante').value || "";
+            } else if (paymentMethod === 'cash') {
+                paymentDetails.reference = document.getElementById('cashReference').textContent;
+                paymentDetails.store = getSelectedStore();
+            }
+
+            // Guardar datos en localStorage para la página de confirmación
+            const customerData = {
+                firstName: firstName || "Cliente",
+                lastName: lastName || "Perfumes & Aromas",
+                email: email || "cliente@perfumesyaromas.com",
+                phone: phone || "449 000 0000",
+                address: address || "Dirección no especificada",
+                city: city || "Aguascalientes",
+                state: state || "Aguascalientes",
+                zipCode: zipCode || "20000",
+                paymentMethod: paymentText,
+                paymentDetails: paymentDetails,
+                total: '$148.00',
+                timestamp: new Date().toISOString()
+            };
+
+            localStorage.setItem('customerData', JSON.stringify(customerData));
+
+            // Redirigir a la página de confirmación SIN VALIDACIÓN
+            window.location.href = 'confirmacionpago.html';
+        }
+
+        // Obtener tienda seleccionada para pago en efectivo
+        function getSelectedStore() {
+            const selectedStore = document.querySelector('.store-option.selected');
+            if (selectedStore) {
+                return selectedStore.querySelector('strong').textContent;
+            }
+            return "No seleccionada";
+        }
+    </script>
+</body>
+</html>

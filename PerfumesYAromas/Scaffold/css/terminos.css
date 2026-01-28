@@ -1,0 +1,337 @@
+ <style>
+        /* Reset y Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+<<<<<<< HEAD
+       body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f3f3f3;
+}
+
+=======
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f7f5; /* Fondo cremoso para lujo */
+            color: #333;
+            line-height: 1.6;
+            text-transform: none;
+        }
+>>>>>>> 5191eb6438a68010d90c612c860b7719ab711d53
+
+        /* Fuentes elegantes */
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+        }
+
+        p {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 300;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 80px;
+<<<<<<< HEAD
+           background: linear-gradient(90deg, purple, blue);
+=======
+            background: linear-gradient(135deg, #6a0dad, #4a00a0, #2d0b5e);
+>>>>>>> 5191eb6438a68010d90c612c860b7719ab711d53
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            color: white;
+            z-index: 1000;
+        }
+
+        .navbar-logo {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .search-bar {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 30px;
+            position: relative;
+            max-width: 400px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 12px 40px 12px 20px;
+            border-radius: 25px;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: box-shadow 0.3s;
+        }
+
+        .search-bar input:focus {
+<<<<<<< HEAD
+           background: linear-gradient(90deg, purple, blue);
+=======
+            box-shadow: 0 4px 15px rgba(106, 13, 173, 0.3);
+>>>>>>> 5191eb6438a68010d90c612c860b7719ab711d53
+        }
+
+        .search-bar img {
+            position: absolute;
+            right: 15px;
+            width: 20px;
+            height: 20px;
+            opacity: 0.8;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .search-bar img:hover {
+            opacity: 1;
+        }
+
+        .buttons {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px 15px;
+            border-radius: 20px;
+            color: white;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .nav-btn img {
+            width: 22px;
+            height: 22px;
+            filter: brightness(0) invert(1);
+        }
+
+        /* Hero Section Adaptada */
+        .hero-section {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://via.placeholder.com/1920x400/6a0dad/FFFFFF?text=T%C3%A9rminos+y+Condiciones') center/cover;
+            height: 40vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding-top: 80px;
+        }
+
+        .hero-content h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            max-width: 600px;
+        }
+
+        /* Contenido Principal */
+        .terms-section {
+            max-width: 900px;
+            margin: 60px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .terms-section h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #6a0dad;
+            border-bottom: 2px solid #6a0dad;
+            padding-bottom: 10px;
+        }
+
+        .terms-section h3 {
+            font-size: 1.5rem;
+            margin: 30px 0 15px 0;
+            color: #4a00a0;
+        }
+
+        .terms-section p {
+            margin-bottom: 15px;
+            text-align: justify;
+            font-size: 1rem;
+        }
+
+        .terms-section ul {
+            margin: 15px 0 15px 20px;
+            list-style-type: disc;
+        }
+
+        .terms-section li {
+            margin-bottom: 8px;
+        }
+
+        .terms-section strong {
+            color: #6a0dad;
+        }
+
+        /* Footer */
+        .footer {
+<<<<<<< HEAD
+           background: linear-gradient(90deg, purple, blue);
+=======
+            background: #2d0b5e;
+>>>>>>> 5191eb6438a68010d90c612c860b7719ab711d53
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        .footer .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .footer a {
+            color: #ffd700;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Botón WhatsApp Fijo */
+        .btn-whatsapp-fixed {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #25D366;
+            color: white;
+            font-size: 24px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease, background 0.3s;
+            z-index: 2000;
+        }
+
+        .btn-whatsapp-fixed:hover {
+            transform: scale(1.1);
+            background: #20b957;
+        }
+
+        /* Popup de Bienvenida (Opcional) */
+        .welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none; /* Oculto por defecto en esta página */
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .welcome-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0px 5px 20px rgba(0,0,0,0.3);
+            animation: fadeIn 0.6s ease;
+        }
+
+        .welcome-box h2 {
+            margin-bottom: 15px;
+            color: purple;
+        }
+
+        .welcome-box p {
+            margin-bottom: 20px;
+            font-size: 1rem;
+            color: #444;
+        }
+
+        .welcome-box button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: linear-gradient(90deg, purple, blue);
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .welcome-box button:hover {
+            background: linear-gradient(90deg, darkmagenta, darkblue);
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0; transform: scale(0.9);}
+            to {opacity: 1; transform: scale(1);}
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 20px;
+                flex-wrap: wrap;
+            }
+            .hero-content h1 {
+                font-size: 2.2rem;
+            }
+            .terms-section {
+                margin: 40px 20px;
+                padding: 20px;
+            }
+            .buttons {
+                gap: 10px;
+            }
+            .nav-btn {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>

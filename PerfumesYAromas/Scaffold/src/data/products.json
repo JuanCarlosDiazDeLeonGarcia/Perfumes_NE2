@@ -1,0 +1,88 @@
+{
+  "productos": [
+    {
+      "id": 1,
+      "nombre": "NAVIGO",
+      "descripcion": "Aromas frescos y delicados con notas de jazmín y rosa.",
+      "precio": 25.00,
+      "imagen": "https://cdn5.coppel.com/mkp/103020481-1.jpg"
+    },
+    {
+      "id": 2,
+      "nombre": "ODYYSEY",
+      "descripcion": "Notas cálidas de sándalo y cedro para un aroma intenso.",
+      "precio": 30.00,
+      "imagen": "https://cazanovaonline.mx/cdn/shop/files/ANUNNCIO_Amazon_37.jpg?v=1747758258&width=1946"
+    },
+    {
+      "id": 3,
+      "nombre": "KHALAF LATFTAFFA",
+      "descripcion": "Notas cálidas de sándalo y cedro para un aroma intenso.",
+      "precio": 35.00,
+      "imagen": "https://perfumes-arabes.mx/wp-content/uploads/2023/10/Perfume-Lattafa-Khamrah-Perfumes-Arabes-Mexico.jpeg"
+    },
+    {
+      "id": 4,
+      "nombre": "9PM",
+      "descripcion": "Notas cálidas de sándalo y cedro para un aroma intenso.",
+      "precio": 45.00,
+      "imagen": "https://m.media-amazon.com/images/I/41ZQdV659VL.jpg"
+    },
+    {
+      "id": 5,
+      "nombre": "9AM",
+      "descripcion": "Notas cálidas de sándalo y cedro para un aroma intenso.",
+      "precio": 28.00,
+      "imagen": "https://beautyfreeshop.com.mx/cdn/shop/files/perfume-9am-dive-unisex-de-afnan-edp-100ml-arome-mexico-1_800x_255077d6-54df-4360-b1ed-c9d48edb8a13.jpg?v=1727982720"
+    },
+    {
+      "id": 6,
+      "nombre": "INVICTUS",
+      "descripcion": "Notas cálidas de sándalo y cedro para un aroma intenso.",
+      "precio": 30.00,
+      "imagen": "https://fraganciasfiord.com.mx/wp-content/uploads/2024/06/Decant-o-muestra-del-perfume-Invictus-PARFUM-original-de-Rabanne-en-Fragancias-Fiord.jpg"
+    },
+    {
+      "id": 7,
+      "nombre": "VERSACE EROS FLAME",
+      "descripcion": "Notas cálidas de sándalo y cedro para un aroma intenso.",
+      "precio": 38.00,
+      "imagen": "https://www.versace.com/dw/image/v2/BGWN_PRD/on/demandware.static/-/Sites-ver-master-catalog/default/dw74626350/original/90_R741010-R100MLS_RNUL_20_Eros~Flame~EDP~100~ml-Accessories-Versace-online-store_0_1.jpg?sw=1200&q=85&strip=true"
+    },
+    {
+      "id": 8,
+      "nombre": "JPG LE MAU LA PERFUM",
+      "descripcion": "Notas cálidas de sándalo y cedro para un aroma intenso.",
+      "precio": 50.00,
+      "imagen": "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_webp,s_webp/nuestrasfragancias.com/wp-content/uploads/2022/06/Le-Beau-Le-Parfum-125ml-EDP.webp"
+    },
+    {
+      "id": 9,
+      "nombre": "COOL WATER",
+      "descripcion": "Aroma fresco y acuático con notas marinas.",
+      "precio": 34.00,
+      "imagen": "https://m.media-amazon.com/images/I/91xkVmTPE3L._UF350,350_QL80_.jpg"
+    },
+    {
+      "id": 10,
+      "nombre": "SAVAGE DIOR",
+      "descripcion": "Notas cálidas de sándalo combinadas con frescura.",
+      "precio": 30.00,
+      "imagen": "https://www.dior.com/dw/image/v2/BGXS_PRD/on/demandware.static/-/Library-Sites-DiorSharedLibrary/default/dwf80880b6/images/beauty/01-FRAGRANCES/2025/PDP-REVAMP/SAUVAGE/Y0785220/POSTER_DIOR_SAUVAGE_CAPSULE_EDP_VA_916.jpg?sw=800"
+    },
+    {
+      "id": 11,
+      "nombre": "Perfume Amaderado",
+      "descripcion": "Notas cálidas de sándalo y cedro para un aroma intenso.",
+      "precio": 39.00,
+      "imagen": "https://perfumerica.mx/cdn/shop/files/HC3A.png?v=1708969297&width=2048"
+    },
+    {
+      "id": 12,
+      "nombre": "Perfume Cítrico",
+      "descripcion": "Frescura vibrante con notas de limón y bergamota.",
+      "precio": 22.00,
+      "imagen": "https://m.media-amazon.com/images/I/71-w3x3BP-L._AC_SX522_.jpg"
+    }
+  ]
+}

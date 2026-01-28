@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Métricas del Sitio - PerfumeShop</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <style>
+    /* Estilos adicionales para la nueva tarjeta */
+    .card-clicks {
+      background: linear-gradient(135deg, #24243e, #302b63);
+      color: #f5f7ff;
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      transition: .3s;
+    }
+    .card-clicks:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    .card-clicks h3 {
+      margin-bottom: 6px;
+    }
+    .clicks-number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #25D366;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Menú lateral -->
+  <aside class="sidebar">
+    <h2>🌸 PerfumeShop</h2>
+    <nav>
+      <a href="menuadmin.html">📊 Dashboard</a>
+      <a href="perfumesadmin.html">🧴 Perfumes</a>
+      <a href="ventasadmin.html">🛍️ Ventas</a>
+      <a href="clientesadmin.html">👥 Clientes</a>
+      <a href="metricasadmin.html" class="active">📊 Métricas</a>
+      <a href="configuracionadmin.html">⚙️ Configuración</a>
+    </nav>
+  </aside>
+
+  <!-- Contenido principal -->
+  <main class="main-content">
+    <header class="admin-header">
+      <h1>📊 Métricas del Sitio Web</h1>
+      <div class="admin-actions">
+        <button class="btn-sesion" onclick="cerrarSesion()">Cerrar Sesión</button>
+      </div>
+    </header>
+
+    <!-- Tarjetas informativas -->
+    <section class="cards">
+      <div class="card">
+        <h3>👥 Visitantes Totales</h3>
+        <p id="visitas-totales">12,540</p>
+      </div>
+      <div class="card">
+        <h3>📱 Usuarios en Móvil</h3>
+        <p id="usuarios-movil">68%</p>
+      </div>
+      <div class="card">
+        <h3>💻 Usuarios en Escritorio</h3>
+        <p id="usuarios-pc">29%</p>
+      </div>
+      <div class="card">
+        <h3>🕒 Hora Pico</h3>
+        <p id="hora-pico">8:00 p.m.</p>
+      </div>
+
+      <!-- NUEVA TARJETA: CLICKS DIARIOS -->
+      <div class="card-clicks">
+        <h3>🖱️ Clics en la Página (Hoy)</h3>
+        <p class="clicks-number" id="clicks-dia">0</p>
+        <small>Actualizado en tiempo real</small>
+      </div>
+    </section>
+
+    <!-- Tabla de ubicaciones -->
+    <section class="tabla-admin">
+      <div class="titulo-tabla">
+        <h2>🌍 Ubicaciones con Más Visitas</h2>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>País</th>
+            <th>Ciudad</th>
+            <th>Visitantes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>México</td><td>CDMX</td><td>4,320</td></tr>
+          <tr><td>Argentina</td><td>Buenos Aires</td><td>2,110</td></tr>
+          <tr><td>Colombia</td><td>Bogotá</td><td>1,980</td></tr>
+          <tr><td>España</td><td>Madrid</td><td>1,620</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Tabla de horarios -->
+    <section class="tabla-admin">
+      <div class="titulo-tabla">
+        <h2>🗓️ Horarios con Mayor Actividad</h2>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Franja Horaria</th>
+            <th>Promedio de Visitas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>09:00 a.m. – 12:00 p.m.</td><td>350</td></tr>
+          <tr><td>01:00 p.m. – 04:00 p.m.</td><td>420</td></tr>
+          <tr><td>07:00 p.m. – 10:00 p.m.</td><td><b>650 (hora pico)</b></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Tabla de dispositivos -->
+    <section class="tabla-admin">
+      <div class="titulo-tabla">
+        <h2>📱 Dispositivos Utilizados</h2>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Dispositivo</th>
+            <th>Porcentaje</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Móvil</td><td>68%</td></tr>
+          <tr><td>Escritorio</td><td>29%</td></tr>
+          <tr><td>Tablet</td><td>3%</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  
+
+</body>
+</html>
+

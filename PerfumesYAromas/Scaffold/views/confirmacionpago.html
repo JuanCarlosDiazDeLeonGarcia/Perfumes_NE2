@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de Pago - Perfumes & Aromas</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container-confirmacion {
+            max-width: 600px;
+            margin: 120px auto 50px;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            border-top: 5px solid #25D366;
+        }
+
+        .icono-check {
+            font-size: 80px;
+            color: #25D366;
+            margin-bottom: 20px;
+            animation: checkmark 0.6s ease-in-out;
+        }
+
+        @keyframes checkmark {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            70% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .container-confirmacion h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .container-confirmacion p {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: 500;
+            border-left: 4px solid #4caf50;
+        }
+
+        .datos-pago {
+            text-align: left;
+            margin-top: 25px;
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+        }
+
+            .datos-pago p {
+                margin: 12px 0;
+                padding: 8px 0;
+                border-bottom: 1px dashed #ddd;
+            }
+
+                .datos-pago p:last-child {
+                    border-bottom: none;
+                }
+
+            .datos-pago strong {
+                color: #333;
+                min-width: 200px;
+                display: inline-block;
+            }
+
+        .order-number {
+            background: #9b5de5;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 15px 0;
+            letter-spacing: 1px;
+            font-size: 1.1rem;
+        }
+
+        /* Botones */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .catalog-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .catalog-btn:hover {
+                background: #1da851;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
+            }
+
+        .invoice-btn {
+            background: #9b5de5;
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .invoice-btn:hover {
+                background: #8a4bd1;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(155, 93, 229, 0.3);
+            }
+
+        .home-btn {
+            background: white;
+            color: #333;
+            border: 2px solid #e0e0e0;
+            padding: 14px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .home-btn:hover {
+                background: #f8f9fa;
+                border-color: #ccc;
+            }
+
+        .info-footer {
+            margin-top: 25px;
+            font-size: 0.9rem;
+            color: #888;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .container-confirmacion {
+                margin: 100px 15px 30px;
+                padding: 25px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .catalog-btn, .invoice-btn, .home-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .action-buttons {
+                flex-direction: row;
+            }
+
+            .catalog-btn, .invoice-btn, .home-btn {
+                min-width: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <div id="navbar-container"></div>
+
+    <div class="container-confirmacion">
+        <div class="icono-check">✓</div>
+        <h2>¡Pago Confirmado!</h2>
+        <p class="success-message">✅ Tu transacción se realizó exitosamente</p>
+        <p>Gracias por confiar en Perfumes & Aromas</p>
+
+        <div class="order-number" id="orderNumber">ORD-0000</div>
+
+        <div class="datos-pago">
+            <p><strong>📦 Productos:</strong> <span id="productos">3 perfumes diferentes</span></p>
+            <p><strong>💰 Monto Total:</strong> <span id="totalAmount">$148.00 MXN</span></p>
+            <p><strong>💳 Método de Pago:</strong> <span id="paymentMethod">Tarjeta de Crédito</span></p>
+            <p><strong>📅 Fecha de Transacción:</strong> <span id="transactionDate">02/12/2025</span></p>
+            <p><strong>🆔 ID de Transacción:</strong> <span id="transactionId">TXN-000000</span></p>
+            <p><strong>📧 Correo de Confirmación:</strong> <span id="customerEmail">juan.carlos@perfumesyaromas.com</span></p>
+            <p><strong>📞 Teléfono:</strong> <span id="customerPhone">449 438 9825</span></p>
+        </div>
+
+        <div class="action-buttons">
+            <button class="invoice-btn" onclick="window.location.href='factura.html'">
+                Ver Factura
+            </button>
+            <button class="catalog-btn" onclick="window.location.href='errorpago.html'">
+                Continuar Comprando
+            </button>
+            <button class="home-btn" onclick="window.location.href='index.html'">
+                Ir al Inicio
+            </button>
+        </div>
+
+        <div class="info-footer">
+            <p>📧 Recibirás un correo de confirmación con los detalles de tu pedido</p>
+            <p>📦 Tu pedido será enviado en 24-48 horas hábiles</p>
+            <p>📞 Cualquier duda, contáctanos por WhatsApp: 449 438 9825</p>
+        </div>
+    </div>
+
+    <script>
+        // Cargar navbar
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('navbar-container').innerHTML = data;
+                initializeDropdown();
+            })
+            .catch(error => console.error('Error loading navbar:', error));
+
+        // Función para inicializar el dropdown
+        function initializeDropdown() {
+            const dropdownBtn = document.querySelector('.dropdown-btn');
+            const dropdownContent = document.querySelector('.dropdown-content');
+            if (dropdownBtn && dropdownContent) {
+                dropdownBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    dropdownContent.classList.toggle('show');
+                });
+                document.addEventListener('click', function () {
+                    dropdownContent.classList.remove('show');
+                });
+                dropdownContent.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+            }
+        }
+
+        // Cargar datos del localStorage
+        document.addEventListener('DOMContentLoaded', function () {
+            // Obtener datos del localStorage
+            const customerData = JSON.parse(localStorage.getItem('customerData')) || {};
+            const orderNumber = localStorage.getItem('orderNumber') || generateOrderNumber();
+            const transactionId = localStorage.getItem('transactionId') || generateTransactionId();
+
+            // Si no hay datos, usar valores por defecto
+            const fullName = (customerData.firstName || "Cliente") + " " + (customerData.lastName || "");
+            const email = customerData.email || "juan.carlos@perfumesyaromas.com";
+            const phone = customerData.phone || "449 438 9825";
+            const address = customerData.address || "No especificada";
+            const city = customerData.city || "No especificada";
+            const state = customerData.state || "No especificado";
+            const zipCode = customerData.zipCode || "No especificado";
+            const paymentMethod = customerData.paymentMethod || "Tarjeta Visa terminación 4512";
+            const total = customerData.total || "$148.00";
+
+            // Obtener fecha actual
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const currentDate = now.toLocaleDateString('es-ES', options);
+
+            // Guardar datos para la factura
+            const invoiceData = {
+                orderNumber: orderNumber,
+                transactionId: transactionId,
+                customerData: customerData,
+                date: currentDate,
+                total: total
+            };
+            localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
+
+            // Actualizar elementos en la página
+            document.getElementById('orderNumber').textContent = orderNumber;
+            document.getElementById('totalAmount').textContent = total + ' MXN';
+            document.getElementById('paymentMethod').textContent = paymentMethod;
+            document.getElementById('transactionDate').textContent = currentDate;
+            document.getElementById('transactionId').textContent = transactionId;
+            document.getElementById('customerEmail').textContent = email;
+            document.getElementById('customerPhone').textContent = phone;
+
+            // Mostrar detalles en consola para debugging
+            console.log('Confirmación de pago generada:', {
+                orderNumber: orderNumber,
+                transactionId: transactionId,
+                customerData: customerData,
+                date: currentDate
+            });
+
+            // Resaltar el botón del carrito en el navbar (si existe)
+            setTimeout(() => {
+                const cartBtn = document.querySelector('.cart-btn');
+                if (cartBtn) {
+                    cartBtn.style.background = 'rgba(37, 211, 102, 0.2)';
+                    cartBtn.style.border = '2px solid #25D366';
+                }
+            }, 500);
+        });
+
+        // Generar número de orden
+        function generateOrderNumber() {
+            return 'ORD-' + Math.floor(Math.random() * 9000 + 1000);
+        }
+
+        // Generar ID de transacción
+        function generateTransactionId() {
+            return 'TXN-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+        }
+    </script>
+</body>
+</html>

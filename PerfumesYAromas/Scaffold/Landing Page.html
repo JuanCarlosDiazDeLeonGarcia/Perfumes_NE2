@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfumes & Aromas | Aromas & Servicios</title>
+  <meta name="description" content="Perfumería moderna: fragancias personalizadas, recargas, ambientadores, aromas para auto y negocio. Atención por WhatsApp." />
+  <meta name="theme-color" content="#0e0f1a" />
+  <style>
+    :root{
+      --bg1:#0f0c29; --bg2:#302b63; --bg3:#24243e; --accent:#25D366; --light:#f5f7ff; --muted:#c7c9d9;
+      --card:rgba(255,255,255,.08); --stroke:rgba(255,255,255,.15);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial;
+      color:var(--light); background: radial-gradient(1200px 600px at 10% 10%,#1b1d3a40,transparent), linear-gradient(135deg,var(--bg1),var(--bg2) 50%,var(--bg3));
+      overflow-x:hidden;
+    }
+    /* Animated blobs background */
+    .blobs{position:fixed; inset:-20vmax; z-index:-1; filter: blur(50px); opacity:.5;}
+    .blob{position:absolute; width:40vmax; height:40vmax; border-radius:50%; mix-blend-mode:screen; animation: float 18s ease-in-out infinite;}
+    .b1{background:#9b5de5; left:10%; top:10%;}
+    .b2{background:#00bbf9; right:5%; top:30%; animation-delay: -6s}
+    .b3{background:#f15bb5; left:35%; bottom:5%; animation-delay: -12s}
+    @keyframes float{0%,100%{transform:translateY(0) translateX(0)} 50%{transform:translateY(-6vmax) translateX(3vmax)}}
+
+    .hero{max-width:1100px; margin:60px auto 30px; padding:0 20px; text-align:center}
+    h1{font-size:clamp(2rem,5vw,3.5rem); margin:.2em 0 .3em; line-height:1.05}
+    .sub{color:var(--muted); font-size:clamp(1rem,2.2vw,1.2rem)}
+
+    .cta{display:inline-flex; align-items:center; gap:10px; margin-top:26px; padding:14px 22px; border-radius:14px; text-decoration:none; font-weight:700; background:var(--accent); color:#062b12; border:1px solid #0b4d2655; position:relative; overflow:hidden;}
+    .cta:after{content:""; position:absolute; inset:0; background:linear-gradient(120deg,transparent, #ffffff88, transparent); transform: translateX(-120%);}
+    .cta:hover:after{animation:shine 900ms ease}
+    .cta:hover{transform:translateY(-1px)}
+    @keyframes shine{to{transform:translateX(120%)}}
+
+    /* Grid servicios */
+    .grid{
+      max-width:1100px;
+      margin:50px auto;
+      padding:0 20px;
+      display:grid;
+      gap:22px;
+      grid-template-columns: repeat(3,1fr); /* 3 columnas en desktop */
+      justify-items:center; /* centra las últimas tarjetas en filas incompletas */
+    }
+    .card{background:var(--card); border:1px solid var(--stroke); border-radius:18px; padding:22px; transition:.3s; text-align:center; width:100%;}
+    .card:hover{transform: translateY(-4px) scale(1.02); box-shadow:0 10px 30px #00000055}
+    .icon{font-size:2rem; margin-bottom:12px}
+    .card h3{margin:10px 0 8px}
+    .card p{margin:0; color:var(--muted)}
+
+    @media(max-width:900px){
+      .grid{grid-template-columns: repeat(2,1fr);}
+    }
+    @media(max-width:600px){
+      .grid{grid-template-columns:1fr;}
+    }
+
+    /* marquee testimonials */
+    .strip{border-top:1px solid var(--stroke); border-bottom:1px solid var(--stroke); background:linear-gradient(0deg, #ffffff05, #ffffff00);}
+    .marquee{display:flex; gap:22px; white-space:nowrap; overflow:hidden;}
+    .marquee span{display:inline-block; padding:16px 0; color:#e6e7f7; opacity:.9}
+    .marquee .dot{color:#9b5de5; margin:0 14px}
+    @keyframes scrollx{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+    .track{display:flex; gap:22px; animation:scrollx 22s linear infinite}
+
+    /* pricing */
+    .pricing{max-width:1100px; margin:60px auto; padding:0 20px; display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+    .price{background:linear-gradient(180deg, #ffffff10, #ffffff05); border:1px solid var(--stroke); border-radius:20px; padding:24px}
+    .price h4{margin:6px 0}
+    .price .tag{font-size:.9rem; color:var(--muted)}
+    .price .amount{font-size:2rem; font-weight:800; margin:10px 0}
+    .price ul{list-style:none; padding:0; margin:14px 0 0; color:var(--muted)}
+    .price li{margin:8px 0}
+    .price .btn{display:inline-block; margin-top:14px; background:#ffffff10; border:1px solid var(--stroke); color:var(--light); padding:10px 14px; border-radius:12px; text-decoration:none}
+    .price:hover{transform: translateY(-3px)}
+
+    /* FAQ */
+    .faq{max-width:900px; margin:60px auto; padding:0 20px}
+    details{background:var(--card); border:1px solid var(--stroke); border-radius:14px; padding:16px 18px; margin:12px 0}
+    summary{cursor:pointer; font-weight:700}
+    details p{color:var(--muted); margin:10px 0 0}
+
+    footer{max-width:1100px; margin:60px auto 40px; padding:0 20px; color:var(--muted); text-align:center}
+    footer a{color:#b0ffca; text-decoration:none;}
+
+    .reveal{opacity:0; transform:translateY(14px); transition: .6s cubic-bezier(.2,.7,.2,1)}
+    .reveal.on{opacity:1; transform:translateY(0)}
+
+    .cta-fixed{
+      position:fixed;
+      right:18px;
+      bottom:18px;
+      z-index:100;
+      box-shadow:0 6px 20px #00000066;
+    }
+    @media (max-width: 640px){
+      .cta-fixed{
+        left:14px;
+        right:14px;
+        bottom:18px;
+        justify-content:center;
+        width:auto;
+        display:flex;
+        text-align:center;
+        border-radius:14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- animated blobs background -->
+  <div class="blobs" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+
+  <section class="hero">
+    <h1 class="reveal">Perfumes & Aromas</h1>
+    <p class="sub reveal">Fragancias personalizadas, recargas y ambientadores premium para personas y negocios. Entrega rápida y atención</p>
+    <div class="badges reveal">
+      <span class="pill">✔️ Hecho al momento</span>
+      <span class="pill">🌿 Aromas de larga duración</span>
+      <span class="pill">🏷️ Mayoreo para negocios</span>
+    </div>
+  </section>
+
+  <!-- Servicios -->
+  <section id="servicios" class="grid">
+    <article class="card reveal">
+      <div class="icon">💎</div>
+      <h3>Fragancias Personalizadas</h3>
+      <p>Inspiradas en marcas top, ajustadas a tu estilo. Diferentes concentraciones.</p>
+    </article>
+    <article class="card reveal">
+      <div class="icon">🔁</div>
+      <h3>Recargas & Refill</h3>
+      <p>Trae tu frasco y recárgalo. Eco-friendly y más barato.</p>
+    </article>
+    <article class="card reveal">
+      <div class="icon">🚗</div>
+      <h3>Aromas para Auto</h3>
+      <p>Colgantes y difusores premium para tu coche.</p>
+    </article>
+  </section>
+
+  <!-- Carrusel de reseñas -->
+  <div class="strip">
+    <div class="marquee" aria-hidden="true">
+      <div class="track">
+        <span>“Duración brutal, huele TOP” <span class="dot">•</span></span>
+        <span>“La recarga me salió baratísima” <span class="dot">•</span></span>
+        <span>“Mi local huele increíble, mis clientes lo notan” <span class="dot">•</span></span>
+        <span>“Atención por WhatsApp en minutos” <span class="dot">•</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Precios -->
+  <section id="precios" class="pricing">
+    <div class="price reveal">
+      <span class="tag">Entrada</span>
+      <h4>Colonia diaria</h4>
+      <div class="amount">$149</div>
+      <ul>
+        <li>Presentación 30 ml</li>
+        <li>Duración 4–6 h</li>
+        <li>Fragancias populares</li>
+      </ul>
+    </div>
+    <div class="price reveal" style="outline:2px solid #ffffff22">
+      <span class="tag">Más vendido</span>
+      <h4>Perfume firma</h4>
+      <div class="amount">$299</div>
+      <ul>
+        <li>Presentación 50 ml</li>
+        <li>Duración 8–10 h</li>
+        <li>Personalización básica</li>
+      </ul>
+      <a class="btn" target="_blank" rel="noopener" href="https://wa.me/524494389825?text=Voy%20por%20el%20perfume%20de%2050ml%20%24299">Pedir por WhatsApp</a>
+    </div>
+    <div class="price reveal">
+      <span class="tag">Premium</span>
+      <h4>Alta concentración</h4>
+      <div class="amount">$449</div>
+      <ul>
+        <li>Presentación 100 ml</li>
+        <li>Duración 12h+</li>
+        <li>Blend a tu medida</li>
+      </ul>
+      <a class="btn" target="_blank" rel="noopener" href="https://wa.me/524494389825?text=Quiero%20el%20premium%20de%20100ml%20%24449">Pedir por WhatsApp</a>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="faq">
+    <h2 class="reveal" style="text-align:center; margin-bottom:10px">FAQ</h2>
+    <details class="reveal"><summary>¿Las fragancias son inspiradas en marcas?</summary><p>Sí, trabajamos inspiraciones con excelente desempeño. No vendemos originales de diseñador.</p></details>
+    <details class="reveal"><summary>¿Hacen envíos?</summary><p>Local y foráneo con costo adicional. Cotizamos por WhatsApp.</p></details>
+    <details class="reveal"><summary>¿Puedo llevar mi frasco para recarga?</summary><p>Claro. Verificamos limpieza y compatibilidad del atomizador.</p></details>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>© <span id="year"></span> Perfumería & Aromas — Atención por WhatsApp <a href="https://wa.me/524494389825">449 438 9825</a></p>
+    <p><a href="#">Términos y Condiciones</a></p>
+  </footer>
+
+  <!-- Botón fijo -->
+  <a class="cta cta-fixed"
+     href="https://wa.me/524494389825?text=Hola%2C%20me%20interesa%20una%20fragancia%20personalizada"
+     target="_blank" rel="noopener" aria-label="Cotizar ahora por WhatsApp">
+     ✨ Cotizar ahora por WhatsApp
+  </a>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const obs = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('on'); obs.unobserve(e.target);} })
+    },{threshold:.16});
+    document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+    const track=document.querySelector('.track');
+    if(track){ track.innerHTML += track.innerHTML; }
+  </script>
+</body>
+</html>

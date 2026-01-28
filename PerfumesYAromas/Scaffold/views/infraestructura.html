@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfumes & Aromas - Propuesta de Hardware</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <style>
+
+        /* Estilos básicos para la propuesta */
+        .hardware {
+            width: 90%;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            font-family: Arial, sans-serif;
+        }
+
+            .hardware-proposal h2 {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .hardware-proposal ul {
+                list-style-type: none;
+                padding: 0;
+            }
+
+            .hardware-proposal li {
+                margin: 10px 0;
+                font-size: 1.1rem;
+            }
+
+            .hardware-proposal .importance {
+                margin-top: 20px;
+                font-style: italic;
+                color: #333;
+            }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+    <script>// Cargar navbar
+    fetch('navbar.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('navbar-container').innerHTML = data;
+            initializeDropdown(); // ← Inicializar dropdown después de cargar
+        })
+        .catch(error => console.error('Error loading navbar:', error));
+
+    // Función para inicializar el dropdown
+    function initializeDropdown() {
+        const dropdownBtn = document.querySelector('.dropdown-btn');
+        const dropdownContent = document.querySelector('.dropdown-content');
+
+        if (dropdownBtn && dropdownContent) {
+            dropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownContent.classList.toggle('show');
+            });
+
+            // Cerrar dropdown al hacer click fuera
+            document.addEventListener('click', function() {
+                dropdownContent.classList.remove('show');
+            });
+
+            // Prevenir que se cierre al hacer click dentro del dropdown
+            dropdownContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+    }</script>
+
+    <div><</div>>
+
+    <!-- Propuesta de Hardware -->
+    <section class="hardware">
+        <h2>Hardware para Tienda de Perfumes en Línea</h2>
+        <ul>
+            <li>💻 CPU: 2 vCPU</li>
+            <li>🧠 RAM: 4 GB</li>
+            <li>💾 Almacenamiento: 50 GB SSD</li>
+            <li>📶 Transferencia: 1 TB</li>
+            <li>🖥️ Sistema Operativo: Windows</li>
+            <li>🌐 Servidor Web: Apache</li>
+        </ul>
+        <p class="importance">
+            El diseño de este sistema radica en garantizar un rendimiento estable y rápido de la tienda en línea.
+            Los 2 vCPU y 4 GB de RAM permiten manejar múltiples solicitudes de usuarios simultáneos, mientras que el SSD de 50 GB asegura tiempos de acceso rápidos a los datos.
+            La transferencia de 1 TB soporta el tráfico mensual esperado y la elección de Windows con Apache facilita la compatibilidad y facilidad de mantenimiento del servidor.
+        </p>
+    </section>
+
+    <section class="hardware">
+        <h2>Software para Tienda de Perfumes en Línea</h2>
+        <!-- Contenido -->
+        <div class="content">
+
+            <!-- Etapas -->
+            <div class="steps-container">
+                <h2>🧭 Etapas de resolución DNS y carga del sitio</h2>
+
+                <div class="step">
+                    <div class="step-number"></div>
+                    <div class="step-text">El usuario escribe <strong>www.perfumexaromas.mx</strong> en su navegador.</div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number"></div>
+                    <div class="step-text">El DNS local busca la IP o consulta los servidores raíz.</div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number"></div>
+                    <div class="step-text">El DNS raíz indica el servidor TLD (<strong>.mx</strong>).</div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number"></div>
+                    <div class="step-text">El TLD responde con el servidor autoritativo.</div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number"></div>
+                    <div class="step-text">El DNS autoritativo devuelve la IP <strong>(172.67.130.15)</strong>.</div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number"></div>
+                    <div class="step-text">El navegador se conecta al hosting y muestra la web.</div>
+                </div>
+            </div>
+
+            <!-- Configuración Técnica -->
+            <div class="config-container">
+                <h2>⚙️ Configuración Técnica</h2>
+                <ul>
+                    <li><strong>Dominio:</strong> perfumexaromas.mx</li>
+                    <li><strong>Subdominios:</strong> tienda.perfumex.mx, blog.perfumex.mx</li>
+                    <li><strong>Servidor DNS:</strong> ns1.hostinger.com</li>
+                    <li><strong>IP del servidor:</strong> 172.67.130.15</li>
+                    <li>💻 <strong>CPU:</strong> 2 vCPU</li>
+                    <li>🧠 <strong>RAM:</strong> 4 GB</li>
+                    <li>💾 <strong>Almacenamiento:</strong> 50 GB SSD</li>
+                    <li>📶 <strong>Transferencia:</strong> 1 TB</li>
+                    <li>🖥️ <strong>Sistema Operativo:</strong> Windows</li>
+                    <li>🌐 <strong>Servidor Web:</strong> Apache</li>
+                </ul>
+            </div>
+
+        </div>
+    </section>
+</body>
+</html>

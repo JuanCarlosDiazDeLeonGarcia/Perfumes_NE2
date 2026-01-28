@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfumes & Aromas - SLA</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <style>
+        /* Estilos para la tabla SLA */
+        .sla-section {
+            width: 90%;
+            max-width: 800px;
+            margin: 50px auto;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+            .sla-section h2 {
+                margin-bottom: 25px;
+            }
+
+        .sla-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+            .sla-table th, .sla-table td {
+                border: 1px solid #ccc;
+                padding: 12px 15px;
+            }
+
+            .sla-table th {
+                background-color: #f4f4f4;
+            }
+
+        .sla-text {
+            font-size: 1.1rem;
+            color: #333;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+    <script>
+    // Cargar navbar
+    fetch('navbar.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('navbar-container').innerHTML = data;
+            initializeDropdown(); // ← Inicializar dropdown después de cargar
+        })
+        .catch(error => console.error('Error loading navbar:', error));
+
+    // Función para inicializar el dropdown
+    function initializeDropdown() {
+        const dropdownBtn = document.querySelector('.dropdown-btn');
+        const dropdownContent = document.querySelector('.dropdown-content');
+
+        if (dropdownBtn && dropdownContent) {
+            dropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownContent.classList.toggle('show');
+            });
+
+            // Cerrar dropdown al hacer click fuera
+            document.addEventListener('click', function() {
+                dropdownContent.classList.remove('show');
+            });
+
+            // Prevenir que se cierre al hacer click dentro del dropdown
+            dropdownContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+    }
+    </script>
+
+    <div><</div>>
+
+    <!-- Sección SLA -->
+    <section class="sla-section">
+        <h2>Acuerdo de Nivel de Servicio (SLA)</h2>
+        <table class="sla-table">
+            <thead>
+                <tr>
+                    <th>SLA</th>
+                    <th>Caída anual aprox.</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>99%</td>
+                    <td>3.65 días</td>
+                </tr>
+                <tr>
+                    <td>99.9%</td>
+                    <td>8.7 horas</td>
+                </tr>
+                <tr>
+                    <td>99.99%</td>
+                    <td>52 minutos</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="sla-text">
+            Nuestra tienda de perfumes en línea opera con una disponibilidad mínima garantizada de 99.9%,
+            asegurando que nuestros clientes puedan comprar en cualquier momento con confianza.
+        </p>
+    </section>
+</body>
+</html>
