@@ -1,0 +1,270 @@
+
+/* ========================================
+   ESTILOS LOGIN - Perfumes NE2
+   Colores morado-azul del proyecto
+   ======================================== */
+
+body.login-page {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(90deg, purple, blue);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+}
+
+.login-container {
+    max-width: 450px;
+    width: 100%;
+    background-color: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Logo y header */
+.login-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.login-logo {
+    font-size: 4rem;
+    margin-bottom: 15px;
+}
+
+.login-header h1 {
+    color: #333;
+    margin: 10px 0;
+    font-size: 1.8rem;
+}
+
+.login-header p {
+    color: #666;
+    font-size: 1rem;
+}
+
+.login-header .acceso-restringido {
+    color: red;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* Formulario */
+.login-form {
+    margin-top: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: purple;
+    box-shadow: 0 0 0 3px rgba(128, 0, 128, 0.1);
+}
+
+/* Checkbox recordar */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.checkbox-group label {
+    margin: 0;
+    color: #666;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Botón de login */
+.btn-login {
+    width: 100%;
+    background: linear-gradient(90deg, purple, blue);
+    color: white;
+    padding: 14px;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.btn-login:hover {
+    background: linear-gradient(90deg, darkmagenta, darkblue);
+}
+
+.btn-login:active {
+    transform: translateY(0);
+}
+
+/* Mensajes de error */
+.mensaje-error {
+    display: none;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 15px;
+    text-align: center;
+    font-weight: 600;
+    animation: shake 0.5s;
+}
+
+.mensaje-error.show {
+    display: block;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.mensaje-exito {
+    display: none;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 15px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.mensaje-exito.show {
+    display: block;
+}
+
+/* Footer del login */
+.login-footer {
+    margin-top: 25px;
+    text-align: center;
+}
+
+.login-footer p {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.login-footer a {
+    color: blue;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.login-footer a:hover {
+    color: purple;
+    text-decoration: underline;
+}
+
+/* Credenciales de prueba */
+.credenciales-prueba {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    color: #666;
+    border-left: 4px solid purple;
+}
+
+.credenciales-prueba strong {
+    color: #333;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.credenciales-prueba p {
+    margin: 5px 0;
+    font-family: 'Courier New', monospace;
+}
+
+/* Loader (spinner de carga) */
+.loader {
+    display: none;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid purple;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 15px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loader.show {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .login-container {
+        padding: 30px 20px;
+    }
+
+    .login-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .login-logo {
+        font-size: 3rem;
+    }
+}
