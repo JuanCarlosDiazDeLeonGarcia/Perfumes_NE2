@@ -1,133 +1,627 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Mi Cuenta - PerfumeShop</title>
-  <link rel="stylesheet" href="../css/base.css">
+    <meta charset="UTF-8">
+    <title>Mi Cuenta - PerfumeShop</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <style>
+        /* Estilos adicionales */
+        .main-content {
+            padding: 20px;
+        }
+
+        .admin-header {
+            margin-bottom: 30px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+            .card h3 {
+                margin-bottom: 10px;
+                color: #555;
+                font-size: 16px;
+            }
+
+            .card p {
+                font-size: 24px;
+                font-weight: bold;
+                color: #333;
+            }
+
+        .tabla-admin {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .titulo-tabla {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+            .titulo-tabla h2 {
+                color: #333;
+            }
+
+        /* Estilos del formulario */
+        form label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        form input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+            form input:focus {
+                outline: none;
+                border-color: #7e57c2;
+            }
+
+        .btn-agregar {
+            background: linear-gradient(90deg, #7e57c2, #5c6bc0);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+            .btn-agregar:hover {
+                opacity: 0.9;
+            }
+
+        .btn-sesion {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+            .btn-sesion:hover {
+                opacity: 0.9;
+            }
+
+        /* Estilos de la tabla */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+            table th, table td {
+                padding: 12px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+
+            table th {
+                background-color: #f8f9fa;
+                font-weight: bold;
+                color: #333;
+            }
+
+            table tr:hover {
+                background-color: #f9f9f9;
+            }
+
+        /* Mensajes */
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+            display: none;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Sidebar - MANTENIENDO EL ESTILO ORIGINAL DE TU CSS BASE */
+        /* Los estilos de .sidebar deben venir de base.css */
+
+        .main-content {
+            margin-left: 250px;
+        }
+    </style>
 </head>
 <body>
 
-  <!-- Menú lateral del usuario -->
-  <aside class="sidebar">
-    <h2>🌸 PerfumeShop</h2>
-    <nav>
-      <a href="#" class="active">🏠 Inicio</a>
-      <a href="miscompras.html">🛍️ Mis Compras</a>
-      <a href="metodopago.html">💳 Métodos de Pago</a>
-      <a href="seguimiento.html">📦 Seguimiento</a>
-      <a href="#">⚙️ Configuración</a>
-      <a href="#">📩 Soporte</a>
-      <a href="catalog.html"> Cerre de sesion</a>
-    </nav>
-  </aside>
+    <!-- Menú lateral del usuario - CON EL DISEÑO ORIGINAL -->
+    <aside class="sidebar">
+        <h2>🌸 PerfumeShop</h2>
+        <nav>
+            <a href="catalog.html">🢀 Volver</a>
+            <a href="usuariomenu.html" class="active">🏠 Inicio</a>
+            <a href="miscompras.html">🛍️ Mis Compras</a>
+            <a href="metodopago.html">💳 Métodos de Pago</a>
+            <a href="seguimiento.html">📦 Seguimiento</a>
+            <a href="#">📩 Soporte</a>
+            <a href="catalog.html">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
 
-  <!-- Contenido principal -->
-  <main class="main-content">
-    <header class="admin-header">
-      <h1>Bienvenido, Ana López 🌸</h1>
-      <div class="admin-actions">
-      
-      </div>
-    </header>
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <header class="admin-header">
+            <h1 id="welcomeMessage">Bienvenido, <span id="clienteNombre">Cargando...</span> 🌸</h1>
+            <div class="admin-actions"></div>
+        </header>
 
-    <!-- Tarjetas de perfil -->
-    <section class="cards">
-      <div class="card">
-        <h3>Mis puntos</h3>
-        <p>1,250 ⭐</p>
-      </div>
-      <div class="card">
-        <h3>Pedidos realizados</h3>
-        <p>18</p>
-      </div>
-      <div class="card">
-        <h3>Última compra</h3>
-        <p>22/10/2025</p>
-      </div>
-      <div class="card">
-        <h3>Membresía</h3>
-        <p>Cliente Premium 💎</p>
-      </div>
-    </section>
+        <!-- Mensajes -->
+        <div id="successMessage" class="message success"></div>
+        <div id="errorMessage" class="message error"></div>
 
-    <!-- Perfil del usuario -->
-    <section class="tabla-admin">
-      <div class="titulo-tabla">
-        <h2>👤 Mi Perfil</h2>
-      </div>
+        <!-- Tarjetas de perfil -->
+        <section class="cards">
+            <div class="card">
+                <h3>Etapa CRM</h3>
+                <p id="etapaCrm">Cargando...</p>
+            </div>
+            <div class="card">
+                <h3>Pedidos realizados</h3>
+                <p id="totalCompras">0</p>
+            </div>
+            <div class="card">
+                <h3>Cliente desde</h3>
+                <p id="fechaRegistro">Cargando...</p>
+            </div>
+            <div class="card">
+                <h3>Estado</h3>
+                <p id="estadoCliente">Cargando...</p>
+            </div>
+        </section>
 
-      <form id="perfilForm" style="max-width:600px; margin:auto; text-align:left;">
-        <label><strong>Nombre completo:</strong></label>
-        <input type="text" id="nombre" value="Ana López" required>
+        <!-- Perfil del usuario -->
+        <section class="tabla-admin">
+            <div class="titulo-tabla">
+                <h2>👤 Mi Perfil</h2>
+            </div>
 
-        <label><strong>Correo electrónico:</strong></label>
-        <input type="email" id="correo" value="ana.lopez@mail.com" required>
+            <form id="perfilForm" style="max-width:600px; margin:auto; text-align:left;">
+                <label><strong>Nombre completo:</strong></label>
+                <input type="text" id="nombre" required>
 
-        <label><strong>Teléfono:</strong></label>
-        <input type="tel" id="telefono" value="+52 555 210 4321" required>
+                <label><strong>Correo electrónico:</strong></label>
+                <input type="email" id="correo" required>
 
-        <label><strong>Dirección:</strong></label>
-        <input type="text" id="direccion" value="Av. Reforma #123, CDMX" required>
+                <label><strong>Teléfono:</strong></label>
+                <input type="tel" id="telefono">
 
-        <label><strong>Contraseña:</strong></label>
-        <input type="password" id="clave" value="******" required>
+                <label><strong>Empresa:</strong></label>
+                <input type="text" id="empresa">
 
-        <div style="display:flex;justify-content:space-between;margin-top:20px;">
-          <button type="submit" class="btn-agregar">💾 Actualizar</button>
-          <button type="button" class="btn-sesion" style="background:gray;" onclick="cancelarCambios()">Cancelar</button>
-        </div>
-      </form>
-    </section>
+                <label><strong>Dirección:</strong></label>
+                <textarea id="direccion" rows="3" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px;"></textarea>
 
-    <!-- Historial de compras -->
-    <section class="tabla-admin" style="margin-top:40px;">
-      <div class="titulo-tabla">
-        <h2>🛍️ Compras Recientes</h2>
-      </div>
+                <label><strong>Ciudad:</strong></label>
+                <input type="text" id="ciudad">
 
-      <table>
-        <thead>
-          <tr>
-            <th>ID Pedido</th>
-            <th>Producto</th>
-            <th>Fecha</th>
-            <th>Monto</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>#P001</td><td>Floral Dream</td><td>22/10/2025</td><td>$120</td><td>✅ Entregado</td></tr>
-          <tr><td>#P002</td><td>Midnight Musk</td><td>20/10/2025</td><td>$150</td><td>✅ Entregado</td></tr>
-          <tr><td>#P003</td><td>Vanilla Breeze</td><td>18/10/2025</td><td>$95</td><td>🕓 En tránsito</td></tr>
-        </tbody>
-      </table>
-    </section>
-  </main>
+                <label><strong>Estado:</strong></label>
+                <input type="text" id="estado">
 
-  <script>
-    // Cerrar sesión simulada
-    function cerrarSesion() {
-      const confirmar = confirm('¿Deseas cerrar sesión?');
-      if (confirmar) {
-        alert('Sesión cerrada correctamente ✅');
-        window.location.href = "login.html";
-      }
-    }
+                <label><strong>Código Postal:</strong></label>
+                <input type="text" id="codigoPostal">
 
-    // Guardar cambios del perfil
-    const form = document.getElementById('perfilForm');
-    form.addEventListener('submit', e => {
-      e.preventDefault();
-      alert('✅ Datos actualizados correctamente.');
-    });
+                <label><strong>Fecha de Nacimiento:</strong></label>
+                <input type="date" id="fechaNacimiento">
 
-    // Cancelar cambios
-    function cancelarCambios() {
-      if (confirm('¿Deseas descartar los cambios?')) {
-        form.reset();
-      }
-    }
-  </script>
+                <label><strong>Género:</strong></label>
+                <select id="genero" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px;">
+                    <option value="">Seleccionar</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                    <option value="Otro">Otro</option>
+                    <option value="Prefiero no decir">Prefiero no decir</option>
+                </select>
 
+                <div style="display:flex;justify-content:space-between;margin-top:30px;">
+                    <button type="submit" class="btn-agregar">💾 Guardar Cambios</button>
+                    <button type="button" class="btn-sesion" onclick="cancelarCambios()" style="background:gray;">Cancelar</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Historial de compras -->
+        <section class="tabla-admin" style="margin-top:40px;">
+            <div class="titulo-tabla">
+                <h2>🛍️ Compras Recientes</h2>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Pedido</th>
+                        <th>Producto</th>
+                        <th>Fecha</th>
+                        <th>Monto</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="comprasTableBody">
+                    <tr><td colspan="5" style="text-align:center;">Cargando compras...</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <script>
+        // URL base del servidor
+        const API_BASE_URL = 'http://localhost:3000';
+
+        // Mostrar mensajes
+        function showMessage(type, text) {
+            const successDiv = document.getElementById('successMessage');
+            const errorDiv = document.getElementById('errorMessage');
+
+            if (type === 'success') {
+                successDiv.textContent = text;
+                successDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+            } else {
+                errorDiv.textContent = text;
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+            }
+
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Cargar datos del cliente
+        async function cargarDatosCliente() {
+            try {
+                // Obtener datos del cliente del localStorage
+                const clienteData = localStorage.getItem('cliente');
+                if (!clienteData) {
+                    showMessage('error', 'No hay sesión activa. Redirigiendo al login...');
+                    setTimeout(() => window.location.href = '../html/login.html', 2000);
+                    return;
+                }
+
+                const cliente = JSON.parse(clienteData);
+
+                // Actualizar datos en la interfaz
+                document.getElementById('clienteNombre').textContent = cliente.nombre;
+                document.getElementById('welcomeMessage').innerHTML = `Bienvenido, ${cliente.nombre} 🌸`;
+
+                document.getElementById('nombre').value = cliente.nombre || '';
+                document.getElementById('correo').value = cliente.correo || '';
+                document.getElementById('telefono').value = cliente.telefono || '';
+                document.getElementById('empresa').value = cliente.empresa || '';
+                document.getElementById('direccion').value = cliente.direccion || '';
+                document.getElementById('ciudad').value = cliente.ciudad || '';
+                document.getElementById('estado').value = cliente.estado || '';
+                document.getElementById('codigoPostal').value = cliente.codigo_postal || '';
+                document.getElementById('fechaNacimiento').value = cliente.fecha_nacimiento || '';
+                document.getElementById('genero').value = cliente.genero || '';
+
+                // Actualizar tarjetas
+                document.getElementById('etapaCrm').textContent = cliente.etapa_crm || 'No definida';
+                document.getElementById('estadoCliente').textContent = cliente.estado_cliente || 'activo';
+                document.getElementById('fechaRegistro').textContent = new Date(cliente.fecha_registro).toLocaleDateString();
+
+                // Cargar métricas del cliente si existen
+                await cargarMetricasCliente(cliente.id);
+
+                // Cargar compras del cliente
+                await cargarComprasCliente(cliente.id);
+
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+                showMessage('error', 'Error al cargar los datos del perfil');
+            }
+        }
+
+        // Cargar métricas del cliente
+        async function cargarMetricasCliente(clienteId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/metricas-cliente/${clienteId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('totalCompras').textContent = data.total_compras || 0;
+                }
+            } catch (error) {
+                console.error('Error cargando métricas:', error);
+                document.getElementById('totalCompras').textContent = '0';
+            }
+        }
+
+        // Cargar compras del cliente
+        async function cargarComprasCliente(clienteId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedidos-cliente/${clienteId}`);
+                if (response.ok) {
+                    const pedidos = await response.json();
+                    actualizarTablaCompras(pedidos);
+                } else {
+                    mostrarSinCompras();
+                }
+            } catch (error) {
+                console.error('Error cargando compras:', error);
+                mostrarSinCompras();
+            }
+        }
+
+        function actualizarTablaCompras(pedidos) {
+            const tbody = document.getElementById('comprasTableBody');
+            tbody.innerHTML = '';
+
+            if (pedidos.length === 0) {
+                mostrarSinCompras();
+                return;
+            }
+
+            pedidos.forEach(pedido => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+              <td>#${String(pedido.id).padStart(3, '0')}</td>
+              <td>${pedido.productos || 'Varios productos'}</td>
+              <td>${new Date(pedido.fecha_pedido).toLocaleDateString()}</td>
+              <td>$${pedido.total.toFixed(2)}</td>
+              <td>${getEstadoIcon(pedido.estado)} ${pedido.estado}</td>
+            `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function mostrarSinCompras() {
+            const tbody = document.getElementById('comprasTableBody');
+            tbody.innerHTML = `
+            <tr>
+              <td colspan="5" style="text-align:center; color:#666; padding:20px;">
+                No has realizado compras aún.
+                <a href="../html/catalog.html" style="color:#7e57c2; text-decoration:none; font-weight:bold;">
+                  ¡Explora nuestro catálogo!
+                </a>
+              </td>
+            </tr>
+          `;
+        }
+
+        function getEstadoIcon(estado) {
+            const icons = {
+                'entregado': '✅',
+                'enviado': '🚚',
+                'procesando': '⚙️',
+                'confirmado': '📋',
+                'pendiente': '⏳',
+                'cancelado': '❌'
+            };
+            return icons[estado.toLowerCase()] || '📄';
+        }
+
+        // Actualizar perfil del cliente - VERSIÓN CORREGIDA
+        async function actualizarPerfil(event) {
+            event.preventDefault();
+
+            // Mostrar estado de carga
+            const submitBtn = document.querySelector('#perfilForm button[type="submit"]');
+            if (!submitBtn) {
+                showMessage('error', 'No se encontró el botón de envío');
+                return;
+            }
+
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Guardando...';
+            submitBtn.disabled = true;
+
+            try {
+                const clienteData = localStorage.getItem('cliente');
+                if (!clienteData) {
+                    showMessage('error', 'Sesión expirada. Inicia sesión nuevamente.');
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                const cliente = JSON.parse(clienteData);
+
+                // Obtener los elementos del DOM de forma segura
+                const nombreInput = document.getElementById('nombre');
+                const correoInput = document.getElementById('correo');
+                const telefonoInput = document.getElementById('telefono');
+                const empresaInput = document.getElementById('empresa');
+                const direccionInput = document.getElementById('direccion');
+                const ciudadInput = document.getElementById('ciudad');
+                const estadoInput = document.getElementById('estado');
+                const codigoPostalInput = document.getElementById('codigoPostal');
+                const fechaNacimientoInput = document.getElementById('fechaNacimiento');
+                const generoSelect = document.getElementById('genero');
+
+                // Verificar que todos los elementos existan
+                const elementos = [
+                    { elem: nombreInput, id: 'nombre' },
+                    { elem: correoInput, id: 'correo' },
+                    { elem: telefonoInput, id: 'telefono' },
+                    { elem: empresaInput, id: 'empresa' },
+                    { elem: direccionInput, id: 'direccion' },
+                    { elem: ciudadInput, id: 'ciudad' },
+                    { elem: estadoInput, id: 'estado' },
+                    { elem: codigoPostalInput, id: 'codigoPostal' },
+                    { elem: fechaNacimientoInput, id: 'fechaNacimiento' },
+                    { elem: generoSelect, id: 'genero' }
+                ];
+
+                const elementosFaltantes = elementos.filter(item => !item.elem);
+                if (elementosFaltantes.length > 0) {
+                    console.error('Elementos faltantes:', elementosFaltantes.map(e => e.id));
+                    showMessage('error', `Error: Elementos del formulario no encontrados: ${elementosFaltantes.map(e => e.id).join(', ')}`);
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                // Preparar datos
+                const datosActualizados = {
+                    nombre: nombreInput.value.trim() || null,
+                    correo: correoInput.value.trim() || null,
+                    telefono: telefonoInput.value.trim() || null,
+                    empresa: empresaInput.value.trim() || null,
+                    direccion: direccionInput.value.trim() || null,
+                    ciudad: ciudadInput.value.trim() || null,
+                    estado: estadoInput.value.trim() || null,
+                    codigo_postal: codigoPostalInput.value.trim() || null,
+                    fecha_nacimiento: fechaNacimientoInput.value || null,
+                    genero: generoSelect.value || null
+                };
+
+                // Validación básica
+                if (!datosActualizados.nombre) {
+                    showMessage('error', 'El nombre es obligatorio');
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                if (!datosActualizados.correo) {
+                    showMessage('error', 'El correo electrónico es obligatorio');
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                if (!datosActualizados.correo.includes('@')) {
+                    showMessage('error', 'Ingresa un correo electrónico válido');
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                console.log('📤 Enviando datos al servidor:', datosActualizados);
+
+                const response = await fetch(`${API_BASE_URL}/api/clientes/${cliente.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(datosActualizados)
+                });
+
+                const responseData = await response.json();
+
+                if (response.ok) {
+                    console.log('✅ Respuesta del servidor:', responseData);
+
+                    // Actualizar localStorage con los nuevos datos
+                    const nuevoCliente = { ...cliente, ...datosActualizados };
+                    localStorage.setItem('cliente', JSON.stringify(nuevoCliente));
+
+                    showMessage('success', '✅ Perfil actualizado correctamente');
+
+                    // Actualizar nombre en el encabezado
+                    if (datosActualizados.nombre) {
+                        const clienteNombreSpan = document.getElementById('clienteNombre');
+                        const welcomeMessage = document.getElementById('welcomeMessage');
+
+                        if (clienteNombreSpan) {
+                            clienteNombreSpan.textContent = datosActualizados.nombre;
+                        }
+                        if (welcomeMessage) {
+                            welcomeMessage.innerHTML = `Bienvenido, ${datosActualizados.nombre} 🌸`;
+                        }
+                    }
+
+                } else {
+                    console.error('❌ Error del servidor:', responseData);
+                    const errorMsg = responseData.message || 'Error al actualizar perfil';
+                    showMessage('error', errorMsg);
+                }
+
+            } catch (error) {
+                console.error('💥 Error en la solicitud:', error);
+                showMessage('error', `Error de conexión: ${error.message}`);
+            } finally {
+                // Restaurar estado del botón
+                if (submitBtn) {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
+        }
+
+        // Cancelar cambios (función original)
+        function cancelarCambios() {
+            if (confirm('¿Deseas descartar los cambios?')) {
+                cargarDatosCliente(); // Recargar los datos originales
+                showMessage('success', 'Cambios descartados. Se restauraron los datos originales.');
+            }
+        }
+
+        // Verificar sesión al cargar la página
+        function verificarSesion() {
+            const cliente = localStorage.getItem('cliente');
+            const userType = localStorage.getItem('userType');
+
+            if (!cliente || userType !== 'cliente') {
+                window.location.href = '../html/login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function () {
+            if (verificarSesion()) {
+                cargarDatosCliente();
+            }
+
+            // Asignar evento al formulario
+            document.getElementById('perfilForm').addEventListener('submit', actualizarPerfil);
+
+            // Modificar el enlace de cierre de sesión para limpiar localStorage
+            const cerrarSesionLink = document.querySelector('a[href="catalog.html"]');
+            if (cerrarSesionLink) {
+                cerrarSesionLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                        localStorage.removeItem('cliente');
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('userType');
+                        window.location.href = 'catalog.html';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
