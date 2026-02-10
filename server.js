@@ -791,6 +791,245 @@ app.get('/api/ultimo-pago/:cliente_id', async (req, res) => {
     }
 });
 
+// Primero, agregar columnas de seguimiento si no existen
+app.post('/api/agregar-seguimiento-pedidos', async (req, res) => {
+    try {
+        // Agregar columnas para seguimiento si no existen
+        await pool.query(`
+            ALTER TABLE pedidos 
+            ADD COLUMN IF NOT EXISTS numero_guia VARCHAR(50),
+            ADD COLUMN IF NOT EXISTS transportista VARCHAR(100),
+            ADD COLUMN IF NOT EXISTS ubicacion_actual TEXT,
+            ADD COLUMN IF NOT EXISTS fecha_actualizacion_seguimiento TIMESTAMP,
+            ADD COLUMN IF NOT EXISTS fecha_entrega_estimada DATE
+        `);
+
+        console.log('✅ Columnas de seguimiento agregadas a pedidos');
+        res.json({ message: 'Columnas de seguimiento listas' });
+    } catch (error) {
+        console.error('Error agregando columnas:', error);
+        res.status(500).json({ message: 'Error configurando seguimiento' });
+    }
+});
+
+// Ruta para obtener pedidos con seguimiento
+app.get('/api/seguimiento-pedidos/:cliente_id', async (req, res) => {
+    const { cliente_id } = req.params;
+
+    try {
+        const result = await pool.query(
+            `SELECT p.*, 
+                    STRING_AGG(pr.nombre, ', ') as productos,
+                    COUNT(dp.id) as cantidad_items
+             FROM pedidos p
+             LEFT JOIN detalle_pedidos dp ON p.id = dp.pedido_id
+             LEFT JOIN productos pr ON dp.producto_id = pr.id
+             WHERE p.cliente_id = $1
+             GROUP BY p.id
+             ORDER BY 
+                 CASE 
+                     WHEN p.estado = 'enviado' THEN 1
+                     WHEN p.estado = 'procesando' THEN 2
+                     WHEN p.estado = 'confirmado' THEN 3
+                     WHEN p.estado = 'pendiente' THEN 4
+                     WHEN p.estado = 'entregado' THEN 5
+                     WHEN p.estado = 'cancelado' THEN 6
+                     ELSE 7
+                 END,
+                 p.fecha_pedido DESC`,
+            [cliente_id]
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo seguimiento:', error);
+        res.status(500).json({ message: 'Error obteniendo seguimiento de pedidos' });
+    }
+});
+
+// Ruta para obtener detalle completo de seguimiento
+app.get('/api/seguimiento-detalle/:pedido_id', async (req, res) => {
+    const { pedido_id } = req.params;
+
+    try {
+        // Obtener información del pedido
+        const pedidoResult = await pool.query(
+            `SELECT * FROM pedidos WHERE id = $1`,
+            [pedido_id]
+        );
+
+        if (pedidoResult.rows.length === 0) {
+            return res.status(404).json({ message: 'Pedido no encontrado' });
+        }
+
+        const pedido = pedidoResult.rows[0];
+
+        // Obtener detalles del pedido
+        const detallesResult = await pool.query(
+            `SELECT dp.*, p.nombre, p.marca
+             FROM detalle_pedidos dp
+             JOIN productos p ON dp.producto_id = p.id
+             WHERE dp.pedido_id = $1`,
+            [pedido_id]
+        );
+
+        // Obtener historial de seguimiento (si existe tabla separada)
+        try {
+            const historialResult = await pool.query(
+                `SELECT * FROM historial_seguimiento 
+                 WHERE pedido_id = $1 
+                 ORDER BY fecha DESC`,
+                [pedido_id]
+            );
+            pedido.historial = historialResult.rows;
+        } catch (error) {
+            // Si no existe la tabla, no hay problema
+            pedido.historial = [];
+        }
+
+        // Agregar detalles al objeto pedido
+        pedido.productos_detalle = detallesResult.rows;
+
+        // Crear string de productos para mostrar
+        if (detallesResult.rows.length > 0) {
+            pedido.productos = detallesResult.rows.map(p => p.nombre).join(', ');
+        }
+
+        res.json(pedido);
+    } catch (error) {
+        console.error('Error obteniendo detalle de seguimiento:', error);
+        res.status(500).json({ message: 'Error obteniendo detalle de seguimiento' });
+    }
+});
+
+// Ruta para crear tabla de historial de seguimiento (opcional)
+app.post('/api/crear-tabla-seguimiento', async (req, res) => {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS historial_seguimiento (
+                id SERIAL PRIMARY KEY,
+                pedido_id INTEGER REFERENCES pedidos(id) ON DELETE CASCADE,
+                estado_anterior VARCHAR(30),
+                estado_nuevo VARCHAR(30) NOT NULL,
+                ubicacion TEXT,
+                descripcion TEXT,
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                usuario_id INTEGER REFERENCES usuarios(id)
+            )
+        `);
+
+        console.log('✅ Tabla historial_seguimiento creada/verificada');
+        res.json({ message: 'Tabla de historial lista' });
+    } catch (error) {
+        console.error('Error creando tabla seguimiento:', error);
+        res.status(500).json({ message: 'Error creando tabla de seguimiento' });
+    }
+});
+
+// Ruta para registrar nuevo cliente
+app.post('/api/registrar-cliente', async (req, res) => {
+    const {
+        nombre,
+        correo,
+        password,
+        telefono,
+        empresa,
+        direccion,
+        ciudad,
+        estado,
+        codigo_postal,
+        fecha_nacimiento,
+        genero,
+        newsletter
+    } = req.body;
+
+    console.log('📝 Registro de nuevo cliente:', correo);
+
+    try {
+        // Validar campos requeridos
+        if (!nombre || !correo || !password) {
+            return res.status(400).json({ message: 'Nombre, correo y contraseña son obligatorios' });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
+        }
+
+        // Verificar si el correo ya está registrado
+        const clienteExistente = await pool.query(
+            'SELECT id FROM clientes WHERE correo = $1',
+            [correo]
+        );
+
+        if (clienteExistente.rows.length > 0) {
+            console.log('❌ Correo ya registrado:', correo);
+            return res.status(400).json({ message: 'Este correo electrónico ya está registrado' });
+        }
+
+        // Insertar nuevo cliente
+        const result = await pool.query(
+            `INSERT INTO clientes 
+             (nombre, correo, password, telefono, empresa, direccion, 
+              ciudad, estado, codigo_postal, fecha_nacimiento, genero, 
+              estado_cliente, etapa_crm, fecha_registro)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP)
+             RETURNING id, nombre, correo, telefono, empresa, direccion, 
+                       ciudad, estado, codigo_postal, fecha_nacimiento, genero,
+                       fecha_registro, estado_cliente, etapa_crm`,
+            [
+                nombre, correo, password, telefono, empresa, direccion,
+                ciudad, estado, codigo_postal, fecha_nacimiento, genero,
+                'activo', 'Prospecto'
+            ]
+        );
+
+        const nuevoCliente = result.rows[0];
+        console.log('✅ Cliente registrado exitosamente:', nuevoCliente.nombre);
+
+        // Crear métricas iniciales para el cliente
+        try {
+            await pool.query(
+                `INSERT INTO metricas_clientes (cliente_id, total_interacciones, total_compras, valor_total_compras)
+                 VALUES ($1, 0, 0, 0)`,
+                [nuevoCliente.id]
+            );
+        } catch (error) {
+            console.log('⚠️ No se pudieron crear métricas iniciales, pero el cliente se registró');
+        }
+
+        // Enviar correo de bienvenida (simulado)
+        if (newsletter) {
+            console.log('📧 Suscrito a newsletter:', correo);
+        }
+
+        // Preparar respuesta
+        const { password: pwd, ...clienteSinPassword } = nuevoCliente;
+
+        res.status(201).json({
+            message: 'Cliente registrado exitosamente',
+            cliente: clienteSinPassword,
+            token: 'cliente_' + nuevoCliente.id + '_' + Date.now()
+        });
+
+    } catch (error) {
+        console.error('💥 Error registrando cliente:', error);
+
+        let mensajeError = 'Error al registrar cliente';
+        if (error.code === '23505') { // Violación de unique constraint
+            mensajeError = 'El correo electrónico ya está registrado';
+        } else if (error.code === '23514') { // Violación de check constraint
+            mensajeError = 'Datos inválidos en el formulario';
+        }
+
+        res.status(500).json({
+            message: mensajeError,
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+
+
 /////   SEPARACION DEL LISTEN Y RUTAS           /////////
 
 app.listen(PORT, () => {

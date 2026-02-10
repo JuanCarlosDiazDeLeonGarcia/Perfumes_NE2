@@ -955,7 +955,7 @@
                 localStorage.removeItem('cliente');
                 localStorage.removeItem('token');
                 localStorage.removeItem('userType');
-                window.location.href = '../html/catalog.html';
+                window.location.href = '../views/catalog.html';
             }
         }
 
@@ -965,7 +965,7 @@
             const userType = localStorage.getItem('userType');
 
             if (!cliente || userType !== 'cliente') {
-                window.location.href = '../html/login.html';
+                window.location.href = '../views/login.html';
                 return false;
             }
             return true;

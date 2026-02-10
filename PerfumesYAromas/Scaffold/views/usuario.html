@@ -276,10 +276,16 @@
             // Asignar evento al formulario
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
 
-            // Asignar eventos a los enlaces (puedes implementar estas funciones después)
+            // Asignar eventos a los enlaces
             document.getElementById('registerLink').addEventListener('click', function (e) {
                 e.preventDefault();
-                alert('Funcionalidad de registro en desarrollo.');
+                // Redirigir a la página de registro
+                window.location.href = 'registro.html';  // O la ruta correcta si está en otra carpeta
+            });
+
+            document.getElementById('forgotPassword').addEventListener('click', function (e) {
+                e.preventDefault();
+                alert('Funcionalidad de recuperación en desarrollo.');
             });
 
             document.getElementById('forgotPassword').addEventListener('click', function (e) {

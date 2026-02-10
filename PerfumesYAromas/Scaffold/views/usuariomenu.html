@@ -314,7 +314,7 @@
                 const clienteData = localStorage.getItem('cliente');
                 if (!clienteData) {
                     showMessage('error', 'No hay sesión activa. Redirigiendo al login...');
-                    setTimeout(() => window.location.href = '../html/login.html', 2000);
+                    setTimeout(() => window.location.href = '../views/usuario.html', 2000);
                     return;
                 }
 
@@ -410,7 +410,7 @@
             <tr>
               <td colspan="5" style="text-align:center; color:#666; padding:20px;">
                 No has realizado compras aún.
-                <a href="../html/catalog.html" style="color:#7e57c2; text-decoration:none; font-weight:bold;">
+                <a href="../views/catalog.html" style="color:#7e57c2; text-decoration:none; font-weight:bold;">
                   ¡Explora nuestro catálogo!
                 </a>
               </td>
@@ -593,7 +593,7 @@
             const userType = localStorage.getItem('userType');
 
             if (!cliente || userType !== 'cliente') {
-                window.location.href = '../html/login.html';
+                window.location.href = '../views/usuario.html';
                 return false;
             }
             return true;
