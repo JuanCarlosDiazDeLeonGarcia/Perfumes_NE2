@@ -84,6 +84,30 @@
                     text-decoration: underline;
                 }
 
+        /* Mensajes de error */
+        .error-message {
+            color: red;
+            background-color: #ffe6e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            color: green;
+            background-color: #e6ffe6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
         /* Asegurar que el navbar importado se vea bien */
         #navbar-container .navbar {
             position: fixed;
@@ -102,16 +126,21 @@
         <div class="login-container">
             <h2>Iniciar Sesión</h2>
             <form id="loginForm">
-                <input type="text" placeholder="Usuario o Email" id="username">
-                <input type="password" placeholder="Contraseña" id="password">
-                <button type="button" id="loginBtn">Entrar</button>
+                <input type="email" placeholder="Correo electrónico" id="email" required>
+                <input type="password" placeholder="Contraseña" id="password" required>
+                <button type="submit" id="loginBtn">Entrar</button>
+                <div id="errorMessage" class="error-message"></div>
+                <div id="successMessage" class="success-message"></div>
             </form>
-            <p>¿No tienes cuenta? <a href="#">Regístrate</a></p>
-            <p><a href="usuariomenu.html">¿Olvidaste tu contraseña?</a></p>
+            <p>¿No tienes cuenta? <a href="#" id="registerLink">Regístrate</a></p>
+            <p><a href="#" id="forgotPassword">¿Olvidaste tu contraseña?</a></p>
         </div>
     </div>
 
     <script>
+        // URL base del servidor (ajusta si es necesario)
+        const API_BASE_URL = 'http://localhost:3000';
+
         // Cargar navbar
         fetch('navbar.html')
             .then(response => response.text())
@@ -144,35 +173,137 @@
             }
         }
 
+        // Función para mostrar mensajes de error
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        // Función para mostrar mensajes de éxito
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
         // Función para manejar el inicio de sesión
-        document.addEventListener('DOMContentLoaded', function () {
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
             const loginBtn = document.getElementById('loginBtn');
 
-            loginBtn.addEventListener('click', function () {
-                // Obtener valores de los campos (opcional - solo para mostrar en consola)
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
+            // Validación básica
+            if (!email || !password) {
+                showError('Por favor, completa todos los campos.');
+                return;
+            }
 
-                // Mostrar en consola los valores (opcional)
-                console.log('Intento de login:');
-                console.log('Usuario:', username || '(campo vacío)');
-                console.log('Contraseña:', password || '(campo vacío)');
+            if (!email.includes('@')) {
+                showError('Por favor, ingresa un correo electrónico válido.');
+                return;
+            }
 
-                // Redireccionar a la página de pago
-                window.location.href = 'pago.html';
+            // Mostrar estado de carga
+            loginBtn.textContent = 'Iniciando sesión...';
+            loginBtn.classList.add('loading');
 
-                // Opcional: Mostrar mensaje de redirección
-                console.log('Redirigiendo a pago.html...');
+            try {
+                // Primero intentamos autenticar como cliente
+                const response = await fetch(`${API_BASE_URL}/api/login-cliente`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
 
-                // Prevenir comportamiento por defecto (no necesario para type="button")
-                return false;
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Login exitoso como cliente
+                    showSuccess('¡Inicio de sesión exitoso! Redirigiendo...');
+
+                    // Guardar datos del cliente en localStorage o sessionStorage
+                    localStorage.setItem('cliente', JSON.stringify(data.cliente));
+                    localStorage.setItem('token', data.token || 'cliente_authenticated');
+                    localStorage.setItem('userType', 'cliente');
+
+                    // Redirigir después de un breve delay
+                    setTimeout(() => {
+                        window.location.href = 'usuariomenu.html';
+                    }, 1500);
+
+                } else {
+                    // Si falla como cliente, mostrar mensaje de error
+                    showError(data.message || 'Credenciales incorrectas.');
+
+                    // Restaurar botón
+                    loginBtn.textContent = 'Entrar';
+                    loginBtn.classList.remove('loading');
+                }
+
+            } catch (error) {
+                console.error('Error en login:', error);
+                showError('Error de conexión. Verifica tu conexión a internet.');
+
+                // Restaurar botón
+                loginBtn.textContent = 'Entrar';
+                loginBtn.classList.remove('loading');
+            }
+        }
+
+        // Función para verificar si ya hay una sesión activa
+        function checkExistingSession() {
+            const cliente = localStorage.getItem('cliente');
+            const userType = localStorage.getItem('userType');
+
+            if (cliente && userType === 'cliente') {
+                // Si ya hay sesión de cliente, redirigir directamente
+                window.location.href = 'usuariomenu.html';
+            }
+        }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function () {
+            // Verificar sesión existente
+            checkExistingSession();
+
+            // Asignar evento al formulario
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+            // Asignar eventos a los enlaces
+            document.getElementById('registerLink').addEventListener('click', function (e) {
+                e.preventDefault();
+                // Redirigir a la página de registro
+                window.location.href = 'registro.html';  // O la ruta correcta si está en otra carpeta
             });
 
-            // También permitir enviar el formulario con Enter (opcional)
-            document.getElementById('loginForm').addEventListener('submit', function (e) {
-                e.preventDefault(); // Prevenir envío real del formulario
-                window.location.href = 'pago.html';
-                return false;
+            document.getElementById('forgotPassword').addEventListener('click', function (e) {
+                e.preventDefault();
+                alert('Funcionalidad de recuperación en desarrollo.');
+            });
+
+            document.getElementById('forgotPassword').addEventListener('click', function (e) {
+                e.preventDefault();
+                alert('Funcionalidad de recuperación en desarrollo.');
+            });
+
+            // Permitir enviar con Enter (ya está manejado por el submit del formulario)
+            document.getElementById('email').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('loginBtn').click();
+                }
+            });
+
+            document.getElementById('password').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('loginBtn').click();
+                }
             });
         });
     </script>
