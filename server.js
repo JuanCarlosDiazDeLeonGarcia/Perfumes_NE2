@@ -280,6 +280,88 @@ app.put('/api/usuarios/:id/ultimo-login', async (req, res) => {
     }
 });
 
+// ===================== MÉTRICAS DE CLIENTES =====================
+
+app.get('/api/metricas', async (req, res) => {
+    try {
+        // Primero verificar qué columnas tiene la tabla clientes
+        let columnasClientes = [];
+        try {
+            const resCols = await pool.query(`
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'clientes'
+            `);
+            columnasClientes = resCols.rows.map(r => r.column_name);
+        } catch(e) {
+            console.log('⚠️ No se pudo leer columnas de clientes:', e.message);
+        }
+
+        const tieneApellido = columnasClientes.includes('apellido');
+        const tieneCorreo = columnasClientes.includes('correo');
+        const tieneEmail = columnasClientes.includes('email');
+
+        const campoNombre = tieneApellido
+            ? "CONCAT(COALESCE(c.nombre, ''), ' ', COALESCE(c.apellido, ''))"
+            : "COALESCE(c.nombre, '')";
+        const campoCorreo = tieneCorreo ? 'c.correo' : (tieneEmail ? 'c.email' : "'' AS correo");
+
+        // Total de clientes en métricas
+        const resTotal = await pool.query("SELECT COUNT(*) AS total FROM metricas_clientes");
+        const total = parseInt(resTotal.rows[0].total);
+
+        // Activos: dias_sin_contacto <= 30 e interacciones > 0
+        const resActivos = await pool.query("SELECT COUNT(*) AS total FROM metricas_clientes WHERE dias_sin_contacto <= 30 AND total_interacciones > 0");
+        const activos = parseInt(resActivos.rows[0].total);
+        const inactivos = total - activos;
+
+        // Clientes en riesgo
+        const resRiesgo = await pool.query(`
+            SELECT mc.cliente_id, 
+                   ${campoNombre} AS nombre_completo,
+                   ${campoCorreo} AS correo,
+                   mc.total_interacciones, mc.dias_sin_contacto,
+                   mc.ultima_interaccion, mc.total_compras,
+                   mc.valor_total_compras, mc.puntuacion_satisfaccion
+            FROM metricas_clientes mc
+            LEFT JOIN clientes c ON c.id = mc.cliente_id
+            WHERE mc.dias_sin_contacto > 30 OR mc.total_interacciones = 0
+            ORDER BY mc.dias_sin_contacto DESC
+        `);
+
+        // Interacciones por cliente
+        const resInter = await pool.query(`
+            SELECT mc.cliente_id,
+                   ${campoNombre} AS nombre_completo,
+                   mc.total_interacciones, mc.dias_sin_contacto,
+                   mc.total_compras, mc.valor_total_compras,
+                   mc.ticket_promedio, mc.puntuacion_satisfaccion
+            FROM metricas_clientes mc
+            LEFT JOIN clientes c ON c.id = mc.cliente_id
+            ORDER BY mc.cliente_id ASC
+        `);
+
+        // Promedio satisfacción
+        const resSat = await pool.query("SELECT ROUND(AVG(puntuacion_satisfaccion), 1) AS promedio FROM metricas_clientes WHERE puntuacion_satisfaccion IS NOT NULL");
+        const promedioSat = parseFloat(resSat.rows[0].promedio) || 0;
+
+        console.log('📊 Métricas enviadas - Total:', total, 'Activos:', activos, 'Inactivos:', inactivos);
+
+        res.json({
+            total_clientes: total,
+            activos,
+            inactivos,
+            promedio_satisfaccion: promedioSat,
+            clientes_riesgo: resRiesgo.rows,
+            interacciones_por_cliente: resInter.rows
+        });
+
+    } catch (error) {
+        console.error('❌ Error en métricas:', error.message);
+        res.status(500).json({ error: 'Error al obtener métricas: ' + error.message });
+    }
+});
+
+// ================================================================
 
 app.listen(PORT, () => {
     console.log('🚀 Servidor corriendo en http://localhost:' + PORT);
