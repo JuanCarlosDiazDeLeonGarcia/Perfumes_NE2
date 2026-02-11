@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Mi Cuenta - PerfumeShop</title>
-    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../../css/base.css">
     <style>
         /* Estilos adicionales */
         .main-content {
@@ -168,13 +168,13 @@
     <aside class="sidebar">
         <h2>🌸 PerfumeShop</h2>
         <nav>
-            <a href="catalog.html">🢀 Volver</a>
-            <a href="usuariomenu.html" class="active">🏠 Inicio</a>
-            <a href="miscompras.html">🛍️ Mis Compras</a>
+            <a href="../catalog.html">🢀 Volver</a>
+            <a href="usuariomenu.html">🏠 Inicio</a>
+            <a href="#" class="active">🛍️ Mis Compras</a>
             <a href="metodopago.html">💳 Métodos de Pago</a>
             <a href="seguimiento.html">📦 Seguimiento</a>
-            <a href="#">📩 Soporte</a>
-            <a href="catalog.html">🚪 Cerrar Sesión</a>
+            <a href="usuariomenu.html">📩 Soporte</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
         </nav>
     </aside>
 
@@ -191,10 +191,6 @@
 
         <!-- Tarjetas de perfil -->
         <section class="cards">
-            <div class="card">
-                <h3>Etapa CRM</h3>
-                <p id="etapaCrm">Cargando...</p>
-            </div>
             <div class="card">
                 <h3>Pedidos realizados</h3>
                 <p id="totalCompras">0</p>
@@ -314,7 +310,7 @@
                 const clienteData = localStorage.getItem('cliente');
                 if (!clienteData) {
                     showMessage('error', 'No hay sesión activa. Redirigiendo al login...');
-                    setTimeout(() => window.location.href = '../views/usuario.html', 2000);
+                    setTimeout(() => window.location.href = '../clientelogin.html', 2000);
                     return;
                 }
 
@@ -336,7 +332,6 @@
                 document.getElementById('genero').value = cliente.genero || '';
 
                 // Actualizar tarjetas
-                document.getElementById('etapaCrm').textContent = cliente.etapa_crm || 'No definida';
                 document.getElementById('estadoCliente').textContent = cliente.estado_cliente || 'activo';
                 document.getElementById('fechaRegistro').textContent = new Date(cliente.fecha_registro).toLocaleDateString();
 
@@ -394,12 +389,12 @@
             pedidos.forEach(pedido => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-              <td>#${String(pedido.id).padStart(3, '0')}</td>
-              <td>${pedido.productos || 'Varios productos'}</td>
-              <td>${new Date(pedido.fecha_pedido).toLocaleDateString()}</td>
-              <td>$${pedido.total.toFixed(2)}</td>
-              <td>${getEstadoIcon(pedido.estado)} ${pedido.estado}</td>
-            `;
+                  <td>#${String(pedido.id).padStart(3, '0')}</td>
+                  <td>${pedido.productos || 'Varios productos'}</td>
+                  <td>${new Date(pedido.fecha_pedido).toLocaleDateString()}</td>
+                  <td>$${pedido.total.toFixed(2)}</td>
+                  <td>${getEstadoIcon(pedido.estado)} ${pedido.estado}</td>
+                `;
                 tbody.appendChild(tr);
             });
         }
@@ -407,15 +402,15 @@
         function mostrarSinCompras() {
             const tbody = document.getElementById('comprasTableBody');
             tbody.innerHTML = `
-            <tr>
-              <td colspan="5" style="text-align:center; color:#666; padding:20px;">
-                No has realizado compras aún.
-                <a href="../views/catalog.html" style="color:#7e57c2; text-decoration:none; font-weight:bold;">
-                  ¡Explora nuestro catálogo!
-                </a>
-              </td>
-            </tr>
-          `;
+                <tr>
+                  <td colspan="5" style="text-align:center; color:#666; padding:20px;">
+                    No has realizado compras aún.
+                    <a href="../catalog.html" style="color:#7e57c2; text-decoration:none; font-weight:bold;">
+                      ¡Explora nuestro catálogo!
+                    </a>
+                  </td>
+                </tr>
+              `;
         }
 
         function getEstadoIcon(estado) {
@@ -587,13 +582,23 @@
             }
         }
 
+        // Cerrar sesión
+        function cerrarSesion() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                localStorage.removeItem('cliente');
+                localStorage.removeItem('token');
+                localStorage.removeItem('userType');
+                window.location.href = '../catalog.html';
+            }
+        }
+
         // Verificar sesión al cargar la página
         function verificarSesion() {
             const cliente = localStorage.getItem('cliente');
             const userType = localStorage.getItem('userType');
 
             if (!cliente || userType !== 'cliente') {
-                window.location.href = '../views/usuario.html';
+                window.location.href = '../clientelogin.html';
                 return false;
             }
             return true;
@@ -608,19 +613,7 @@
             // Asignar evento al formulario
             document.getElementById('perfilForm').addEventListener('submit', actualizarPerfil);
 
-            // Modificar el enlace de cierre de sesión para limpiar localStorage
-            const cerrarSesionLink = document.querySelector('a[href="catalog.html"]');
-            if (cerrarSesionLink) {
-                cerrarSesionLink.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                        localStorage.removeItem('cliente');
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('userType');
-                        window.location.href = 'catalog.html';
-                    }
-                });
-            }
+
         });
     </script>
 </body>

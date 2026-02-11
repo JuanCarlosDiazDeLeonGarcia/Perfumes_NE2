@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Métodos de Pago - PerfumeShop</title>
-    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../../css/base.css">
     <style>
         /* Estilos adicionales para los nuevos métodos */
         .payment-instructions {
@@ -270,7 +270,7 @@
     <aside class="sidebar">
         <h2>🌸 PerfumeShop</h2>
         <nav>
-            <a href="catalog.html">🢀 Volver</a>
+            <a href="../catalog.html">🢀 Volver</a>
             <a href="usuariomenu.html">🏠 Inicio</a>
             <a href="miscompras.html">🛍️ Mis Compras</a>
             <a href="#" class="active">💳 Métodos de Pago</a>
@@ -595,7 +595,7 @@
                 const clienteData = localStorage.getItem('cliente');
                 if (!clienteData) {
                     showMessage('error', 'No hay sesión activa');
-                    setTimeout(() => window.location.href = 'login.html', 2000);
+                    setTimeout(() => window.location.href = '../clientelogin.html', 2000);
                     return;
                 }
 
@@ -955,7 +955,7 @@
                 localStorage.removeItem('cliente');
                 localStorage.removeItem('token');
                 localStorage.removeItem('userType');
-                window.location.href = '../views/catalog.html';
+                window.location.href = '../catalog.html';
             }
         }
 
@@ -965,7 +965,7 @@
             const userType = localStorage.getItem('userType');
 
             if (!cliente || userType !== 'cliente') {
-                window.location.href = '../views/login.html';
+                window.location.href = '../clientelogin.html';
                 return false;
             }
             return true;

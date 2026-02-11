@@ -18,7 +18,7 @@ function verificarSesion() {
     const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
     
     if (!usuario) {
-        window.location.href = 'login.html';
+        window.location.href = 'clientelogin.html';
         return;
     }
     
@@ -34,7 +34,7 @@ function verificarSesion() {
 function cerrarSesion() {
     if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
         localStorage.removeItem('usuarioActual');
-        window.location.href = 'login.html';
+        window.location.href = '../catalog.html';
     }
 }
 

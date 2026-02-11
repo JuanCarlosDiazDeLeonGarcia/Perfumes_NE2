@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Historial de Compras - PerfumeShop</title>
-    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../../css/base.css">
     <style>
         /* Estilos adicionales */
         .main-content {
@@ -232,7 +232,7 @@
     <aside class="sidebar">
         <h2>🌸 PerfumeShop</h2>
         <nav>
-            <a href="catalog.html">🢀 Volver</a>
+            <a href="../catalog.html">🢀 Volver</a>
             <a href="usuariomenu.html">🏠 Inicio</a>
             <a href="#" class="active">🛍️ Mis Compras</a>
             <a href="metodopago.html">💳 Métodos de Pago</a>
@@ -349,7 +349,7 @@
                 const clienteData = localStorage.getItem('cliente');
                 if (!clienteData) {
                     showMessage('error', 'No hay sesión activa. Redirigiendo al login...');
-                    setTimeout(() => window.location.href = 'login.html', 2000);
+                    setTimeout(() => window.location.href = '../clientelogin.html', 2000);
                     return;
                 }
 
@@ -475,7 +475,7 @@
               <td colspan="8" style="text-align:center; color:#666; padding:40px;">
                 <h3 style="margin-bottom:15px;">No has realizado compras aún</h3>
                 <p style="margin-bottom:20px;">Cuando realices pedidos, aparecerán aquí.</p>
-                <a href="../views/catalog.html" style="
+                <a href="../catalog.html" style="
                   background: linear-gradient(90deg, #7e57c2, #5c6bc0);
                   color: white;
                   padding: 12px 24px;
@@ -600,7 +600,7 @@
                 localStorage.removeItem('cliente');
                 localStorage.removeItem('token');
                 localStorage.removeItem('userType');
-                window.location.href = '../views/catalog.html';
+                window.location.href = '../catalog.html';
             }
         }
 
@@ -610,7 +610,7 @@
             const userType = localStorage.getItem('userType');
 
             if (!cliente || userType !== 'cliente') {
-                window.location.href = '../views/usuario.html';
+                window.location.href = '../clientelogin.html';
                 return false;
             }
             return true;
