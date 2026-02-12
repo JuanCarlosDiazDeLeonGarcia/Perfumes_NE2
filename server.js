@@ -11,8 +11,8 @@ const PORT = 3000;
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'perfumes', //cambiar si el nombre de la BD es diferente
-    password: '2244', //Cambiar por su contraseña segun su BD
+    database: 'perfumes_ne2', //cambiar si el nombre de la BD es diferente
+    password: '1234', //Cambiar por su contraseña segun su BD
     port: 5432,
 });
 
@@ -45,6 +45,59 @@ app.get('/api', (req, res) => {
     });
 });
 
+// ENDPOINT DE DIAGNÓSTICO - para verificar tablas y columnas
+app.get('/api/debug-tablas', async (req, res) => {
+    try {
+        // 1. Listar todas las tablas
+        const tablas = await pool.query(`
+            SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = 'public' ORDER BY table_name
+        `);
+
+        // 2. Verificar si metricas_clientes existe
+        const existeMetricas = tablas.rows.some(t => t.table_name === 'metricas_clientes');
+
+        let colsMetricas = [];
+        let datosMetricas = [];
+        let colsClientes = [];
+
+        if (existeMetricas) {
+            const resCols = await pool.query(`
+                SELECT column_name, data_type FROM information_schema.columns 
+                WHERE table_name = 'metricas_clientes' ORDER BY ordinal_position
+            `);
+            colsMetricas = resCols.rows;
+
+            const resDatos = await pool.query('SELECT * FROM metricas_clientes LIMIT 5');
+            datosMetricas = resDatos.rows;
+        }
+
+        // 3. Verificar tabla clientes
+        const existeClientes = tablas.rows.some(t => t.table_name === 'clientes');
+        if (existeClientes) {
+            const resCols = await pool.query(`
+                SELECT column_name, data_type FROM information_schema.columns 
+                WHERE table_name = 'clientes' ORDER BY ordinal_position
+            `);
+            colsClientes = resCols.rows;
+        }
+
+        res.json({
+            tablas: tablas.rows.map(t => t.table_name),
+            metricas_clientes: {
+                existe: existeMetricas,
+                columnas: colsMetricas,
+                datos_ejemplo: datosMetricas
+            },
+            clientes: {
+                existe: existeClientes,
+                columnas: colsClientes
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message, stack: error.stack });
+    }
+});
 
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
@@ -1031,81 +1084,162 @@ app.post('/api/registrar-cliente', async (req, res) => {
 // ===================== MÉTRICAS DE CLIENTES =====================
 
 app.get('/api/metricas', async (req, res) => {
+    console.log('📊 Petición recibida en /api/metricas');
+
     try {
-        // Primero verificar qué columnas tiene la tabla clientes
-        let columnasClientes = [];
-        try {
-            const resCols = await pool.query(`
-                SELECT column_name FROM information_schema.columns 
-                WHERE table_name = 'clientes'
-            `);
-            columnasClientes = resCols.rows.map(r => r.column_name);
-        } catch (e) {
-            console.log('⚠️ No se pudo leer columnas de clientes:', e.message);
-        }
-
-        const tieneApellido = columnasClientes.includes('apellido');
-        const tieneCorreo = columnasClientes.includes('correo');
-        const tieneEmail = columnasClientes.includes('email');
-
-        const campoNombre = tieneApellido
-            ? "CONCAT(COALESCE(c.nombre, ''), ' ', COALESCE(c.apellido, ''))"
-            : "COALESCE(c.nombre, '')";
-        const campoCorreo = tieneCorreo ? 'c.correo' : (tieneEmail ? 'c.email' : "'' AS correo");
-
-        // Total de clientes en métricas
-        const resTotal = await pool.query("SELECT COUNT(*) AS total FROM metricas_clientes");
-        const total = parseInt(resTotal.rows[0].total);
-
-        // Activos: dias_sin_contacto <= 30 e interacciones > 0
-        const resActivos = await pool.query("SELECT COUNT(*) AS total FROM metricas_clientes WHERE dias_sin_contacto <= 30 AND total_interacciones > 0");
-        const activos = parseInt(resActivos.rows[0].total);
-        const inactivos = total - activos;
-
-        // Clientes en riesgo
-        const resRiesgo = await pool.query(`
-            SELECT mc.cliente_id, 
-                   ${campoNombre} AS nombre_completo,
-                   ${campoCorreo} AS correo,
-                   mc.total_interacciones, mc.dias_sin_contacto,
-                   mc.ultima_interaccion, mc.total_compras,
-                   mc.valor_total_compras, mc.puntuacion_satisfaccion
-            FROM metricas_clientes mc
-            LEFT JOIN clientes c ON c.id = mc.cliente_id
-            WHERE mc.dias_sin_contacto > 30 OR mc.total_interacciones = 0
-            ORDER BY mc.dias_sin_contacto DESC
+        // Paso 1: Verificar que la tabla existe
+        const tablaExiste = await pool.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' AND table_name = 'metricas_clientes'
+            ) AS existe
         `);
 
-        // Interacciones por cliente
-        const resInter = await pool.query(`
+        if (!tablaExiste.rows[0].existe) {
+            console.log('❌ La tabla metricas_clientes NO existe');
+            return res.status(500).json({ 
+                error: 'La tabla metricas_clientes no existe en la base de datos. Créala primero.' 
+            });
+        }
+
+        // Paso 2: Obtener columnas disponibles
+        const resCols = await pool.query(`
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'metricas_clientes'
+        `);
+        const cols = resCols.rows.map(r => r.column_name);
+        console.log('📋 Columnas encontradas en metricas_clientes:', cols);
+
+        const resColsCli = await pool.query(`
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'clientes'
+        `);
+        const colsCli = resColsCli.rows.map(r => r.column_name);
+        console.log('📋 Columnas encontradas en clientes:', colsCli);
+
+        // Paso 3: Obtener TODOS los registros de metricas_clientes (raw)
+        const rawData = await pool.query('SELECT * FROM metricas_clientes');
+        console.log('📊 Total registros en metricas_clientes:', rawData.rows.length);
+
+        if (rawData.rows.length === 0) {
+            console.log('⚠️ La tabla metricas_clientes está vacía');
+            return res.json({
+                total_clientes: 0,
+                activos: 0,
+                inactivos: 0,
+                promedio_satisfaccion: 0,
+                clientes_riesgo: [],
+                interacciones_por_cliente: [],
+                mensaje: 'La tabla metricas_clientes está vacía'
+            });
+        }
+
+        // Paso 4: Construir campos dinámicos
+        const has = (col) => cols.includes(col);
+        const hasCli = (col) => colsCli.includes(col);
+
+        // Campo nombre del cliente
+        const campoNombre = hasCli('apellido')
+            ? "CONCAT(COALESCE(c.nombre,''), ' ', COALESCE(c.apellido,''))"
+            : "COALESCE(c.nombre, 'Sin nombre')";
+        const campoCorreo = hasCli('correo') ? 'c.correo' : (hasCli('email') ? 'c.email' : "'' AS correo");
+
+        // Campos de métricas con fallback a 0/NULL
+        const f = (col, alias) => has(col) ? `mc.${col}` : `0 AS ${alias || col}`;
+        const fn = (col, alias) => has(col) ? `mc.${col}` : `NULL AS ${alias || col}`;
+
+        // Paso 5: Total
+        const total = rawData.rows.length;
+
+        // Paso 6: Activos/Inactivos
+        let activos = 0;
+        if (has('dias_sin_contacto') && has('total_interacciones')) {
+            const r = await pool.query(
+                "SELECT COUNT(*) AS n FROM metricas_clientes WHERE dias_sin_contacto <= 30 AND total_interacciones > 0"
+            );
+            activos = parseInt(r.rows[0].n);
+        } else if (has('total_interacciones')) {
+            const r = await pool.query(
+                "SELECT COUNT(*) AS n FROM metricas_clientes WHERE total_interacciones > 0"
+            );
+            activos = parseInt(r.rows[0].n);
+        } else {
+            activos = total; // Si no hay columnas para determinar, asumir todos activos
+        }
+        const inactivos = total - activos;
+
+        // Paso 7: Satisfacción promedio
+        let promedioSat = 0;
+        if (has('puntuacion_satisfaccion')) {
+            const r = await pool.query(
+                "SELECT ROUND(AVG(puntuacion_satisfaccion)::numeric, 1) AS p FROM metricas_clientes WHERE puntuacion_satisfaccion IS NOT NULL"
+            );
+            promedioSat = parseFloat(r.rows[0].p) || 0;
+        }
+
+        // Paso 8: Query principal - interacciones por cliente
+        const queryInter = `
             SELECT mc.cliente_id,
                    ${campoNombre} AS nombre_completo,
-                   mc.total_interacciones, mc.dias_sin_contacto,
-                   mc.total_compras, mc.valor_total_compras,
-                   mc.ticket_promedio, mc.puntuacion_satisfaccion
+                   ${f('total_interacciones', 'total_interacciones')},
+                   ${f('dias_sin_contacto', 'dias_sin_contacto')},
+                   ${f('total_compras', 'total_compras')},
+                   ${f('valor_total_compras', 'valor_total_compras')},
+                   ${f('ticket_promedio', 'ticket_promedio')},
+                   ${fn('puntuacion_satisfaccion', 'puntuacion_satisfaccion')}
             FROM metricas_clientes mc
             LEFT JOIN clientes c ON c.id = mc.cliente_id
             ORDER BY mc.cliente_id ASC
-        `);
+        `;
+        console.log('📊 Query interacciones:', queryInter);
+        const resInter = await pool.query(queryInter);
 
-        // Promedio satisfacción
-        const resSat = await pool.query("SELECT ROUND(AVG(puntuacion_satisfaccion), 1) AS promedio FROM metricas_clientes WHERE puntuacion_satisfaccion IS NOT NULL");
-        const promedioSat = parseFloat(resSat.rows[0].promedio) || 0;
+        // Paso 9: Query riesgo
+        let condRiesgo = 'TRUE';
+        if (has('dias_sin_contacto') && has('total_interacciones')) {
+            condRiesgo = 'mc.dias_sin_contacto > 30 OR mc.total_interacciones = 0';
+        } else if (has('total_interacciones')) {
+            condRiesgo = 'mc.total_interacciones = 0';
+        }
 
-        console.log('📊 Métricas enviadas - Total:', total, 'Activos:', activos, 'Inactivos:', inactivos);
+        const queryRiesgo = `
+            SELECT mc.cliente_id,
+                   ${campoNombre} AS nombre_completo,
+                   ${campoCorreo} AS correo,
+                   ${f('total_interacciones', 'total_interacciones')},
+                   ${f('dias_sin_contacto', 'dias_sin_contacto')},
+                   ${fn('ultima_interaccion', 'ultima_interaccion')},
+                   ${f('total_compras', 'total_compras')},
+                   ${f('valor_total_compras', 'valor_total_compras')},
+                   ${fn('puntuacion_satisfaccion', 'puntuacion_satisfaccion')}
+            FROM metricas_clientes mc
+            LEFT JOIN clientes c ON c.id = mc.cliente_id
+            WHERE ${condRiesgo}
+            ORDER BY mc.cliente_id ASC
+        `;
+        console.log('📊 Query riesgo:', queryRiesgo);
+        const resRiesgo = await pool.query(queryRiesgo);
 
-        res.json({
+        const respuesta = {
             total_clientes: total,
             activos,
             inactivos,
             promedio_satisfaccion: promedioSat,
             clientes_riesgo: resRiesgo.rows,
             interacciones_por_cliente: resInter.rows
-        });
+        };
+
+        console.log('✅ Métricas enviadas correctamente - Total:', total);
+        res.json(respuesta);
 
     } catch (error) {
-        console.error('❌ Error en métricas:', error.message);
-        res.status(500).json({ error: 'Error al obtener métricas: ' + error.message });
+        console.error('❌ Error en /api/metricas:', error.message);
+        console.error('❌ Query que falló:', error.query || 'N/A');
+        console.error('❌ Stack:', error.stack);
+        res.status(500).json({ 
+            error: 'Error al obtener métricas: ' + error.message,
+            detalle: error.stack
+        });
     }
 });
 

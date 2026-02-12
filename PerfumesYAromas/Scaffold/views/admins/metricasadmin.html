@@ -210,51 +210,107 @@
     <script src="../../js/usuarios.js"></script>
 
     <script>
-        // Detecta automáticamente el servidor Node.js en puerto 3000 del mismo host
-        const API_URL = window.location.origin.replace(/:\d+/, ':3000') + '/api/metricas';
-        console.log('🔗 Conectando a:', API_URL);
+        // Intentar múltiples URLs por si una no funciona
+        const API_URLS = [
+            'http://localhost:3000/api/metricas',
+            'http://127.0.0.1:3000/api/metricas',
+            'http://' + window.location.hostname + ':3000/api/metricas'
+        ];
+        // URL de debug
+        const DEBUG_URL = 'http://localhost:3000/api/debug-tablas';
+
+        console.log('🔗 URLs a intentar:', API_URLS);
 
         document.addEventListener('DOMContentLoaded', () => {
-            fetch(API_URL)
-                .then(r => {
-                    if (!r.ok) throw new Error('HTTP ' + r.status);
-                    return r.text();
-                })
-                .then(text => {
-                    console.log('Respuesta API:', text);
-                    if (!text.trim()) throw new Error('Respuesta vacía del servidor');
-                    let data;
-                    try { data = JSON.parse(text); } catch (e) { throw new Error('JSON inválido: ' + text.substring(0, 200)); }
-                    if (data.error) { throw new Error(data.error); }
-                    renderCounters(data);
-                    renderBarChart(data.interacciones_por_cliente);
-                    renderPieChart(data.activos, data.inactivos);
-                    renderRiskTable(data.clientes_riesgo);
-                    renderInteraccionesTable(data.interacciones_por_cliente);
-                })
-                .catch(err => {
-                    console.error('Error cargando métricas:', err);
-                    document.getElementById('tbody-riesgo').innerHTML =
-                        '<tr><td colspan="9" style="text-align:center;color:red;">Error: ' + err.message + '</td></tr>';
-                    document.getElementById('tbody-interacciones').innerHTML =
-                        '<tr><td colspan="8" style="text-align:center;color:red;">Error: ' + err.message + '</td></tr>';
-                    // Mostrar error en los contadores
-                    ['total-clientes', 'clientes-activos', 'clientes-inactivos', 'prom-satisfaccion'].forEach(id => {
-                        document.getElementById(id).textContent = '⚠️';
-                    });
-                });
+            intentarConexion(0);
         });
 
+        function intentarConexion(index) {
+            if (index >= API_URLS.length) {
+                // Ninguna URL funcionó - mostrar diagnóstico
+                mostrarErrorConexion();
+                return;
+            }
+
+            const url = API_URLS[index];
+            console.log(`🔄 Intentando URL ${index + 1}/${API_URLS.length}: ${url}`);
+
+            fetch(url, { signal: AbortSignal.timeout(5000) })
+                .then(r => {
+                    console.log('📡 Status:', r.status, 'desde', url);
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(data => {
+                    console.log('✅ Datos recibidos:', data);
+                    if (data.error) throw new Error(data.error);
+                    renderCounters(data);
+                    renderBarChart(data.interacciones_por_cliente || []);
+                    renderPieChart(data.activos, data.inactivos);
+                    renderRiskTable(data.clientes_riesgo || []);
+                    renderInteraccionesTable(data.interacciones_por_cliente || []);
+                    if (data.mensaje) {
+                        console.log('ℹ️ Mensaje del servidor:', data.mensaje);
+                    }
+                })
+                .catch(err => {
+                    console.warn(`❌ Falló URL ${url}:`, err.message);
+                    intentarConexion(index + 1); // Intentar siguiente URL
+                });
+        }
+
+        function mostrarErrorConexion() {
+            const msg = `
+                <div style="background:#fff3cd;border:1px solid #ffc107;padding:20px;border-radius:8px;margin:20px 0;">
+                    <h3 style="color:#856404;">⚠️ No se puede conectar al servidor</h3>
+                    <p><strong>Verifica lo siguiente:</strong></p>
+                    <ol style="text-align:left;color:#856404;">
+                        <li>Abre una terminal/CMD en <code>c:\\xampp\\htdocs\\Perfumes_NE2</code></li>
+                        <li>Ejecuta: <code>node server.js</code></li>
+                        <li>Deberías ver: "✅ Conectado a PostgreSQL"</li>
+                        <li>Luego recarga esta página</li>
+                    </ol>
+                    <p style="margin-top:10px;">
+                        <strong>Test rápido:</strong> Abre 
+                        <a href="http://localhost:3000/api" target="_blank" style="color:#0056b3;">http://localhost:3000/api</a> 
+                        en otra pestaña. Si no carga, el servidor no está corriendo.
+                    </p>
+                    <p>
+                        <strong>Debug:</strong> 
+                        <a href="http://localhost:3000/api/debug-tablas" target="_blank" style="color:#0056b3;">Ver estructura de tablas</a>
+                    </p>
+                </div>
+            `;
+
+            // Insertar mensaje después del header
+            const header = document.querySelector('.admin-header');
+            if (header) {
+                header.insertAdjacentHTML('afterend', msg);
+            }
+
+            document.getElementById('tbody-riesgo').innerHTML =
+                '<tr><td colspan="9" style="text-align:center;color:red;">❌ Servidor no disponible. Ejecuta: node server.js</td></tr>';
+            document.getElementById('tbody-interacciones').innerHTML =
+                '<tr><td colspan="8" style="text-align:center;color:red;">❌ Servidor no disponible</td></tr>';
+            ['total-clientes', 'clientes-activos', 'clientes-inactivos', 'prom-satisfaccion'].forEach(id => {
+                document.getElementById(id).textContent = '⚠️';
+            });
+        }
+
         function renderCounters(d) {
-            document.getElementById('total-clientes').textContent = d.total_clientes;
-            document.getElementById('clientes-activos').textContent = d.activos;
-            document.getElementById('clientes-inactivos').textContent = d.inactivos;
-            document.getElementById('prom-satisfaccion').textContent = d.promedio_satisfaccion;
+            document.getElementById('total-clientes').textContent = d.total_clientes ?? 0;
+            document.getElementById('clientes-activos').textContent = d.activos ?? 0;
+            document.getElementById('clientes-inactivos').textContent = d.inactivos ?? 0;
+            document.getElementById('prom-satisfaccion').textContent = d.promedio_satisfaccion ?? 0;
         }
 
         function renderBarChart(clientes) {
-            const labels = clientes.map(c => c.nombre_completo.trim() || 'Cliente ' + c.cliente_id);
-            const valores = clientes.map(c => parseInt(c.total_interacciones));
+            if (!clientes || !clientes.length) {
+                document.getElementById('chartInteracciones').parentElement.innerHTML += '<p style="text-align:center;color:#999">Sin datos de interacciones</p>';
+                return;
+            }
+            const labels = clientes.map(c => (c.nombre_completo || '').trim() || 'Cliente ' + c.cliente_id);
+            const valores = clientes.map(c => parseInt(c.total_interacciones) || 0);
             new Chart(document.getElementById('chartInteracciones'), {
                 type: 'bar',
                 data: {
@@ -280,7 +336,7 @@
                 data: {
                     labels: ['Activos', 'Inactivos'],
                     datasets: [{
-                        data: [activos, inactivos],
+                        data: [activos || 0, inactivos || 0],
                         backgroundColor: ['#25D366', '#ff6b6b']
                     }]
                 },
@@ -290,12 +346,12 @@
 
         function renderRiskTable(clientes) {
             const tbody = document.getElementById('tbody-riesgo');
-            if (!clientes.length) {
+            if (!clientes || !clientes.length) {
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align:center">No hay clientes en riesgo 🎉</td></tr>';
                 return;
             }
             tbody.innerHTML = clientes.map(c => {
-                const dias = parseInt(c.dias_sin_contacto);
+                const dias = parseInt(c.dias_sin_contacto) || 0;
                 const badge = dias > 60
                     ? '<span class="badge-danger">Crítico</span>'
                     : '<span class="badge-warning">En riesgo</span>';
@@ -303,11 +359,11 @@
                       <td>${c.cliente_id}</td>
                       <td>${c.nombre_completo || '—'}</td>
                       <td>${c.correo || '—'}</td>
-                      <td>${c.total_interacciones}</td>
-                      <td>${c.dias_sin_contacto}</td>
-                      <td>${c.total_compras}</td>
-                      <td>$${parseFloat(c.valor_total_compras).toFixed(2)}</td>
-                      <td>${c.puntuacion_satisfaccion || '—'}/10</td>
+                      <td>${c.total_interacciones ?? 0}</td>
+                      <td>${c.dias_sin_contacto ?? 0}</td>
+                      <td>${c.total_compras ?? 0}</td>
+                      <td>$${parseFloat(c.valor_total_compras || 0).toFixed(2)}</td>
+                      <td>${c.puntuacion_satisfaccion != null ? c.puntuacion_satisfaccion + '/10' : '—'}</td>
                       <td>${badge}</td>
                     </tr>`;
             }).join('');
@@ -315,15 +371,19 @@
 
         function renderInteraccionesTable(clientes) {
             const tbody = document.getElementById('tbody-interacciones');
+            if (!clientes || !clientes.length) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">Sin datos</td></tr>';
+                return;
+            }
             tbody.innerHTML = clientes.map(c => `<tr>
                     <td>${c.cliente_id}</td>
-                    <td>${c.nombre_completo.trim() || '—'}</td>
-                    <td>${c.total_interacciones}</td>
-                    <td>${c.dias_sin_contacto}</td>
-                    <td>${c.total_compras}</td>
-                    <td>$${parseFloat(c.valor_total_compras).toFixed(2)}</td>
-                    <td>$${parseFloat(c.ticket_promedio).toFixed(2)}</td>
-                    <td>${c.puntuacion_satisfaccion || '—'}/10</td>
+                    <td>${(c.nombre_completo || '').trim() || '—'}</td>
+                    <td>${c.total_interacciones ?? 0}</td>
+                    <td>${c.dias_sin_contacto ?? 0}</td>
+                    <td>${c.total_compras ?? 0}</td>
+                    <td>$${parseFloat(c.valor_total_compras || 0).toFixed(2)}</td>
+                    <td>$${parseFloat(c.ticket_promedio || 0).toFixed(2)}</td>
+                    <td>${c.puntuacion_satisfaccion != null ? c.puntuacion_satisfaccion + '/10' : '—'}</td>
                   </tr>`).join('');
         }
     </script>
