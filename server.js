@@ -11,8 +11,8 @@ const PORT = 3000;
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'perfumes_ne2', //cambiar si el nombre de la BD es diferente
-    password: '1234', //Cambiar por su contraseña segun su BD
+    database: 'perfumes', //cambiar si el nombre de la BD es diferente
+    password: '2244', //Cambiar por su contraseña segun su BD
     port: 5432,
 });
 
@@ -22,7 +22,7 @@ pool.connect((err, client, release) => {
         console.error('❌ Error al conectar a PostgreSQL:', err.stack);
         return;
     }
-    console.log('✅ Conectado a PostgreSQL - Base de datos: perfumes_ne2');
+    console.log('✅ Conectado a PostgreSQL - Base de datos: perfumes');
     release();
 });
 
@@ -99,61 +99,106 @@ app.get('/api/debug-tablas', async (req, res) => {
     }
 });
 
+// Endpoint de login modificado para incluir el campo 'vendedor'
 app.post('/api/login', async (req, res) => {
+    console.log('Login attempt:', { email: req.body.email });
+
     const { email, password } = req.body;
 
-    console.log('📧 Intento de login:', email);
+    if (!email || !password) {
+        console.log('Login failed: campos vacíos');
+        return res.status(400).json({
+            success: false,
+            message: 'Email y contraseña son requeridos'
+        });
+    }
 
     try {
-        const result = await pool.query(
-            'SELECT * FROM usuarios WHERE email = $1',
-            [email]
-        );
+        console.log(`Buscando cliente con email: ${email}`);
+
+        // Buscar cliente por email - INCLUIMOS EL CAMPO 'vendedor'
+        const query = `
+            SELECT id, nombre, correo, telefono, empresa, ciudad, estado, 
+                   estado_cliente, etapa_crm, password, direccion,
+                   codigo_postal, fecha_registro, vendedor
+            FROM clientes 
+            WHERE correo = $1 AND estado_cliente = 'activo'
+        `;
+
+        console.log('Ejecutando query:', query);
+        const result = await pool.query(query, [email]);
+
+        console.log(`Resultados encontrados: ${result.rows.length}`);
 
         if (result.rows.length === 0) {
-            console.log('❌ Usuario no encontrado:', email);
-            return res.status(401).json({ message: 'Email o contraseña incorrectos' });
+            console.log(`No se encontró cliente activo con email: ${email}`);
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales incorrectas'
+            });
         }
 
-        const usuario = result.rows[0];
-        console.log('✅ Usuario encontrado:', usuario.nombre, '- Rol:', usuario.rol);
+        const cliente = result.rows[0];
+        console.log('Cliente encontrado:', {
+            id: cliente.id,
+            nombre: cliente.nombre,
+            es_vendedor: cliente.vendedor
+        });
 
-        // Validación de contraseñas
-        let passwordValida = false;
-
-        if (email === 'admin@perfumesne2.com' && password === 'admin123') {
-            passwordValida = true;
-        } else if (email === 'juan@perfumesne2.com' && password === 'vendedor123') {
-            passwordValida = true;
-        } else if (email === 'maria@perfumesne2.com' && password === 'vendedor123') {
-            passwordValida = true;
-        } else if (email === 'fernando@perfumesne2.com' && password === 'admin123') {
-            passwordValida = true;
+        // Verificar contraseña
+        if (!cliente.password) {
+            console.log('Cliente no tiene contraseña en la BD');
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales incorrectas'
+            });
         }
 
-        if (!passwordValida) {
-            console.log('❌ Contraseña incorrecta para:', email);
-            return res.status(401).json({ message: 'Email o contraseña incorrectos' });
+        // Para testing, comparación simple
+        if (cliente.password.trim() !== password.trim()) {
+            console.log('Contraseñas no coinciden');
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales incorrectas'
+            });
         }
 
-        // Verificar que esté activo
-        if (!usuario.activo) {
-            console.log('⚠️ Usuario inactivo:', email);
-            return res.status(401).json({ message: 'Usuario inactivo. Contacta al administrador.' });
+        console.log('Contraseña válida para cliente ID:', cliente.id);
+
+        // Remover la contraseña de la respuesta
+        const clienteSinPassword = { ...cliente };
+        delete clienteSinPassword.password;
+
+        // Crear un token simple
+        const token = Buffer.from(`${email}:${Date.now()}`).toString('base64');
+
+        // Actualizar último login
+        try {
+            await pool.query(
+                'UPDATE clientes SET ultimo_login = CURRENT_TIMESTAMP WHERE id = $1',
+                [cliente.id]
+            );
+            console.log('Último login actualizado');
+        } catch (updateError) {
+            console.warn('No se pudo actualizar último login:', updateError.message);
         }
 
-        console.log('🎉 Login exitoso para:', usuario.nombre);
-
-        const { password_hash, ...usuarioSinPassword } = usuario;
+        console.log('Login exitoso para:', email);
 
         res.json({
+            success: true,
             message: 'Login exitoso',
-            usuario: usuarioSinPassword
+            cliente: clienteSinPassword,
+            token: token
         });
 
     } catch (error) {
-        console.error('💥 Error en login:', error);
-        res.status(500).json({ message: 'Error en el servidor' });
+        console.error('ERROR EN LOGIN:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error del servidor',
+            error: error.message
+        });
     }
 });
 
@@ -572,7 +617,7 @@ app.get('/api/pedidos-cliente/:cliente_id', async (req, res) => {
             `SELECT p.*, 
                     STRING_AGG(pr.nombre, ', ') as productos
              FROM pedidos p
-             LEFT JOIN detalle_pedidos dp ON p.id = dp.pedido_id
+             LEFT JOIN carrito dp ON p.id = dp.pedido_id
              LEFT JOIN productos pr ON dp.producto_id = pr.id
              WHERE p.cliente_id = $1
              GROUP BY p.id
@@ -598,7 +643,7 @@ app.get('/api/pedidos-detallados/:cliente_id', async (req, res) => {
                     STRING_AGG(pr.nombre, ', ') as productos,
                     SUM(dp.cantidad) as cantidad_total
              FROM pedidos p
-             LEFT JOIN detalle_pedidos dp ON p.id = dp.pedido_id
+             LEFT JOIN carrito dp ON p.id = dp.pedido_id
              LEFT JOIN productos pr ON dp.producto_id = pr.id
              WHERE p.cliente_id = $1
              GROUP BY p.id
@@ -633,7 +678,7 @@ app.get('/api/pedido-detalle/:pedido_id', async (req, res) => {
         // Obtener detalles del pedido
         const detallesResult = await pool.query(
             `SELECT dp.*, p.nombre as nombre_producto
-             FROM detalle_pedidos dp
+             FROM carrito dp
              JOIN productos p ON dp.producto_id = p.id
              WHERE dp.pedido_id = $1`,
             [pedido_id]
@@ -646,6 +691,58 @@ app.get('/api/pedido-detalle/:pedido_id', async (req, res) => {
     } catch (error) {
         console.error('Error obteniendo detalle del pedido:', error);
         res.status(500).json({ message: 'Error obteniendo detalles del pedido' });
+    }
+});
+
+// Actualizar seguimiento (ubicación, fecha estimada y estado) sobre la tabla pedidos
+app.put('/api/seguimiento/:id', async (req, res) => {
+    const { id } = req.params;
+    const { ubicacion_actual, fecha_estimada_entrega, estado_paquete } = req.body;
+
+    try {
+        const result = await pool.query(
+            `UPDATE pedidos
+             SET ubicacion_actual = COALESCE($1, ubicacion_actual),
+                 fecha_entrega_estimada = COALESCE($2, fecha_entrega_estimada),
+                 estado_paquete = COALESCE($3, estado_paquete),
+                 fecha_actualizacion = CURRENT_TIMESTAMP
+             WHERE id = $4
+             RETURNING id, numero_orden, cliente_id, vendedor_id, estado_paquete, ubicacion_actual, fecha_entrega_estimada, fecha_actualizacion`,
+            [ubicacion_actual || null, fecha_estimada_entrega || null, estado_paquete || null, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+
+        res.json({ message: 'Seguimiento actualizado', seguimiento: result.rows[0] });
+    } catch (error) {
+        console.error('Error actualizando seguimiento:', error);
+        res.status(500).json({ error: 'Error al actualizar seguimiento' });
+    }
+});
+
+// Marcar seguimiento como entregado (en la tabla pedidos)
+app.put('/api/seguimiento/:id/entregar', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query(
+            `UPDATE pedidos
+             SET estado_paquete = 'entregado', fecha_actualizacion = CURRENT_TIMESTAMP
+             WHERE id = $1
+             RETURNING id, numero_orden, cliente_id, vendedor_id, estado_paquete, fecha_actualizacion`,
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+
+        res.json({ message: 'Pedido marcado como entregado', seguimiento: result.rows[0] });
+    } catch (error) {
+        console.error('Error marcando como entregado:', error);
+        res.status(500).json({ error: 'Error al actualizar estado de entrega' });
     }
 });
 
@@ -847,14 +944,15 @@ app.get('/api/ultimo-pago/:cliente_id', async (req, res) => {
 // Primero, agregar columnas de seguimiento si no existen
 app.post('/api/agregar-seguimiento-pedidos', async (req, res) => {
     try {
-        // Agregar columnas para seguimiento si no existen
+        // Agregar columnas para seguimiento si no existen (estandarizar nombres)
         await pool.query(`
             ALTER TABLE pedidos 
             ADD COLUMN IF NOT EXISTS numero_guia VARCHAR(50),
             ADD COLUMN IF NOT EXISTS transportista VARCHAR(100),
             ADD COLUMN IF NOT EXISTS ubicacion_actual TEXT,
-            ADD COLUMN IF NOT EXISTS fecha_actualizacion_seguimiento TIMESTAMP,
-            ADD COLUMN IF NOT EXISTS fecha_entrega_estimada DATE
+            ADD COLUMN IF NOT EXISTS fecha_actualizacion TIMESTAMP,
+            ADD COLUMN IF NOT EXISTS fecha_entrega_estimada DATE,
+            ADD COLUMN IF NOT EXISTS estado_paquete VARCHAR(50) DEFAULT 'en_proceso'
         `);
 
         console.log('✅ Columnas de seguimiento agregadas a pedidos');
@@ -875,7 +973,7 @@ app.get('/api/seguimiento-pedidos/:cliente_id', async (req, res) => {
                     STRING_AGG(pr.nombre, ', ') as productos,
                     COUNT(dp.id) as cantidad_items
              FROM pedidos p
-             LEFT JOIN detalle_pedidos dp ON p.id = dp.pedido_id
+             LEFT JOIN carrito dp ON p.id = dp.pedido_id
              LEFT JOIN productos pr ON dp.producto_id = pr.id
              WHERE p.cliente_id = $1
              GROUP BY p.id
@@ -920,7 +1018,7 @@ app.get('/api/seguimiento-detalle/:pedido_id', async (req, res) => {
         // Obtener detalles del pedido
         const detallesResult = await pool.query(
             `SELECT dp.*, p.nombre, p.marca
-             FROM detalle_pedidos dp
+             FROM carrito dp
              JOIN productos p ON dp.producto_id = p.id
              WHERE dp.pedido_id = $1`,
             [pedido_id]
@@ -1243,6 +1341,640 @@ app.get('/api/metricas', async (req, res) => {
     }
 });
 
+// ==================== ENDPOINTS PARA VENDEDORES ====================
+// Obtener clientes que han comprado con este vendedor
+app.get('/api/vendedor/:vendedorId/clientes', async (req, res) => {
+    const { vendedorId } = req.params;
+
+    try {
+        const query = `
+            SELECT DISTINCT 
+                c.id,
+                c.nombre,
+                c.correo,
+                c.telefono,
+                c.ciudad,
+                c.estado_cliente,
+                MAX(p.fecha_pedido) as ultima_compra,
+                COUNT(DISTINCT p.id) as total_compras,
+                COALESCE(SUM(p.total), 0) as total_gastado
+            FROM clientes c
+            JOIN pedidos p ON c.id = p.cliente_id
+            WHERE p.vendedor_id = $1  -- Ahora usa vendedor_id directamente
+            GROUP BY c.id, c.nombre, c.correo, c.telefono, c.ciudad, c.estado_cliente
+            ORDER BY ultima_compra DESC NULLS LAST
+        `;
+
+        const result = await pool.query(query, [vendedorId]);
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error obteniendo clientes del vendedor:', error);
+        res.status(500).json({ error: 'Error al cargar clientes' });
+    }
+});
+
+// Obtener pedidos del vendedor (sin usar carrito)
+app.get('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
+    const { vendedorId } = req.params;
+
+    try {
+        const query = `
+            SELECT 
+                p.id,
+                p.numero_orden,
+                p.fecha_pedido,
+                p.total,
+                p.estado,
+                p.vendedor_id,
+                c.nombre as cliente_nombre,
+                c.id as cliente_id,
+                c.correo as cliente_email,
+                s.estado_paquete,
+                s.ubicacion_actual,
+                -- Como ya no tenemos carrito, mostramos info básica
+                'Ver detalles completos en el pedido' as productos
+            FROM pedidos p
+            JOIN clientes c ON p.cliente_id = c.id
+            LEFT JOIN seguimiento_pedidos s ON p.id = s.pedido_id
+            WHERE p.vendedor_id = $1
+            ORDER BY p.fecha_pedido DESC
+            LIMIT 50
+        `;
+
+        const result = await pool.query(query, [vendedorId]);
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error obteniendo pedidos del vendedor:', error);
+        res.status(500).json({ error: 'Error al cargar pedidos' });
+    }
+});
+
+// Obtener seguimiento activo (pedidos no entregados)
+app.get('/api/vendedor/:vendedorId/seguimiento-activo', async (req, res) => {
+    const { vendedorId } = req.params;
+
+    try {
+        const query = `
+            SELECT 
+                s.id,
+                s.pedido_id,
+                s.estado_paquete,
+                s.ubicacion_actual,
+                s.fecha_estimada_entrega,
+                s.fecha_actualizacion,
+                p.numero_orden,
+                p.total,
+                p.fecha_pedido,
+                c.nombre as cliente_nombre,
+                c.id as cliente_id,
+                -- Info básica del pedido
+                'Pedido #' || p.numero_orden as productos
+            FROM seguimiento_pedidos s
+            JOIN pedidos p ON s.pedido_id = p.id
+            JOIN clientes c ON p.cliente_id = c.id
+            WHERE p.vendedor_id = $1
+                AND s.estado_paquete NOT IN ('entregado', 'cancelado', 'devuelto')
+            ORDER BY 
+                CASE s.estado_paquete
+                    WHEN 'en_reparto' THEN 1
+                    WHEN 'en_transito' THEN 2
+                    WHEN 'en_proceso' THEN 3
+                    WHEN 'pendiente' THEN 4
+                    ELSE 5
+                END,
+                s.fecha_estimada_entrega ASC
+        `;
+
+        const result = await pool.query(query, [vendedorId]);
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error obteniendo seguimiento activo:', error);
+        res.status(500).json({ error: 'Error al cargar seguimiento' });
+    }
+});
+
+// Obtener estadísticas del vendedor
+app.get('/api/vendedor/:vendedorId/estadisticas', async (req, res) => {
+    const { vendedorId } = req.params;
+
+    try {
+        const query = `
+            SELECT 
+                COUNT(DISTINCT p.id) as total_pedidos,
+                COUNT(DISTINCT p.cliente_id) as total_clientes,
+                COALESCE(SUM(p.total) FILTER (WHERE p.estado NOT IN ('cancelado')), 0) as ventas_totales,
+                COALESCE(AVG(p.total) FILTER (WHERE p.estado NOT IN ('cancelado')), 0) as ticket_promedio,
+                COUNT(DISTINCT s.id) FILTER (WHERE s.estado_paquete NOT IN ('entregado', 'cancelado')) as pedidos_pendientes
+            FROM pedidos p
+            LEFT JOIN seguimiento_pedidos s ON p.id = s.pedido_id
+            WHERE p.vendedor_id = $1
+        `;
+
+        const result = await pool.query(query, [vendedorId]);
+        res.json(result.rows[0] || {});
+
+    } catch (error) {
+        console.error('Error obteniendo estadísticas:', error);
+        res.status(500).json({ error: 'Error al cargar estadísticas' });
+    }
+});
+
+// Obtener detalles de un pedido específico (sin carrito)
+app.get('/api/pedido/:pedidoId/detalle', async (req, res) => {
+    const { pedidoId } = req.params;
+
+    try {
+        const query = `
+            SELECT 
+                p.*,
+                c.nombre as cliente_nombre,
+                c.correo as cliente_email,
+                c.telefono as cliente_telefono,
+                c.direccion as cliente_direccion,
+                v.nombre as vendedor_nombre,
+                s.estado_paquete as seguimiento_estado,
+                s.ubicacion_actual as seguimiento_ubicacion,
+                s.fecha_estimada_entrega,
+                s.numero_guia,
+                s.transportista
+            FROM pedidos p
+            JOIN clientes c ON p.cliente_id = c.id
+            LEFT JOIN vendedores v ON p.vendedor_id = v.id
+            LEFT JOIN seguimiento_pedidos s ON p.id = s.pedido_id
+            WHERE p.id = $1
+        `;
+
+        const result = await pool.query(query, [pedidoId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error('Error obteniendo detalle del pedido:', error);
+        res.status(500).json({ error: 'Error al cargar detalle del pedido' });
+    }
+});
+
+// Obtener perfil completo del vendedor
+app.get('/api/vendedor/:vendedorId/perfil', async (req, res) => {
+    const { vendedorId } = req.params;
+
+    try {
+        const query = `
+            SELECT 
+                id,
+                nombre,
+                email,
+                telefono,
+                zona_asignada,
+                direccion,
+                ciudad,
+                codigo_postal,
+                fecha_contratacion,
+                fecha_creacion,
+                meta_ventas_mensual,
+                comision_porcentaje,
+                activo
+            FROM vendedores 
+            WHERE id = $1 AND activo = true
+        `;
+
+        const result = await pool.query(query, [vendedorId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Vendedor no encontrado' });
+        }
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error('Error obteniendo perfil del vendedor:', error);
+        res.status(500).json({ error: 'Error al cargar perfil' });
+    }
+});
+
+// Actualizar perfil del vendedor
+app.put('/api/vendedor/:vendedorId/actualizar', async (req, res) => {
+    const { vendedorId } = req.params;
+    const {
+        nombre,
+        telefono,
+        zona_asignada,
+        direccion,
+        ciudad,
+        codigo_postal,
+        meta_ventas_mensual,
+        password_actual,
+        password_nueva
+    } = req.body;
+
+    try {
+        // Verificar que el vendedor existe
+        const vendedorCheck = await pool.query(
+            'SELECT * FROM vendedores WHERE id = $1',
+            [vendedorId]
+        );
+
+        if (vendedorCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Vendedor no encontrado' });
+        }
+
+        const vendedor = vendedorCheck.rows[0];
+
+        // Si se quiere cambiar la contraseña
+        if (password_nueva) {
+            // Verificar contraseña actual
+            if (vendedor.password_hash !== '$2b$10$' + password_actual) { // Simulación
+                return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+            }
+
+            // Actualizar con nueva contraseña
+            await pool.query(
+                `UPDATE vendedores 
+                 SET nombre = COALESCE($1, nombre),
+                     telefono = COALESCE($2, telefono),
+                     zona_asignada = COALESCE($3, zona_asignada),
+                     direccion = COALESCE($4, direccion),
+                     ciudad = COALESCE($5, ciudad),
+                     codigo_postal = COALESCE($6, codigo_postal),
+                     meta_ventas_mensual = COALESCE($7, meta_ventas_mensual),
+                     password_hash = $8,
+                     fecha_actualizacion = CURRENT_TIMESTAMP
+                 WHERE id = $9`,
+                [nombre, telefono, zona_asignada, direccion, ciudad,
+                    codigo_postal, meta_ventas_mensual, '$2b$10$' + password_nueva, vendedorId]
+            );
+        } else {
+            // Actualizar sin cambiar contraseña
+            await pool.query(
+                `UPDATE vendedores 
+                 SET nombre = COALESCE($1, nombre),
+                     telefono = COALESCE($2, telefono),
+                     zona_asignada = COALESCE($3, zona_asignada),
+                     direccion = COALESCE($4, direccion),
+                     ciudad = COALESCE($5, ciudad),
+                     codigo_postal = COALESCE($6, codigo_postal),
+                     meta_ventas_mensual = COALESCE($7, meta_ventas_mensual),
+                     fecha_actualizacion = CURRENT_TIMESTAMP
+                 WHERE id = $8`,
+                [nombre, telefono, zona_asignada, direccion, ciudad,
+                    codigo_postal, meta_ventas_mensual, vendedorId]
+            );
+        }
+
+        // Obtener datos actualizados
+        const result = await pool.query(
+            'SELECT id, nombre, email, telefono, zona_asignada FROM vendedores WHERE id = $1',
+            [vendedorId]
+        );
+
+        res.json({
+            message: 'Perfil actualizado correctamente',
+            vendedor: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error actualizando vendedor:', error);
+        res.status(500).json({ error: 'Error al actualizar perfil' });
+    }
+});
+
+// Obtener estadísticas completas del vendedor
+app.get('/api/vendedor/:vendedorId/estadisticas', async (req, res) => {
+    const { vendedorId } = req.params;
+
+    try {
+        const query = `
+            SELECT 
+                COUNT(DISTINCT p.cliente_id) as total_clientes,
+                COALESCE(SUM(p.total), 0) as ventas_totales,
+                COALESCE(SUM(p.total) FILTER (
+                    WHERE DATE_TRUNC('month', p.fecha_pedido) = DATE_TRUNC('month', CURRENT_DATE)
+                ), 0) as ventas_mes,
+                COUNT(DISTINCT p.id) FILTER (
+                    WHERE DATE_TRUNC('month', p.fecha_pedido) = DATE_TRUNC('month', CURRENT_DATE)
+                ) as pedidos_mes,
+                MIN(p.fecha_pedido) as primera_venta,
+                (SELECT fecha_contratacion FROM vendedores WHERE id = $1) as fecha_ingreso
+            FROM pedidos p
+            WHERE p.vendedor_id = $1
+                AND p.estado NOT IN ('cancelado')
+        `;
+
+        const result = await pool.query(query, [vendedorId]);
+        res.json(result.rows[0] || {});
+
+    } catch (error) {
+        console.error('Error obteniendo estadísticas:', error);
+        res.status(500).json({ error: 'Error al cargar estadísticas' });
+    }
+});
+
+// ==================== ENDPOINTS PARA PRODUCTOS DEL VENDEDOR ====================
+
+// Obtener todos los productos del vendedor
+app.get('/api/vendedor/:vendedorId/productos', async (req, res) => {
+    const { vendedorId } = req.params;
+
+    try {
+        const query = `
+            SELECT 
+                id,
+                nombre,
+                descripcion,
+                precio,
+                stock,
+                stock_minimo,
+                marca,
+                genero,
+                tamanio_ml,
+                notas_olfativas,
+                imagen_url,
+                proveedor_id,
+                activo,
+                fecha_creacion
+            FROM productos 
+            WHERE vendedor_id = $1
+            ORDER BY fecha_creacion DESC
+        `;
+
+        const result = await pool.query(query, [vendedorId]);
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error obteniendo productos:', error);
+        res.status(500).json({ error: 'Error al cargar productos' });
+    }
+});
+
+// Crear nuevo producto
+app.post('/api/vendedor/:vendedorId/productos', async (req, res) => {
+    const { vendedorId } = req.params;
+    const {
+        nombre,
+        descripcion,
+        precio,
+        stock,
+        stock_minimo,
+        marca,
+        genero,
+        tamanio_ml,
+        notas_olfativas,
+        imagen_url,
+        proveedor_id,
+        activo
+    } = req.body;
+
+    // Validaciones básicas
+    if (!nombre || !precio || precio < 0) {
+        return res.status(400).json({ error: 'Nombre y precio válido son requeridos' });
+    }
+
+    try {
+        const query = `
+            INSERT INTO productos (
+                nombre, descripcion, precio, stock, stock_minimo,
+                marca, genero, tamanio_ml, notas_olfativas, imagen_url,
+                vendedor_id, proveedor_id, activo
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            RETURNING *
+        `;
+
+        const result = await pool.query(query, [
+            nombre, descripcion || '', precio, stock || 0, stock_minimo || 5,
+            marca || '', genero || '', tamanio_ml || null, notas_olfativas || '',
+            imagen_url || '', vendedorId, proveedor_id || null,
+            activo !== undefined ? activo : true
+        ]);
+
+        res.status(201).json({
+            message: 'Producto creado exitosamente',
+            producto: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error creando producto:', error);
+        res.status(500).json({ error: 'Error al crear producto' });
+    }
+});
+
+// Actualizar producto
+app.put('/api/productos/:productoId', async (req, res) => {
+    const { productoId } = req.params;
+    const {
+        nombre,
+        descripcion,
+        precio,
+        stock,
+        stock_minimo,
+        marca,
+        genero,
+        tamanio_ml,
+        notas_olfativas,
+        imagen_url,
+        proveedor_id,
+        activo
+    } = req.body;
+
+    try {
+        // Verificar que el producto existe y pertenece al vendedor
+        const productoExistente = await pool.query(
+            'SELECT * FROM productos WHERE id = $1',
+            [productoId]
+        );
+
+        if (productoExistente.rows.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        const query = `
+            UPDATE productos 
+            SET 
+                nombre = COALESCE($1, nombre),
+                descripcion = COALESCE($2, descripcion),
+                precio = COALESCE($3, precio),
+                stock = COALESCE($4, stock),
+                stock_minimo = COALESCE($5, stock_minimo),
+                marca = COALESCE($6, marca),
+                genero = COALESCE($7, genero),
+                tamanio_ml = COALESCE($8, tamanio_ml),
+                notas_olfativas = COALESCE($9, notas_olfativas),
+                imagen_url = COALESCE($10, imagen_url),
+                proveedor_id = COALESCE($11, proveedor_id),
+                activo = COALESCE($12, activo),
+                fecha_actualizacion = CURRENT_TIMESTAMP
+            WHERE id = $13
+            RETURNING *
+        `;
+
+        const result = await pool.query(query, [
+            nombre, descripcion, precio, stock, stock_minimo,
+            marca, genero, tamanio_ml, notas_olfativas, imagen_url,
+            proveedor_id, activo, productoId
+        ]);
+
+        res.json({
+            message: 'Producto actualizado exitosamente',
+            producto: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error actualizando producto:', error);
+        res.status(500).json({ error: 'Error al actualizar producto' });
+    }
+});
+
+// Cambiar estado del producto (activar/desactivar)
+app.put('/api/productos/:productoId/estado', async (req, res) => {
+    const { productoId } = req.params;
+    const { activo } = req.body;
+
+    try {
+        const result = await pool.query(
+            `UPDATE productos 
+             SET activo = $1, fecha_actualizacion = CURRENT_TIMESTAMP
+             WHERE id = $2
+             RETURNING id, nombre, activo`,
+            [activo, productoId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        res.json({
+            message: `Producto ${activo ? 'activado' : 'desactivado'}`,
+            producto: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error cambiando estado:', error);
+        res.status(500).json({ error: 'Error al cambiar estado' });
+    }
+});
+
+// Eliminar producto (solo si no tiene ventas asociadas)
+app.delete('/api/productos/:productoId', async (req, res) => {
+    const { productoId } = req.params;
+
+    try {
+        // Verificar si el producto tiene ventas
+        const ventasCheck = await pool.query(
+            'SELECT id FROM carrito WHERE producto_id = $1 LIMIT 1',
+            [productoId]
+        );
+
+        if (ventasCheck.rows.length > 0) {
+            return res.status(400).json({
+                error: 'No se puede eliminar el producto porque tiene ventas asociadas. Desactívelo en su lugar.'
+            });
+        }
+
+        const result = await pool.query(
+            'DELETE FROM productos WHERE id = $1 RETURNING id, nombre',
+            [productoId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        res.json({
+            message: 'Producto eliminado exitosamente',
+            producto: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error eliminando producto:', error);
+        res.status(500).json({ error: 'Error al eliminar producto' });
+    }
+});
+
+// Obtener proveedores activos para el select
+app.get('/api/proveedores/activos', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                id, 
+                nombre, 
+                contacto,
+                email,
+                telefono
+            FROM proveedores 
+            WHERE activo = true 
+            ORDER BY nombre ASC
+        `;
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error obteniendo proveedores:', error);
+        res.status(500).json({ error: 'Error al cargar proveedores' });
+    }
+});
+
+// Obtener estadísticas de productos del vendedor
+app.get('/api/vendedor/:vendedorId/productos/stats', async (req, res) => {
+    const { vendedorId } = req.params;
+
+    try {
+        const query = `
+            SELECT 
+                COUNT(*) as total,
+                COUNT(*) FILTER (WHERE activo = true) as activos,
+                COALESCE(SUM(stock), 0) as stock_total,
+                COALESCE(SUM(precio * stock), 0) as valor_total
+            FROM productos 
+            WHERE vendedor_id = $1
+        `;
+
+        const result = await pool.query(query, [vendedorId]);
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error('Error obteniendo estadísticas:', error);
+        res.status(500).json({ error: 'Error al cargar estadísticas' });
+    }
+});
+
+// Obtener productos activos para el catálogo
+app.get('/api/productos/activos', async (req, res) => {
+    try {
+        const query = `
+        SELECT 
+                id,
+                nombre,
+                descripcion,
+                precio,
+                stock,
+                stock_minimo,
+                marca,
+                genero,
+                tamanio_ml,
+                notas_olfativas,
+                imagen_url,
+                vendedor_id,
+                activo
+            FROM productos 
+            WHERE activo = true AND stock > 0
+            ORDER BY nombre ASC
+        `;
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error obteniendo productos:', error);
+        res.status(500).json({ error: 'Error al cargar productos' });
+    }
+});
 
 
 /////   SEPARACION DEL LISTEN Y RUTAS           /////////

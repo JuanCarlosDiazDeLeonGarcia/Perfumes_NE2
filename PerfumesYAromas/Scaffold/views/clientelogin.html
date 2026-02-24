@@ -13,7 +13,7 @@
         * {
             margin: 0;
             padding: 0;
-        } 
+        }
 
         body {
             margin: 0;
@@ -146,7 +146,7 @@
             .then(response => response.text())
             .then(data => {
                 document.getElementById('navbar-container').innerHTML = data;
-                initializeDropdown(); // ← Inicializar dropdown después de cargar
+                initializeDropdown();
             })
             .catch(error => console.error('Error loading navbar:', error));
 
@@ -161,12 +161,10 @@
                     dropdownContent.classList.toggle('show');
                 });
 
-                // Cerrar dropdown al hacer click fuera
                 document.addEventListener('click', function () {
                     dropdownContent.classList.remove('show');
                 });
 
-                // Prevenir que se cierre al hacer click dentro del dropdown
                 dropdownContent.addEventListener('click', function (e) {
                     e.stopPropagation();
                 });
@@ -189,6 +187,16 @@
             document.getElementById('errorMessage').style.display = 'none';
         }
 
+        // Función para determinar la redirección según el tipo de usuario
+        function getRedirectUrl(cliente) {
+            // Verificar si el usuario es vendedor (campo vendedor = true)
+            if (cliente.vendedor === true) {
+                return 'vendedores/vendedormenu.html';
+            } else {
+                return 'clientes/usuariomenu.html';
+            }
+        }
+
         // Función para manejar el inicio de sesión
         async function handleLogin(event) {
             event.preventDefault();
@@ -196,6 +204,7 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
             const loginBtn = document.getElementById('loginBtn');
+            const originalButtonText = loginBtn.textContent;
 
             // Validación básica
             if (!email || !password) {
@@ -213,8 +222,8 @@
             loginBtn.classList.add('loading');
 
             try {
-                // Primero intentamos autenticar como cliente
-                const response = await fetch(`${API_BASE_URL}/api/login-cliente`, {
+                // Intentar autenticar
+                const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -224,26 +233,38 @@
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    // Login exitoso como cliente
+                if (response.ok && data.success) {
+                    // Login exitoso
                     showSuccess('¡Inicio de sesión exitoso! Redirigiendo...');
 
-                    // Guardar datos del cliente en localStorage o sessionStorage
-                    localStorage.setItem('cliente', JSON.stringify(data.cliente));
-                    localStorage.setItem('token', data.token || 'cliente_authenticated');
-                    localStorage.setItem('userType', 'cliente');
+                    // Guardar datos del usuario
+                    localStorage.setItem('user', JSON.stringify(data.cliente));
+                    localStorage.setItem('token', data.token || 'authenticated');
+
+                    // Guardar específicamente el tipo de usuario
+                    localStorage.setItem('userType', data.cliente.vendedor ? 'vendedor' : 'cliente');
+
+                    // Determinar la URL de redirección
+                    const redirectUrl = getRedirectUrl(data.cliente);
+
+                    // Mostrar mensaje según el tipo
+                    if (data.cliente.vendedor) {
+                        showSuccess('¡Bienvenido vendedor! Redirigiendo al panel...');
+                    } else {
+                        showSuccess('¡Bienvenido! Redirigiendo a tu cuenta...');
+                    }
 
                     // Redirigir después de un breve delay
                     setTimeout(() => {
-                        window.location.href = 'clientes/usuariomenu.html';
+                        window.location.href = redirectUrl;
                     }, 1500);
 
                 } else {
-                    // Si falla como cliente, mostrar mensaje de error
+                    // Error en el login
                     showError(data.message || 'Credenciales incorrectas.');
 
                     // Restaurar botón
-                    loginBtn.textContent = 'Entrar';
+                    loginBtn.textContent = originalButtonText;
                     loginBtn.classList.remove('loading');
                 }
 
@@ -252,19 +273,24 @@
                 showError('Error de conexión. Verifica tu conexión a internet.');
 
                 // Restaurar botón
-                loginBtn.textContent = 'Entrar';
+                loginBtn.textContent = originalButtonText;
                 loginBtn.classList.remove('loading');
             }
         }
 
         // Función para verificar si ya hay una sesión activa
         function checkExistingSession() {
-            const cliente = localStorage.getItem('cliente');
+            const user = localStorage.getItem('user');
             const userType = localStorage.getItem('userType');
 
-            if (cliente && userType === 'cliente') {
-                // Si ya hay sesión de cliente, redirigir directamente
-                window.location.href = 'clientes/usuariomenu.html';
+            if (user && userType) {
+                const userData = JSON.parse(user);
+                // Redirigir según el tipo de usuario
+                if (userType === 'vendedor') {
+                    window.location.href = 'vendedores/vendedormenu.html';
+                } else {
+                    window.location.href = 'clientes/usuariomenu.html';
+                }
             }
         }
 
@@ -279,8 +305,7 @@
             // Asignar eventos a los enlaces
             document.getElementById('registerLink').addEventListener('click', function (e) {
                 e.preventDefault();
-                // Redirigir a la página de registro
-                window.location.href = 'registro.html';  // O la ruta correcta si está en otra carpeta
+                window.location.href = 'registro.html';
             });
 
             document.getElementById('forgotPassword').addEventListener('click', function (e) {
@@ -288,12 +313,7 @@
                 alert('Funcionalidad de recuperación en desarrollo.');
             });
 
-            document.getElementById('forgotPassword').addEventListener('click', function (e) {
-                e.preventDefault();
-                alert('Funcionalidad de recuperación en desarrollo.');
-            });
-
-            // Permitir enviar con Enter (ya está manejado por el submit del formulario)
+            // Permitir enviar con Enter
             document.getElementById('email').addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     document.getElementById('loginBtn').click();
@@ -306,6 +326,14 @@
                 }
             });
         });
+
+        // Función para depuración (puedes eliminarla en producción)
+        window.debugLogin = function () {
+            console.log('Estado actual:');
+            console.log('- Token:', localStorage.getItem('token'));
+            console.log('- Usuario:', localStorage.getItem('user'));
+            console.log('- Tipo:', localStorage.getItem('userType'));
+        };
     </script>
 </body>
 </html>

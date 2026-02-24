@@ -495,10 +495,11 @@
                     ubicacion = 'Cancelado';
                 }
 
-                // Determinar fecha de última actualización
+                // Determinar fecha de última actualización (usar nuevo campo fecha_actualizacion si existe)
                 let ultimaActualizacion = '-';
-                if (pedido.fecha_actualizacion_seguimiento) {
-                    ultimaActualizacion = new Date(pedido.fecha_actualizacion_seguimiento).toLocaleDateString();
+                const posibleFechaActualizacion = pedido.fecha_actualizacion || pedido.fecha_actualizacion_seguimiento;
+                if (posibleFechaActualizacion) {
+                    ultimaActualizacion = new Date(posibleFechaActualizacion).toLocaleDateString();
                 } else if (pedido.fecha_envio) {
                     ultimaActualizacion = new Date(pedido.fecha_envio).toLocaleDateString();
                 } else if (pedido.fecha_pedido) {
@@ -559,11 +560,12 @@
             const entregados = pedidosCliente.filter(p => p.estado === 'entregado').length;
             const cancelados = pedidosCliente.filter(p => p.estado === 'cancelado').length;
 
-            // Encontrar última fecha de actualización
+            // Encontrar última fecha de actualización (usar fecha_actualizacion si existe)
             let ultimaFecha = null;
             pedidosCliente.forEach(pedido => {
+                const posibleFechaActualizacion = pedido.fecha_actualizacion || pedido.fecha_actualizacion_seguimiento;
                 const fechas = [
-                    pedido.fecha_actualizacion_seguimiento,
+                    posibleFechaActualizacion,
                     pedido.fecha_envio,
                     pedido.fecha_entrega,
                     pedido.fecha_pedido

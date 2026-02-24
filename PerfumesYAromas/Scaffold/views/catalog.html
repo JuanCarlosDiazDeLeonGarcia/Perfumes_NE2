@@ -1,21 +1,360 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<<<<<<< HEAD
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfumes & Aromas</title>
+    <title>Catálogo de Perfumes - Perfumes & Aromas</title>
     <link rel="stylesheet" href="../css/base.css">
+    <style>
+        /* Estilos adicionales para el catálogo */
+        .content {
+            padding: 100px 20px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .catalog-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+            .catalog-header h1 {
+                font-size: 2.5rem;
+                color: #333;
+                margin-bottom: 10px;
+            }
+
+            .catalog-header p {
+                color: #666;
+                font-size: 1.1rem;
+            }
+
+        /* Filtros y búsqueda */
+        .filters-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            display: flex;
+            gap: 10px;
+        }
+
+            .search-box input {
+                flex: 1;
+                padding: 12px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                font-size: 1rem;
+            }
+
+            .search-box button {
+                padding: 12px 20px;
+                background: linear-gradient(90deg, purple, blue);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            min-width: 150px;
+        }
+
+        /* Grid de productos */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .product-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            }
+
+        .product-image {
+            height: 280px;
+            overflow: hidden;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+            .product-image img {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+                transition: transform 0.3s;
+            }
+
+        .product-card:hover .product-image img {
+            transform: scale(1.05);
+        }
+
+        .product-info {
+            padding: 20px;
+            flex: 1;
+        }
+
+        .product-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .product-marca {
+            color: #7e57c2;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+
+        .product-stock {
+            font-size: 0.9rem;
+            color: #4caf50;
+            margin-bottom: 10px;
+        }
+
+            .product-stock.bajo {
+                color: #f44336;
+            }
+
+        .product-descripcion {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 15px 0;
+            display: none;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+            .product-descripcion.show {
+                display: block;
+            }
+
+        .product-footer {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-vermas {
+            flex: 1;
+            padding: 10px;
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .btn-vermas:hover {
+                background: #f0f0f0;
+            }
+
+        .btn-carrito {
+            flex: 1;
+            padding: 10px;
+            background: linear-gradient(90deg, purple, blue);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+            .btn-carrito:hover {
+                opacity: 0.9;
+            }
+
+        /* Loading y mensajes */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #7e57c2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .no-products {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+            grid-column: 1 / -1;
+        }
+
+            .no-products h3 {
+                font-size: 1.5rem;
+                color: #333;
+                margin-bottom: 10px;
+            }
+
+        /* Badge para género */
+        .gender-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(126, 87, 194, 0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .filters-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .filter-select {
+                flex: 1;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="navbar-container"></div>
+
+    <div class="content">
+        <div class="catalog-header">
+            <p>Descubre nuestra exclusiva colección de fragancias</p>
+        </div>
+
+        <!-- Filtros y búsqueda -->
+        <div class="filters-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar por nombre, marca o notas...">
+                <button onclick="filtrarProductos()">🔍 Buscar</button>
+            </div>
+            <div class="filter-group">
+                <select class="filter-select" id="filterGenero" onchange="filtrarProductos()">
+                    <option value="">Todos los géneros</option>
+                    <option value="Hombre">Hombre</option>
+                    <option value="Mujer">Mujer</option>
+                    <option value="Unisex">Unisex</option>
+                </select>
+                <select class="filter-select" id="filterOrden" onchange="filtrarProductos()">
+                    <option value="">Ordenar por</option>
+                    <option value="precio_asc">Precio: menor a mayor</option>
+                    <option value="precio_desc">Precio: mayor a menor</option>
+                    <option value="nombre_asc">Nombre: A-Z</option>
+                    <option value="nombre_desc">Nombre: Z-A</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Grid de productos -->
+        <div class="product-grid" id="productGrid">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Cargando productos...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón de WhatsApp -->
+    <a href="https://wa.me/524494389825?text=Hola%2C%20me%20interesa%20una%20fragancia"
+       class="btn-whatsapp-fixed"
+       target="_blank"
+       rel="noopener"
+       aria-label="Chatea con nosotros en WhatsApp">
+        💬
+    </a>
+
     <script>
+        // URL base del servidor
+        const API_BASE_URL = 'http://localhost:3000';
+
+        // Variable global para almacenar todos los productos
+        let todosLosProductos = [];
+        let productosFiltrados = [];
+
         // Cargar navbar
         fetch('navbar.html')
             .then(response => response.text())
             .then(data => {
                 document.getElementById('navbar-container').innerHTML = data;
-                initializeDropdown(); // ← Inicializar dropdown después de cargar
+                initializeDropdown();
             })
             .catch(error => console.error('Error loading navbar:', error));
 
@@ -25,220 +364,196 @@
             const dropdownContent = document.querySelector('.dropdown-content');
 
             if (dropdownBtn && dropdownContent) {
-                dropdownBtn.addEventListener('click', function(e) {
+                dropdownBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     dropdownContent.classList.toggle('show');
                 });
 
-                // Cerrar dropdown al hacer click fuera
-                document.addEventListener('click', function() {
+                document.addEventListener('click', function () {
                     dropdownContent.classList.remove('show');
                 });
 
-                // Prevenir que se cierre al hacer click dentro del dropdown
-                dropdownContent.addEventListener('click', function(e) {
+                dropdownContent.addEventListener('click', function (e) {
                     e.stopPropagation();
                 });
             }
         }
-    </script>
 
-    <script>
-        // Cerrar aviso de privacidad
-        document.getElementById("cerrarAviso").addEventListener("click", () => {
-            document.getElementById("avisoPrivacidad").style.display = "none";
-        });
+        // Cargar productos desde la BD
+        async function cargarProductos() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/productos/activos`);
 
-        // Cargar productos desde JSON
-        fetch('../src/data/products.json')
-            .then(response => response.json())
-            .then(data => {
-                const grid = document.getElementById('productGrid');
+                if (!response.ok) {
+                    throw new Error('Error al cargar productos');
+                }
 
-                data.productos.forEach(producto => {
-                    // Tarjeta
-                    const card = document.createElement('div');
-                    card.classList.add('product-card');
+                const productos = await response.json();
+                todosLosProductos = productos;
+                productosFiltrados = [...productos];
+                mostrarProductos(productosFiltrados);
 
-                    // Imagen
-                    const img = document.createElement('img');
-                    img.src = `../assets/ejemplo.png`;
-                    img.alt = producto.nombre;
-                    card.appendChild(img);
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarError('No se pudieron cargar los productos. Intenta de nuevo más tarde.');
+            }
+        }
 
-                    // Nombre
-                    const nombre = document.createElement('h3');
-                    nombre.textContent = producto.nombre;
-                    card.appendChild(nombre);
+        // Mostrar productos en el grid
+        function mostrarProductos(productos) {
+            const grid = document.getElementById('productGrid');
 
-                    // Precio base
-                    const precio = document.createElement('p');
-                    precio.classList.add('price');
-                    precio.textContent = `$${producto.precio}`;
-                    card.appendChild(precio);
+            if (productos.length === 0) {
+                grid.innerHTML = `
+                        <div class="no-products">
+                            <h3>😕 No se encontraron productos</h3>
+                            <p>Intenta con otros filtros o términos de búsqueda</p>
+                            <button onclick="limpiarFiltros()" style="margin-top:15px; padding:10px 20px; background:#7e57c2; color:white; border:none; border-radius:5px; cursor:pointer;">
+                                Limpiar filtros
+                            </button>
+                        </div>
+                    `;
+                return;
+            }
 
-                    // NUEVO: Precio con envío / sin envío
-                    const costoEnvio = 99; // puedes modificarlo
-                    const envio = document.createElement('p');
-                    envio.classList.add('envio-info');
-                    envio.textContent = `Precio con envío: $${producto.precio + costoEnvio} | Sin envío: $${producto.precio}`;
-                    card.appendChild(envio);
+            grid.innerHTML = '';
 
-                    // Descripción oculta
-                    const descripcion = document.createElement('div');
-                    descripcion.classList.add('descripcion');
-                    descripcion.textContent = producto.descripcion;
-                    card.appendChild(descripcion);
+            productos.forEach(producto => {
+                // Solo mostrar productos activos
+                if (!producto.activo) return;
 
-                    // Botón ver más
-                    const btnVerMas = document.createElement('button');
-                    btnVerMas.classList.add('btn-vermas');
-                    btnVerMas.textContent = 'Ver más';
-                    btnVerMas.addEventListener('click', () => {
-                        descripcion.style.display =
-                            descripcion.style.display === 'block' ? 'none' : 'block';
-                    });
-                    card.appendChild(btnVerMas);
+                const card = document.createElement('div');
+                card.classList.add('product-card');
 
-                    // Botón agregar carrito
-                    const btnCarrito = document.createElement('button');
-                    btnCarrito.classList.add('btn-carrito');
-                    btnCarrito.textContent = 'Agregar al carrito';
-                    card.appendChild(btnCarrito);
+                // Badge de género (opcional)
+                const genderBadge = producto.genero ?
+                    `<div class="gender-badge">${producto.genero}</div>` : '';
 
-                    grid.appendChild(card);
-                });
-            })
-            .catch(error => console.error('Error al cargar productos:', error));
-    </script>
+                // Determinar clase de stock
+                const stockClass = producto.stock <= (producto.stock_minimo || 5) ? 'bajo' : '';
 
-    <div class="content">
-        <div class="product-grid">
-            <div class="product-card">
-                <img src="https://cdn5.coppel.com/mkp/103020481-1.jpg" alt="Perfume Floral" />
-                <h3>NAVIGO</h3>
-                <p class="price">$25.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">Aromas frescos y delicados con notas de jazmín y rosa.</p>
-            </div>
+                card.innerHTML = `
+                        ${genderBadge}
+                        <div class="product-image">
+                            <img src="${producto.imagen_url || 'https://via.placeholder.com/300x300?text=Perfume'}"
+                                 alt="${producto.nombre}"
+                                 onerror="this.src='https://via.placeholder.com/300x300?text=Perfume'">
+                        </div>
+                        <div class="product-info">
+                            <div class="product-marca">${producto.marca || 'Marca propia'}</div>
+                            <div class="product-title">${producto.nombre}</div>
+                            <div class="product-price">$${parseFloat(producto.precio).toFixed(2)}</div>
+                            <div class="product-stock ${stockClass}">
+                                ${producto.stock > 0 ? `✓ ${producto.stock} disponibles` : '❌ Agotado'}
+                            </div>
+                            ${producto.tamanio_ml ? `<small>${producto.tamanio_ml} ml</small>` : ''}
+                            <div class="product-descripcion" id="desc-${producto.id}">
+                                ${producto.descripcion || 'Sin descripción disponible'}
+                                ${producto.notas_olfativas ? `<br><br><strong>Notas:</strong> ${producto.notas_olfativas}` : ''}
+                            </div>
+                        </div>
+                        <div class="product-footer">
+                            <button class="btn-vermas" onclick="toggleDescripcion(${producto.id})">Ver más</button>
+                            <button class="btn-carrito" ${producto.stock === 0 ? 'disabled style="opacity:0.5"' : ''}>
+                                ${producto.stock > 0 ? 'Agregar al carrito' : 'Agotado'}
+                            </button>
+                        </div>
+                    `;
 
-            <div class="product-card">
-                <img src="https://cazanovaonline.mx/cdn/shop/files/ANUNNCIO_Amazon_37.jpg?v=1747758258&width=1946" alt="Perfume Amaderado" />
-                <h3>ODYYSEY</h3>
-                <p class="price">$30.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
-            </div>
-            <div class="product-card">
-                <img src="https://perfumes-arabes.mx/wp-content/uploads/2023/10/Perfume-Lattafa-Khamrah-Perfumes-Arabes-Mexico.jpeg" alt="Perfume Amaderado" />
-                <h3>KHALAF LATFTAFFA </h3>
-                <p class="price">$35.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
-            </div>
-            <div class="product-card">
-                <img src="https://m.media-amazon.com/images/I/41ZQdV659VL.jpg" alt="Perfume Amaderado" />
-                <h3>9PM</h3>
-                <p class="price">$45.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
-            </div>
-            <div class="product-card">
-                <img src="https://beautyfreeshop.com.mx/cdn/shop/files/perfume-9am-dive-unisex-de-afnan-edp-100ml-arome-mexico-1_800x_255077d6-54df-4360-b1ed-c9d48edb8a13.jpg?v=1727982720" alt="Perfume Amaderado" />
-                <h3>9AM</h3>
-                <p class="price">$28.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
-            </div>
-            <div class="product-card">
-                <img src="https://fraganciasfiord.com.mx/wp-content/uploads/2024/06/Decant-o-muestra-del-perfume-Invictus-PARFUM-original-de-Rabanne-en-Fragancias-Fiord.jpg" alt="Perfume Amaderado" />
-                <h3>INVICTUS</h3>
-                <p class="price">$30.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
-            </div>
-            <div class="product-card">
-                <img src="https://www.versace.com/dw/image/v2/BGWN_PRD/on/demandware.static/-/Sites-ver-master-catalog/default/dw74626350/original/90_R741010-R100MLS_RNUL_20_Eros~Flame~EDP~100~ml-Accessories-Versace-online-store_0_1.jpg?sw=1200&q=85&strip=true" alt="Perfume Amaderado" />
-                <h3>VERSACE EROS FLAME</h3>
-                <p class="price">$38.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
-            </div>
-            <div class="product-card">
-                <img src="https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_webp,s_webp/nuestrasfragancias.com/wp-content/uploads/2022/06/Le-Beau-Le-Parfum-125ml-EDP.webp" alt="Perfume Amaderado" />
-                <h3>JPG LE MAU LA PERFUM</h3>
-                <p class="price">$50.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
-            </div>
-            <div class="product-card">
-                <img src="https://m.media-amazon.com/images/I/91xkVmTPE3L._UF350,350_QL80_.jpg" alt="Perfume Amaderado" />
-                <h3>cool water</h3>
-                <p class="price">$34.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">un aroma intenso.</p>
-            </div>
-            <div class="product-card">
-                <img src="https://www.dior.com/dw/image/v2/BGXS_PRD/on/demandware.static/-/Library-Sites-DiorSharedLibrary/default/dwf80880b6/images/beauty/01-FRAGRANCES/2025/PDP-REVAMP/SAUVAGE/Y0785220/POSTER_DIOR_SAUVAGE_CAPSULE_EDP_VA_916.jpg?sw=800" alt="Perfume Amaderado" />
-                <h3>savage dior</h3>
-                <p class="price">$30.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">Notas cálidas de sándalo .</p>
-            </div>
-            <div class="product-card">
-                <img src="https://perfumerica.mx/cdn/shop/files/HC3A.png?v=1708969297&width=2048" alt="Perfume Amaderado" />
-                <h3>Perfume Amaderado</h3>
-                <p class="price">$39.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">Notas cálidas de sándalo y cedro para un aroma intenso.</p>
-            </div>
+                grid.appendChild(card);
+            });
+        }
 
-            <div class="product-card">
-                <img src="https://m.media-amazon.com/images/I/71-w3x3BP-L._AC_SX522_.jpg" alt="Perfume Cítrico" />
-                <h3>Perfume Cítrico</h3>
-                <p class="price">$22.00</p>
-                <button class="btn-carrito">Comprar</button>
-                <button class="btn-vermas">Ver más</button>
-                <p class="descripcion">Frescura vibrante con notas de limón y bergamota.</p>
-            </div>
+        // Función para mostrar/ocultar descripción
+        function toggleDescripcion(productoId) {
+            const desc = document.getElementById(`desc-${productoId}`);
+            const btn = event.target;
 
-        </div>
-    </div>
+            if (desc.classList.contains('show')) {
+                desc.classList.remove('show');
+                btn.textContent = 'Ver más';
+            } else {
+                desc.classList.add('show');
+                btn.textContent = 'Ver menos';
+            }
+        }
 
-    <script>
-        // Mostrar/ocultar descripción al hacer click en "Ver más"
-        document.querySelectorAll('.btn-vermas').forEach(button => {
-            button.addEventListener('click', () => {
-                const descripcion = button.nextElementSibling;
-                if (descripcion.style.display === 'block') {
-                    descripcion.style.display = 'none';
-                    button.textContent = 'Ver más';
-                } else {
-                    descripcion.style.display = 'block';
-                    button.textContent = 'Ver menos';
+        // Función para filtrar productos
+        function filtrarProductos() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const genero = document.getElementById('filterGenero').value;
+            const orden = document.getElementById('filterOrden').value;
+
+            // Aplicar filtros
+            let filtrados = todosLosProductos.filter(producto => {
+                // Filtrar por búsqueda
+                const matchesSearch =
+                    producto.nombre.toLowerCase().includes(searchTerm) ||
+                    (producto.marca && producto.marca.toLowerCase().includes(searchTerm)) ||
+                    (producto.descripcion && producto.descripcion.toLowerCase().includes(searchTerm)) ||
+                    (producto.notas_olfativas && producto.notas_olfativas.toLowerCase().includes(searchTerm));
+
+                // Filtrar por género
+                const matchesGenero = !genero || producto.genero === genero;
+
+                return matchesSearch && matchesGenero && producto.activo;
+            });
+
+            // Aplicar ordenamiento
+            if (orden) {
+                switch (orden) {
+                    case 'precio_asc':
+                        filtrados.sort((a, b) => a.precio - b.precio);
+                        break;
+                    case 'precio_desc':
+                        filtrados.sort((a, b) => b.precio - a.precio);
+                        break;
+                    case 'nombre_asc':
+                        filtrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
+                        break;
+                    case 'nombre_desc':
+                        filtrados.sort((a, b) => b.nombre.localeCompare(a.nombre));
+                        break;
+                }
+            }
+
+            productosFiltrados = filtrados;
+            mostrarProductos(productosFiltrados);
+        }
+
+        // Limpiar todos los filtros
+        function limpiarFiltros() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterGenero').value = '';
+            document.getElementById('filterOrden').value = '';
+            filtrarProductos();
+        }
+
+        // Mostrar mensaje de error
+        function mostrarError(mensaje) {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = `
+                    <div class="no-products" style="color: #f44336;">
+                        <h3>❌ Error</h3>
+                        <p>${mensaje}</p>
+                        <button onclick="cargarProductos()" style="margin-top:15px; padding:10px 20px; background:#7e57c2; color:white; border:none; border-radius:5px; cursor:pointer;">
+                            Reintentar
+                        </button>
+                    </div>
+                `;
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function () {
+            cargarProductos();
+
+            // Búsqueda en tiempo real (opcional)
+            document.getElementById('searchInput').addEventListener('keyup', function (e) {
+                if (e.key === 'Enter') {
+                    filtrarProductos();
                 }
             });
         });
     </script>
-
-    <a href="https://wa.me/524494389825?text=Hola%2C%20me%20interesa%20una%20fragancia%20personalizada"
-       class="btn-whatsapp-fixed"
-       target="_blank"
-       rel="noopener"
-       aria-label="Chatea con nosotros en WhatsApp">
-        💬
-
 </body>
-
 </html>
