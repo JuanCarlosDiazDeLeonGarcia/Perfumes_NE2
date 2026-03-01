@@ -1984,3 +1984,6 @@ app.listen(PORT, () => {
     console.log('📡 API disponible en http://localhost:' + PORT + '/api');
     console.log('');
 });
+
+const proveedoresRoutes = require('./proveedores');
+proveedoresRoutes(app, pool);
