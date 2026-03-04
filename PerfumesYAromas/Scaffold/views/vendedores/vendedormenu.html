@@ -275,7 +275,6 @@
         <nav>
             <a href="../catalog.html">🢀 Volver</a>
             <a href="vendedormenu.html" class="active">📊 Dashboard</a>
-            <a href="vendedorperfil.html">🏠 Mi Perfil</a>
             <a href="vendedorproductos.html">📦 Productos</a>
             <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
         </nav>
@@ -451,10 +450,10 @@
         // Cargar todos los datos del vendedor
         async function cargarDatosVendedor() {
             try {
-                const userData = localStorage.getItem('user');
+                const userData = localStorage.getItem('usuarioActual');
                 if (!userData) {
                     showMessage('error', 'No hay sesión activa. Redirigiendo al login...');
-                    setTimeout(() => window.location.href = '../clientelogin.html', 2000);
+                    setTimeout(() => window.location.href = '../adminlogin.html', 2000);
                     return;
                 }
 
@@ -463,7 +462,7 @@
 
                 // Actualizar información del vendedor
                 document.getElementById('vendedorNombre').textContent = vendedor.nombre || 'Vendedor';
-                document.getElementById('vendedorEmail').textContent = vendedor.correo || vendedor.email || 'No especificado';
+                document.getElementById('vendedorEmail').textContent = vendedor.email || vendedor.correo || 'No especificado';
                 document.getElementById('vendedorTelefono').textContent = vendedor.telefono || 'No especificado';
                 document.getElementById('vendedorZona').textContent = vendedor.zona_asignada || 'Centro';
 
@@ -566,7 +565,8 @@
         // Cargar seguimiento activo (versión corregida)
         async function cargarSeguimientoActivo(vendedorId) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/seguimiento-activo`);
+                // Usar endpoint que no depende de la tabla seguimiento_pedidos
+                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/seguimiento-activo-simple`);
 
                 if (response.ok) {
                     const seguimiento = await response.json();
@@ -787,7 +787,7 @@
                 if (response.ok) {
                     showMessage('success', '✅ Pedido marcado como entregado');
                     // Recargar datos
-                    const user = JSON.parse(localStorage.getItem('user'));
+                    const user = JSON.parse(localStorage.getItem('usuarioActual'));
                     cargarSeguimientoActivo(user.id);
                     cargarPedidosVendedor(user.id);
                 } else {
@@ -898,20 +898,20 @@
         // Cerrar sesión
         function cerrarSesion() {
             if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                localStorage.removeItem('user');
+                localStorage.removeItem('usuarioActual');
                 localStorage.removeItem('token');
                 localStorage.removeItem('userType');
-                window.location.href = '../clientelogin.html';
+                window.location.href = '../adminlogin.html';
             }
         }
 
         // Verificar sesión
         function verificarSesion() {
-            const user = localStorage.getItem('user');
+            const user = localStorage.getItem('usuarioActual');
             const userType = localStorage.getItem('userType');
 
             if (!user || userType !== 'vendedor') {
-                window.location.href = '../clientelogin.html';
+                window.location.href = '../adminlogin.html';
                 return false;
             }
             return true;

@@ -187,14 +187,9 @@
             document.getElementById('errorMessage').style.display = 'none';
         }
 
-        // Función para determinar la redirección según el tipo de usuario
+        // Función para determinar la redirección según el tipo de usuario (clientes siempre al menú de cliente)
         function getRedirectUrl(cliente) {
-            // Verificar si el usuario es vendedor (campo vendedor = true)
-            if (cliente.vendedor === true) {
-                return 'vendedores/vendedormenu.html';
-            } else {
-                return 'clientes/usuariomenu.html';
-            }
+            return 'clientes/usuariomenu.html';
         }
 
         // Función para manejar el inicio de sesión
@@ -222,42 +217,34 @@
             loginBtn.classList.add('loading');
 
             try {
-                // Intentar autenticar
-                const response = await fetch(`${API_BASE_URL}/api/login`, {
+                // Intentar autenticar (usar endpoint dedicado para clientes)
+                const response = await fetch(`${API_BASE_URL}/api/login-cliente`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ email, password })
                 });
-
                 const data = await response.json();
 
-                if (response.ok && data.success) {
+                // El endpoint /api/login-cliente devuelve { message, cliente, token }
+                if (response.ok && (data.success || data.cliente)) {
                     // Login exitoso
                     showSuccess('¡Inicio de sesión exitoso! Redirigiendo...');
 
-                    // Guardar datos del usuario
-                    localStorage.setItem('user', JSON.stringify(data.cliente));
+                    // Guardar datos del cliente en localStorage
+                    localStorage.setItem('cliente', JSON.stringify(data.cliente));
                     localStorage.setItem('token', data.token || 'authenticated');
-
-                    // Guardar específicamente el tipo de usuario
-                    localStorage.setItem('userType', data.cliente.vendedor ? 'vendedor' : 'cliente');
+                    // Guardar específicamente el tipo de usuario como cliente
+                    localStorage.setItem('userType', 'cliente');
 
                     // Determinar la URL de redirección
                     const redirectUrl = getRedirectUrl(data.cliente);
 
-                    // Mostrar mensaje según el tipo
-                    if (data.cliente.vendedor) {
-                        showSuccess('¡Bienvenido vendedor! Redirigiendo al panel...');
-                    } else {
-                        showSuccess('¡Bienvenido! Redirigiendo a tu cuenta...');
-                    }
+                    showSuccess('¡Bienvenido! Redirigiendo a tu cuenta...');
 
                     // Redirigir después de un breve delay
-                    setTimeout(() => {
-                        window.location.href = redirectUrl;
-                    }, 1500);
+                    setTimeout(() => { window.location.href = redirectUrl; }, 1500);
 
                 } else {
                     // Error en el login
@@ -280,11 +267,10 @@
 
         // Función para verificar si ya hay una sesión activa
         function checkExistingSession() {
-            const user = localStorage.getItem('user');
+            const cliente = localStorage.getItem('cliente');
             const userType = localStorage.getItem('userType');
 
-            if (user && userType) {
-                const userData = JSON.parse(user);
+            if (cliente && userType) {
                 // Redirigir según el tipo de usuario
                 if (userType === 'vendedor') {
                     window.location.href = 'vendedores/vendedormenu.html';

@@ -7,6 +7,10 @@ const path = require('path');
 const app = express();
 const PORT = 3000;
 
+// Middlewares must be registered before any routes that read req.body
+app.use(cors());
+app.use(express.json());
+
 
 const pool = new Pool({
     user: 'postgres',
@@ -14,6 +18,65 @@ const pool = new Pool({
     database: 'perfumes', //cambiar si el nombre de la BD es diferente
     password: '2244', //Cambiar por su contraseña segun su BD
     port: 5432,
+});
+
+// Login para usuarios (tabla usuarios) - usado por adminlogin
+app.post('/api/login-usuario', async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email y contraseña son requeridos' });
+    }
+
+    try {
+        const result = await pool.query(
+            `SELECT id, nombre, email, telefono, rol, activo, password_hash FROM usuarios WHERE email = $1`,
+            [email]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({ message: 'Credenciales incorrectas' });
+        }
+
+        const usuario = result.rows[0];
+
+        // Para pruebas: comparar texto plano con el campo password_hash
+        // (acepta también el formato '$2b$10$' + password usado en algunos lugares)
+        let passwordValida = false;
+        if (usuario.password_hash) {
+            if (usuario.password_hash === password) {
+                passwordValida = true;
+            } else if (usuario.password_hash === '$2b$10$' + password) {
+                passwordValida = true;
+            }
+        }
+
+        if (!passwordValida) {
+            return res.status(401).json({ message: 'Credenciales incorrectas' });
+        }
+
+        if (!usuario.activo) {
+            return res.status(403).json({ message: 'Cuenta inactiva' });
+        }
+
+        // Actualizar último login
+        try {
+            await pool.query('UPDATE usuarios SET ultimo_login = CURRENT_TIMESTAMP WHERE id = $1', [usuario.id]);
+        } catch (e) {
+            console.warn('No se pudo actualizar ultimo_login:', e.message);
+        }
+
+        const usuarioSinPass = { ...usuario };
+        delete usuarioSinPass.password_hash;
+
+        // Token simple (temporal)
+        const token = Buffer.from(`${email}:${Date.now()}`).toString('base64');
+
+        res.json({ success: true, message: 'Login exitoso', usuario: usuarioSinPass, token });
+    } catch (error) {
+        console.error('Error en login-usuario:', error);
+        res.status(500).json({ message: 'Error del servidor', error: error.message });
+    }
 });
 
 // Test de conexión
@@ -25,10 +88,6 @@ pool.connect((err, client, release) => {
     console.log('✅ Conectado a PostgreSQL - Base de datos: perfumes');
     release();
 });
-
-
-app.use(cors());
-app.use(express.json());
 
 
 app.use(express.static(path.join(__dirname, '..')));
@@ -116,11 +175,11 @@ app.post('/api/login', async (req, res) => {
     try {
         console.log(`Buscando cliente con email: ${email}`);
 
-        // Buscar cliente por email - INCLUIMOS EL CAMPO 'vendedor'
+        // Buscar cliente por email
         const query = `
             SELECT id, nombre, correo, telefono, empresa, ciudad, estado, 
                    estado_cliente, etapa_crm, password, direccion,
-                   codigo_postal, fecha_registro, vendedor
+                   codigo_postal, fecha_registro
             FROM clientes 
             WHERE correo = $1 AND estado_cliente = 'activo'
         `;
@@ -141,8 +200,7 @@ app.post('/api/login', async (req, res) => {
         const cliente = result.rows[0];
         console.log('Cliente encontrado:', {
             id: cliente.id,
-            nombre: cliente.nombre,
-            es_vendedor: cliente.vendedor
+            nombre: cliente.nombre
         });
 
         // Verificar contraseña
@@ -729,9 +787,9 @@ app.put('/api/seguimiento/:id/entregar', async (req, res) => {
     try {
         const result = await pool.query(
             `UPDATE pedidos
-             SET estado_paquete = 'entregado', fecha_actualizacion = CURRENT_TIMESTAMP
+             SET estado = 'entregado', fecha_entrega = CURRENT_TIMESTAMP
              WHERE id = $1
-             RETURNING id, numero_orden, cliente_id, vendedor_id, estado_paquete, fecha_actualizacion`,
+             RETURNING id, numero_orden, cliente_id, vendedor_id, estado, fecha_entrega`,
             [id]
         );
 
@@ -1052,6 +1110,63 @@ app.get('/api/seguimiento-detalle/:pedido_id', async (req, res) => {
         res.status(500).json({ message: 'Error obteniendo detalle de seguimiento' });
     }
 });
+
+// Nueva ruta: seguimiento activo para vendedor basada en tabla pedidos (sin usar seguimiento_pedidos)
+app.get('/api/vendedor/:vendedorId/seguimiento-activo-simple', async (req, res) => {
+    const { vendedorId } = req.params;
+
+    try {
+        const query = `
+            SELECT p.id as pedido_id,
+                   p.numero_orden,
+                   p.total,
+                   p.fecha_pedido,
+                   p.direccion_envio,
+                   COALESCE(p.fecha_entrega, (p.fecha_envio + INTERVAL '7 days'), (p.fecha_pedido + INTERVAL '7 days')) AS fecha_estimada_entrega,
+                   p.estado,
+                   c.id as cliente_id,
+                   c.nombre as cliente_nombre,
+                   STRING_AGG(pr.nombre, ', ') as productos
+            FROM pedidos p
+            LEFT JOIN clientes c ON p.cliente_id = c.id
+            LEFT JOIN carrito dp ON p.id = dp.pedido_id
+            LEFT JOIN productos pr ON dp.producto_id = pr.id
+            WHERE p.vendedor_id = $1
+              AND p.estado NOT IN ('entregado', 'cancelado', 'devuelto')
+            GROUP BY p.id, c.id, c.nombre
+            ORDER BY
+              CASE p.estado
+                WHEN 'en_reparto' THEN 1
+                WHEN 'en_transito' THEN 2
+                WHEN 'en_proceso' THEN 3
+                WHEN 'procesando' THEN 4
+                WHEN 'pendiente' THEN 5
+                ELSE 6
+              END,
+              fecha_estimada_entrega ASC
+        `;
+
+        const result = await pool.query(query, [vendedorId]);
+
+        // Mapear a la forma que espera el frontend
+        const rows = result.rows.map(r => ({
+            pedido_id: r.pedido_id,
+            pedido_numero: r.numero_orden,
+            cliente_nombre: r.cliente_nombre,
+            productos: r.productos,
+            // usar direccion_envio como ubicación aproximada si no hay tabla de seguimiento
+            seguimiento_ubicacion: r.direccion_envio || null,
+            seguimiento_fecha_entrega_estimada: r.fecha_estimada_entrega,
+            seguimiento_estado: r.estado
+        }));
+
+        res.json(rows);
+    } catch (error) {
+        console.error('Error obteniendo seguimiento activo (simple):', error);
+        res.status(500).json({ error: 'Error al cargar seguimiento' });
+    }
+});
+
 
 // Ruta para crear tabla de historial de seguimiento (opcional)
 app.post('/api/crear-tabla-seguimiento', async (req, res) => {
@@ -1390,20 +1505,33 @@ app.get('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
                 c.nombre as cliente_nombre,
                 c.id as cliente_id,
                 c.correo as cliente_email,
-                s.estado_paquete,
-                s.ubicacion_actual,
+                p.direccion_envio,
                 -- Como ya no tenemos carrito, mostramos info básica
                 'Ver detalles completos en el pedido' as productos
             FROM pedidos p
             JOIN clientes c ON p.cliente_id = c.id
-            LEFT JOIN seguimiento_pedidos s ON p.id = s.pedido_id
             WHERE p.vendedor_id = $1
             ORDER BY p.fecha_pedido DESC
             LIMIT 50
         `;
 
         const result = await pool.query(query, [vendedorId]);
-        res.json(result.rows);
+        // Normalizar salida: no dependemos de tabla seguimiento_pedidos
+        const rows = result.rows.map(r => ({
+            id: r.id,
+            numero_orden: r.numero_orden,
+            fecha_pedido: r.fecha_pedido,
+            total: r.total,
+            estado: r.estado,
+            vendedor_id: r.vendedor_id,
+            cliente_nombre: r.cliente_nombre,
+            cliente_id: r.cliente_id,
+            cliente_email: r.cliente_email,
+            ubicacion_actual: r.direccion_envio || null,
+            productos: r.productos
+        }));
+
+        res.json(rows);
 
     } catch (error) {
         console.error('Error obteniendo pedidos del vendedor:', error);

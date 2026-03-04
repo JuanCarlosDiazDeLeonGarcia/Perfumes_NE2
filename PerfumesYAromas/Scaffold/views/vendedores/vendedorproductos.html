@@ -11,6 +11,21 @@
             margin-left: 250px;
         }
 
+        // Cerrar sesión (para el nav)
+        function cerrarSesion() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                localStorage.removeItem('usuarioActual');
+                localStorage.removeItem('token');
+                localStorage.removeItem('userType');
+                window.location.href = '../adminlogin.html';
+            }
+        }
+
+        // Inicializar al cargar la página
+        document.addEventListener('DOMContentLoaded', function () {
+            cargarDatosIniciales();
+        });
+
         .admin-header {
             margin-bottom: 30px;
             background: linear-gradient(135deg, #7e57c2, #5c6bc0);
@@ -443,7 +458,6 @@
         <nav>
             <a href="../catalog.html">🢀 Volver</a>
             <a href="vendedormenu.html" class="active">📊 Dashboard</a>
-            <a href="vendedorperfil.html">🏠 Mi Perfil</a>
             <a href="vendedorproductos.html">📦 Productos</a>
             <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
         </nav>
@@ -535,7 +549,7 @@
                 </thead>
                 <tbody id="productosTableBody">
                     <tr>
-                        <td colspan="8" style="text-align:center; padding:40px;">
+                        <td colspan="9" style="text-align:center; padding:40px;">
                             Cargando productos...
                         </td>
                     </tr>
@@ -622,6 +636,14 @@
                         </select>
                     </div>
 
+                    <div class="form-group">
+                        <label>Tipo de Restock</label>
+                        <select id="restockTipo">
+                            <option value="pull">Automática</option>
+                            <option value="push">Manual</option>
+                        </select>
+                    </div>
+
                     <div class="form-group full-width">
                         <label>Notas Olfativas</label>
                         <input type="text" id="notasOlfativas" placeholder="Ej. Sándalo, Cedro, Amaderado">
@@ -681,11 +703,11 @@
         // ==================== FUNCIONES PRINCIPALES ====================
         async function cargarDatosIniciales() {
             try {
-                // Obtener vendedor del localStorage
-                const userData = localStorage.getItem('user');
+                // Obtener vendedor del localStorage (guardado como 'usuarioActual')
+                const userData = localStorage.getItem('usuarioActual');
                 if (!userData) {
                     showMessage('error', 'No hay sesión activa');
-                    setTimeout(() => window.location.href = '../clientelogin.html', 2000);
+                    setTimeout(() => window.location.href = '../adminlogin.html', 2000);
                     return;
                 }
 
@@ -813,7 +835,7 @@
             if (productosFiltrados.length === 0) {
                 tbody.innerHTML = `
                             <tr>
-                                <td colspan="8" style="text-align:center; padding:40px;">
+                                <td colspan="9" style="text-align:center; padding:40px;">
                                     <p style="color:#999; font-size:16px;">No hay productos que coincidan con tu búsqueda</p>
                                     <button class="btn-secundario" onclick="limpiarFiltros()" style="margin-top:10px;">
                                         Limpiar filtros
@@ -829,12 +851,14 @@
                 const stockClass = producto.stock <= (producto.stock_minimo || 5) ? 'stock-bajo' : 'stock-normal';
                 const estadoClass = producto.activo ? 'estado-activo' : 'estado-inactivo';
                 const estadoTexto = producto.activo ? 'Activo' : 'Inactivo';
+                const restockDisplay = producto.restock === 'push' ? 'Manual' : 'Automática';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                             <td>#${producto.id}</td>
                             <td><strong>${producto.nombre}</strong></td>
                             <td>${producto.marca || '—'}</td>
+                            <td>${restockDisplay}</td>
                             <td>${producto.genero || '—'}</td>
                             <td>$${parseFloat(producto.precio).toFixed(2)}</td>
                             <td class="${stockClass}">${producto.stock} uds</td>
@@ -881,6 +905,10 @@
             // Cargar proveedores antes de abrir el modal
             cargarProveedores();
 
+            // Valor por defecto para tipo de restock
+            const restockSelect = document.getElementById('restockTipo');
+            if (restockSelect) restockSelect.value = 'pull';
+
             document.getElementById('productoModal').style.display = 'block';
         }
 
@@ -908,6 +936,10 @@
             if (producto.proveedor_id) {
                 document.getElementById('proveedorId').value = producto.proveedor_id;
             }
+
+            // Asignar tipo de restock (si existe) o usar por defecto 'pull'
+            const restockSelectEdit = document.getElementById('restockTipo');
+            if (restockSelectEdit) restockSelectEdit.value = producto.restock || 'pull';
 
             document.getElementById('productoModal').style.display = 'block';
         }
@@ -941,6 +973,7 @@
                 proveedor_id: parseInt(document.getElementById('proveedorId').value) || null,
                 notas_olfativas: document.getElementById('notasOlfativas').value,
                 imagen_url: document.getElementById('imagenUrl').value,
+                restock: document.getElementById('restockTipo').value || 'pull',
                 activo: document.getElementById('activo').checked
             };
 

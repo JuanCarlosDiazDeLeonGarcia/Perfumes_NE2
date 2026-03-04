@@ -48,8 +48,8 @@ async function cargarUsuarios() {
         
         usuarios = await response.json();
         
-        const usuariosIniciales = usuarios.filter(u => u.id <= 4);
-        mostrarUsuarios(usuariosIniciales);
+        // Mostrar todos los usuarios obtenidos de la API
+        mostrarUsuarios(usuarios);
         
     } catch (error) {
         console.error('Error:', error);
@@ -125,8 +125,8 @@ function buscarUsuarios() {
     const termino = document.getElementById('buscarUsuario').value.toLowerCase().trim();
     
     if (termino === '') {
-        const usuariosIniciales = usuarios.filter(u => u.id <= 4);
-        mostrarUsuarios(usuariosIniciales);
+        // Mostrar todos si no hay término de búsqueda
+        mostrarUsuarios(usuarios);
         return;
     }
     
