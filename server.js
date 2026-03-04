@@ -15,8 +15,8 @@ app.use(express.json());
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'perfumes', //cambiar si el nombre de la BD es diferente
-    password: '2244', //Cambiar por su contraseña segun su BD
+    database: 'perfumes_ne2', //cambiar si el nombre de la BD es diferente
+    password: '1234', //Cambiar por su contraseña segun su BD
     port: 5432,
 });
 
