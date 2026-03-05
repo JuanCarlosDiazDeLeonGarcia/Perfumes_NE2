@@ -1948,6 +1948,7 @@ app.get('/api/vendedor/:vendedorId/productos', async (req, res) => {
                 imagen_url,
                 proveedor_id,
                 activo,
+                restock,
                 fecha_creacion
             FROM productos 
             WHERE vendedor_id = $1
@@ -1978,7 +1979,8 @@ app.post('/api/vendedor/:vendedorId/productos', async (req, res) => {
         notas_olfativas,
         imagen_url,
         proveedor_id,
-        activo
+        activo,
+        restock
     } = req.body;
 
     // Validaciones básicas
@@ -1991,16 +1993,16 @@ app.post('/api/vendedor/:vendedorId/productos', async (req, res) => {
             INSERT INTO productos (
                 nombre, descripcion, precio, stock, stock_minimo,
                 marca, genero, tamanio_ml, notas_olfativas, imagen_url,
-                vendedor_id, proveedor_id, activo
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                vendedor_id, proveedor_id, activo, restock
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING *
         `;
 
         const result = await pool.query(query, [
             nombre, descripcion || '', precio, stock || 0, stock_minimo || 5,
             marca || '', genero || '', tamanio_ml || null, notas_olfativas || '',
-            imagen_url || '', vendedorId, proveedor_id || null,
-            activo !== undefined ? activo : true
+            imagen_url || '', vendedorId, proveedor_id || 2,
+            activo !== undefined ? activo : true, restock || 'push'
         ]);
 
         res.status(201).json({

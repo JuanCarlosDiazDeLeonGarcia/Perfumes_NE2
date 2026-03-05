@@ -11,21 +11,6 @@
             margin-left: 250px;
         }
 
-        // Cerrar sesión (para el nav)
-        function cerrarSesion() {
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                localStorage.removeItem('usuarioActual');
-                localStorage.removeItem('token');
-                localStorage.removeItem('userType');
-                window.location.href = '../adminlogin.html';
-            }
-        }
-
-        // Inicializar al cargar la página
-        document.addEventListener('DOMContentLoaded', function () {
-            cargarDatosIniciales();
-        });
-
         .admin-header {
             margin-bottom: 30px;
             background: linear-gradient(135deg, #7e57c2, #5c6bc0);
@@ -540,6 +525,7 @@
                         <th>ID</th>
                         <th>Nombre</th>
                         <th>Marca</th>
+                        <th>Restock</th>
                         <th>Género</th>
                         <th>Precio</th>
                         <th>Stock</th>
@@ -549,7 +535,7 @@
                 </thead>
                 <tbody id="productosTableBody">
                     <tr>
-                        <td colspan="9" style="text-align:center; padding:40px;">
+                        <td colspan="10" style="text-align:center; padding:40px;">
                             Cargando productos...
                         </td>
                     </tr>
@@ -639,8 +625,8 @@
                     <div class="form-group">
                         <label>Tipo de Restock</label>
                         <select id="restockTipo">
-                            <option value="pull">Automática</option>
-                            <option value="push">Manual</option>
+                            <option value="push">Automático</option>
+                            <option value="pull">Bajo Pedido</option>
                         </select>
                     </div>
 
@@ -835,7 +821,7 @@
             if (productosFiltrados.length === 0) {
                 tbody.innerHTML = `
                             <tr>
-                                <td colspan="9" style="text-align:center; padding:40px;">
+                                <td colspan="10" style="text-align:center; padding:40px;">
                                     <p style="color:#999; font-size:16px;">No hay productos que coincidan con tu búsqueda</p>
                                     <button class="btn-secundario" onclick="limpiarFiltros()" style="margin-top:10px;">
                                         Limpiar filtros
@@ -851,14 +837,15 @@
                 const stockClass = producto.stock <= (producto.stock_minimo || 5) ? 'stock-bajo' : 'stock-normal';
                 const estadoClass = producto.activo ? 'estado-activo' : 'estado-inactivo';
                 const estadoTexto = producto.activo ? 'Activo' : 'Inactivo';
-                const restockDisplay = producto.restock === 'push' ? 'Manual' : 'Automática';
+                const restockLabel = producto.restock === 'push' ? 'Automático' : producto.restock === 'pull' ? 'Bajo Pedido' : '—';
+                const restockClass = producto.restock === 'push' ? 'estado-activo' : producto.restock === 'pull' ? 'stock-bajo' : '';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                             <td>#${producto.id}</td>
                             <td><strong>${producto.nombre}</strong></td>
                             <td>${producto.marca || '—'}</td>
-                            <td>${restockDisplay}</td>
+                            <td><span class="${restockClass}">${restockLabel}</span></td>
                             <td>${producto.genero || '—'}</td>
                             <td>$${parseFloat(producto.precio).toFixed(2)}</td>
                             <td class="${stockClass}">${producto.stock} uds</td>
@@ -907,7 +894,7 @@
 
             // Valor por defecto para tipo de restock
             const restockSelect = document.getElementById('restockTipo');
-            if (restockSelect) restockSelect.value = 'pull';
+            if (restockSelect) restockSelect.value = 'push';
 
             document.getElementById('productoModal').style.display = 'block';
         }
@@ -939,7 +926,7 @@
 
             // Asignar tipo de restock (si existe) o usar por defecto 'pull'
             const restockSelectEdit = document.getElementById('restockTipo');
-            if (restockSelectEdit) restockSelectEdit.value = producto.restock || 'pull';
+            if (restockSelectEdit) restockSelectEdit.value = producto.restock || 'push';
 
             document.getElementById('productoModal').style.display = 'block';
         }
@@ -970,10 +957,10 @@
                 stock_minimo: parseInt(document.getElementById('stockMinimo').value) || 5,
                 descripcion: document.getElementById('descripcion').value,
                 tamanio_ml: parseInt(document.getElementById('tamanioMl').value) || null,
-                proveedor_id: parseInt(document.getElementById('proveedorId').value) || null,
+                proveedor_id: parseInt(document.getElementById('proveedorId').value) || 2,
                 notas_olfativas: document.getElementById('notasOlfativas').value,
                 imagen_url: document.getElementById('imagenUrl').value,
-                restock: document.getElementById('restockTipo').value || 'pull',
+                restock: document.getElementById('restockTipo').value || 'push',
                 activo: document.getElementById('activo').checked
             };
 
@@ -1112,20 +1099,18 @@
 
         function cerrarSesion() {
             if (confirm('¿Cerrar sesión?')) {
-                localStorage.removeItem('user');
+                localStorage.removeItem('usuarioActual');
                 localStorage.removeItem('token');
                 localStorage.removeItem('userType');
-                window.location.href = '../clientelogin.html';
+                window.location.href = '../adminlogin.html';
             }
         }
 
         // Verificar sesión al inicio
         function verificarSesion() {
-            const user = localStorage.getItem('user');
-            const userType = localStorage.getItem('userType');
-
-            if (!user || userType !== 'vendedor') {
-                window.location.href = '../clientelogin.html';
+            const user = localStorage.getItem('usuarioActual');
+            if (!user) {
+                window.location.href = '../adminlogin.html';
                 return false;
             }
             return true;
