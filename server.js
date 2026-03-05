@@ -1964,6 +1964,26 @@ app.get('/api/vendedor/:vendedorId/productos', async (req, res) => {
     }
 });
 
+// Obtener movimientos de inventario (admin)
+app.get('/api/movimientos-inventario', async (req, res) => {
+    try {
+        const query = `
+            SELECT m.id, m.producto_id, p.nombre as producto_nombre,
+                   m.tipo, m.cantidad, m.motivo, m.fecha
+            FROM movimientos_inventario m
+            LEFT JOIN productos p ON m.producto_id = p.id
+            ORDER BY m.fecha DESC
+            LIMIT 1000
+        `;
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo movimientos de inventario:', error);
+        res.status(500).json({ error: 'Error al cargar movimientos' });
+    }
+});
+
 // Crear nuevo producto
 app.post('/api/vendedor/:vendedorId/productos', async (req, res) => {
     const { vendedorId } = req.params;
@@ -2227,6 +2247,26 @@ app.get('/api/productos/activos', async (req, res) => {
     } catch (error) {
         console.error('Error obteniendo productos:', error);
         res.status(500).json({ error: 'Error al cargar productos' });
+    }
+});
+
+// Obtener movimientos de inventario (admin)
+app.get('/api/movimientos-inventario', async (req, res) => {
+    try {
+        const query = `
+            SELECT m.id, m.producto_id, p.nombre as producto_nombre,
+                   m.tipo, m.cantidad, m.motivo, m.fecha
+            FROM movimientos_inventario m
+            LEFT JOIN productos p ON m.producto_id = p.id
+            ORDER BY m.fecha DESC
+            LIMIT 1000
+        `;
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo movimientos de inventario:', error);
+        res.status(500).json({ error: 'Error al cargar movimientos' });
     }
 });
 

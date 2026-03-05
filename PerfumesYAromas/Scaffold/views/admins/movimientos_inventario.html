@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Movimientos de Inventario - Admin | PerfumeShop</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <style>
+        .main-content { padding: 20px; margin-left: 250px; }
+        .admin-header { margin-bottom: 20px; background: linear-gradient(135deg,#7e57c2,#5c6bc0); color:white; padding:20px; border-radius:12px; display:flex; justify-content:space-between; align-items:center }
+        .admin-header h1 { margin:0; font-size:1.25rem }
+        .tabla-admin { background:white; padding:20px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.06) }
+        table { width:100%; border-collapse:collapse }
+        table th, table td { padding:12px; border-bottom:1px solid #f0f0f0; text-align:left }
+        table th { background:#faf7ff; color:#5c3aa8 }
+        .buscador { width:300px; padding:10px 12px; border-radius:8px; border:1px solid #e0e0e0 }
+        .filtros { display:flex; gap:10px; align-items:center; margin-bottom:12px }
+        .message { padding:12px; border-radius:8px; display:none }
+        .success { background:#d4edda; color:#155724 }
+        .error { background:#f8d7da; color:#721c24 }
+    </style>
+</head>
+<body>
+    <!-- Menú lateral -->
+    <aside class="sidebar">
+        <h2>🌸 PerfumeShop</h2>
+        <nav>
+            <a href="paneladmin.html">📊 Dashboard</a>
+            <a href="perfumesadmin.html" class="active">🧴 Perfumes</a>
+            <a href="ventasadmin.html">🛍️ Ventas</a>
+            <a href="clientesadmin.html">👥 Clientes</a>
+            <a href="metricasadmin.html">📊 Métricas</a>
+            <a href="proveedores.html"> 🚚 Proveedores </a>
+            <a href="movimientos_inventario.html" class="active">📊 Movimientos</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="admin-header">
+            <h1>📊 Movimientos de Inventario</h1>
+            <div>
+                <input id="filtroBusqueda" class="buscador" placeholder="Buscar producto, motivo..." oninput="filtrarTabla()">
+            </div>
+        </header>
+
+        <section class="tabla-admin">
+            <div id="successMessage" class="message success"></div>
+            <div id="errorMessage" class="message error"></div>
+
+            <div class="filtros">
+                <label>Tipo:</label>
+                <select id="filtroTipo" onchange="cargarMovimientos()">
+                    <option value="todos">Todos</option>
+                    <option value="entrada">Entradas</option>
+                    <option value="salida">Salidas</option>
+                </select>
+
+                <label>Motivo:</label>
+                <select id="filtroMotivo" onchange="cargarMovimientos()">
+                    <option value="todos">Todos</option>
+                    <option value="venta">venta</option>
+                    <option value="ajuste">ajuste</option>
+                    <option value="reposicion">reposicion</option>
+                </select>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Motivo</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody id="movimientosBody">
+                    <tr><td colspan="6" style="text-align:center; padding:30px; color:#666">Cargando movimientos...</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+        let movimientos = [];
+
+        async function cargarMovimientos() {
+            const tipo = document.getElementById('filtroTipo').value;
+            const motivo = document.getElementById('filtroMotivo').value;
+
+            try {
+                const resp = await fetch(`${API_BASE_URL}/api/movimientos-inventario`);
+                if (!resp.ok) throw new Error('Error cargando movimientos');
+                movimientos = await resp.json();
+
+                let fil = movimientos;
+                if (tipo && tipo !== 'todos') fil = fil.filter(m => m.tipo === tipo);
+                if (motivo && motivo !== 'todos') fil = fil.filter(m => m.motivo === motivo);
+
+                renderTabla(fil);
+            } catch (err) {
+                console.error(err);
+                showError('Error al cargar movimientos');
+            }
+        }
+
+        function renderTabla(rows) {
+            const tbody = document.getElementById('movimientosBody');
+            if (!rows || rows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#666">No hay movimientos</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            rows.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                        <td>#${r.id}</td>
+                        <td>${r.producto_nombre || ('#' + r.producto_id)}</td>
+                        <td>${r.tipo}</td>
+                        <td>${r.cantidad}</td>
+                        <td>${r.motivo}</td>
+                        <td>${new Date(r.fecha).toLocaleString()}</td>
+                    `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filtrarTabla() {
+            const q = document.getElementById('filtroBusqueda').value.toLowerCase();
+            const filtroTipo = document.getElementById('filtroTipo').value;
+            const filtroMotivo = document.getElementById('filtroMotivo').value;
+
+            let fil = movimientos;
+            if (filtroTipo !== 'todos') fil = fil.filter(m => m.tipo === filtroTipo);
+            if (filtroMotivo !== 'todos') fil = fil.filter(m => m.motivo === filtroMotivo);
+
+            if (q) {
+                fil = fil.filter(m => (m.producto_nombre && m.producto_nombre.toLowerCase().includes(q)) ||
+                    (m.motivo && m.motivo.toLowerCase().includes(q)) ||
+                    String(m.producto_id).includes(q));
+            }
+
+            renderTabla(fil);
+        }
+
+        function showError(text) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = text; el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function cerrarSesion() {
+            const confirmar = confirm('¿Seguro que quieres cerrar sesión?');
+            if (confirmar) {
+                // Limpiar información de sesión
+                localStorage.removeItem('usuarioActual');
+                sessionStorage.clear();
+                window.location.href = '../adminlogin.html';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Verificar que el usuario esté autenticado y sea admin
+            try {
+                const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
+                if (!usuario || usuario.rol !== 'admin') {
+                    alert('Acceso restringido. Inicia sesión como administrador.');
+                    window.location.href = '../adminlogin.html';
+                    return;
+                }
+                // Mostrar nombre del usuario si hay espacio
+                const usrEl = document.getElementById('usuarioActual');
+                if (usrEl && usuario.nombre) usrEl.textContent = usuario.nombre;
+            } catch (e) {
+                window.location.href = '../adminlogin.html';
+                return;
+            }
+
+            cargarMovimientos();
+        });
+    </script>
+</body>
+</html>
