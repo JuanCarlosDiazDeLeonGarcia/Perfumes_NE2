@@ -1456,6 +1456,69 @@ app.get('/api/metricas', async (req, res) => {
     }
 });
 
+// ===================== MÉTRICAS DE PRODUCTOS =====================
+
+app.get('/api/metricas-productos', async (req, res) => {
+    console.log('📊 Petición recibida en /api/metricas-productos');
+
+    try {
+        // 1. Productos más vendidos (por cantidad de pedidos)
+        const masVendidos = await pool.query(`
+            SELECT p.id, p.nombre, p.marca, p.stock, p.precio,
+                   COUNT(pe.id) AS total_pedidos,
+                   COALESCE(SUM(pe.cantidad), 0) AS total_unidades
+            FROM productos p
+            LEFT JOIN pedidos pe ON pe.producto_id = p.id
+            GROUP BY p.id, p.nombre, p.marca, p.stock, p.precio
+            ORDER BY total_pedidos DESC, total_unidades DESC
+            LIMIT 10
+        `);
+
+        // 2. Productos con inventario crítico (stock <= stock_minimo)
+        const inventarioCritico = await pool.query(`
+            SELECT id, nombre, marca, stock, stock_minimo,
+                   CASE WHEN stock = 0 THEN 'agotado'
+                        WHEN stock <= stock_minimo THEN 'critico'
+                   END AS estado_stock
+            FROM productos
+            WHERE stock <= stock_minimo AND activo = true
+            ORDER BY stock ASC
+        `);
+
+        // 3. Conteo restock push vs pull
+        const restockConteo = await pool.query(`
+            SELECT 
+                COUNT(*) FILTER (WHERE restock = 'push') AS push_count,
+                COUNT(*) FILTER (WHERE restock = 'pull') AS pull_count,
+                COUNT(*) FILTER (WHERE restock IS NULL OR restock = '') AS sin_definir
+            FROM productos
+            WHERE activo = true
+        `);
+
+        // 4. Stats generales
+        const stats = await pool.query(`
+            SELECT 
+                COUNT(*) AS total_productos,
+                COALESCE(SUM(stock), 0) AS stock_total,
+                COUNT(*) FILTER (WHERE stock = 0) AS agotados,
+                COUNT(*) FILTER (WHERE stock > 0 AND stock <= stock_minimo) AS criticos
+            FROM productos
+            WHERE activo = true
+        `);
+
+        res.json({
+            mas_vendidos: masVendidos.rows,
+            inventario_critico: inventarioCritico.rows,
+            restock: restockConteo.rows[0],
+            stats: stats.rows[0]
+        });
+
+    } catch (error) {
+        console.error('❌ Error en /api/metricas-productos:', error.message);
+        res.status(500).json({ error: 'Error al obtener métricas de productos' });
+    }
+});
+
 // ==================== ENDPOINTS PARA VENDEDORES ====================
 // Obtener clientes que han comprado con este vendedor
 app.get('/api/vendedor/:vendedorId/clientes', async (req, res) => {
@@ -1502,21 +1565,23 @@ app.get('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
                 p.total,
                 p.estado,
                 p.vendedor_id,
+                p.producto_id,
+                p.cantidad,
                 c.nombre as cliente_nombre,
                 c.id as cliente_id,
                 c.correo as cliente_email,
                 p.direccion_envio,
-                -- Como ya no tenemos carrito, mostramos info básica
-                'Ver detalles completos en el pedido' as productos
+                pr.nombre as producto_nombre
             FROM pedidos p
             JOIN clientes c ON p.cliente_id = c.id
+            LEFT JOIN productos pr ON p.producto_id = pr.id
             WHERE p.vendedor_id = $1
             ORDER BY p.fecha_pedido DESC
             LIMIT 50
         `;
 
         const result = await pool.query(query, [vendedorId]);
-        // Normalizar salida: no dependemos de tabla seguimiento_pedidos
+        // Normalizar salida
         const rows = result.rows.map(r => ({
             id: r.id,
             numero_orden: r.numero_orden,
@@ -1524,11 +1589,13 @@ app.get('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
             total: r.total,
             estado: r.estado,
             vendedor_id: r.vendedor_id,
+            producto_id: r.producto_id,
+            cantidad: r.cantidad,
             cliente_nombre: r.cliente_nombre,
             cliente_id: r.cliente_id,
             cliente_email: r.cliente_email,
             ubicacion_actual: r.direccion_envio || null,
-            productos: r.productos
+            productos: r.producto_nombre || 'Sin producto asignado'
         }));
 
         res.json(rows);

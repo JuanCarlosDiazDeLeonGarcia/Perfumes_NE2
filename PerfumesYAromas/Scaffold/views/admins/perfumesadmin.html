@@ -240,8 +240,8 @@
             <label for="restock">Tipo de Restock *</label>
             <select id="restock" required>
               <option value="">-- Seleccionar --</option>
-              <option value="push">Push</option>
-              <option value="pull">Pull</option>
+              <option value="push">Automático</option>
+              <option value="pull">Bajo Pedido</option>
             </select>
           </div>
         </div>
@@ -276,8 +276,8 @@
     }
 
     function restockBadge(val) {
-      if (val === 'push') return '<span class="badge-push">Push</span>';
-      if (val === 'pull') return '<span class="badge-pull">Pull</span>';
+      if (val === 'push') return '<span class="badge-push">Automático</span>';
+      if (val === 'pull') return '<span class="badge-pull">Bajo Pedido</span>';
       return '<span class="badge-na">N/A</span>';
     }
 

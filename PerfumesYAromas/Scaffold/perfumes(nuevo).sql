@@ -370,6 +370,8 @@ CREATE TABLE public.pedidos (
     numero_orden character varying(50) NOT NULL,
     cliente_id integer,
     vendedor_id integer,
+    producto_id integer,
+    cantidad integer DEFAULT 1,
     subtotal numeric(10,2) DEFAULT 0 NOT NULL,
     impuestos numeric(10,2) DEFAULT 0,
     descuento numeric(10,2) DEFAULT 0,
@@ -382,7 +384,8 @@ CREATE TABLE public.pedidos (
     fecha_confirmacion timestamp without time zone,
     fecha_envio timestamp without time zone,
     fecha_entrega timestamp without time zone,
-    CONSTRAINT pedidos_estado_check CHECK (((estado)::text = ANY ((ARRAY['pendiente'::character varying, 'confirmado'::character varying, 'procesando'::character varying, 'enviado'::character varying, 'entregado'::character varying, 'cancelado'::character varying])::text[])))
+    CONSTRAINT pedidos_estado_check CHECK (((estado)::text = ANY ((ARRAY['pendiente'::character varying, 'confirmado'::character varying, 'procesando'::character varying, 'enviado'::character varying, 'entregado'::character varying, 'cancelado'::character varying])::text[]))),
+    CONSTRAINT pedidos_cantidad_check CHECK ((cantidad > 0))
 );
 
 
@@ -871,14 +874,15 @@ COPY public.metricas_clientes (id, cliente_id, total_interacciones, ultima_inter
 -- Data for Name: pedidos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.pedidos (id, numero_orden, cliente_id, vendedor_id, subtotal, impuestos, descuento, total, estado, metodo_pago, direccion_envio, notas, fecha_pedido, fecha_confirmacion, fecha_envio, fecha_entrega) FROM stdin;
-1	ORD-001	4	1	500.00	0.00	0.00	580.00	entregado	tarjeta	\N	\N	2026-02-04 23:12:52.147103	\N	\N	\N
-2	ORD-002	4	1	750.00	0.00	0.00	870.00	enviado	transferencia	\N	\N	2026-02-04 23:12:52.147103	\N	\N	\N
-8	ORD-100	4	1	500.00	0.00	0.00	580.00	confirmado	\N	\N	\N	2026-02-16 07:57:24.117768	\N	\N	\N
-9	ORD-103	6	6	500.00	0.00	0.00	580.00	confirmado	\N	\N	\N	2026-02-16 07:57:24.117768	\N	\N	\N
-10	ORD-104	7	6	500.00	0.00	0.00	580.00	confirmado	\N	\N	\N	2026-02-16 07:57:24.117768	\N	\N	\N
-11	ORD-102	5	6	500.00	0.00	0.00	580.00	confirmado	\N	\N	\N	2026-02-16 07:57:24.117768	\N	\N	\N
-12	ORD-101	2	6	500.00	0.00	0.00	580.00	confirmado	\N	\N	\N	2026-02-16 07:57:24.117768	\N	\N	\N
+COPY public.pedidos (id, numero_orden, cliente_id, vendedor_id, producto_id, cantidad, subtotal, impuestos, descuento, total, estado, metodo_pago, direccion_envio, notas, fecha_pedido, fecha_confirmacion, fecha_envio, fecha_entrega) FROM stdin;
+1	ORD-001	4	1	10	2	500.00	0.00	0.00	580.00	entregado	tarjeta	\N	\N	2026-02-04 23:12:52.147103	\N	\N	\N
+2	ORD-002	4	1	7	3	750.00	0.00	0.00	870.00	enviado	transferencia	\N	\N	2026-02-04 23:12:52.147103	\N	\N	\N
+8	ORD-100	4	1	3	2	500.00	0.00	0.00	580.00	confirmado	\N	\N	\N	2026-02-16 07:57:24.117768	\N	\N	\N
+9	ORD-103	6	6	1	4	500.00	0.00	0.00	580.00	confirmado	\N	\N	\N	2026-02-16 07:57:24.117768	\N	\N	\N
+10	ORD-104	7	6	9	2	500.00	0.00	0.00	580.00	confirmado	\N	\N	\N	2026-02-16 07:57:24.117768	\N	\N	\N
+11	ORD-102	5	6	5	1	500.00	0.00	0.00	580.00	confirmado	\N	\N	\N	2026-02-16 07:57:24.117768	\N	\N	\N
+12	ORD-101	2	6	4	3	500.00	0.00	0.00	580.00	confirmado	\N	\N	\N	2026-02-16 07:57:24.117768	\N	\N	\N
+13	ORD-105	5	6	10	2	60.00	9.60	0.00	69.60	enviado	tarjeta	\N	\N	2026-03-04 10:00:00.000000	\N	\N	\N
 \.
 
 
@@ -901,6 +905,7 @@ COPY public.productos (id, nombre, descripcion, precio, stock, stock_minimo, ven
 9	COOL WATER	Aroma fresco y acuático con notas marinas.	34.00	60	15	6	https://m.media-amazon.com/images/I/91xkVmTPE3L._UF350,350_QL80_.jpg	Davidoff	Hombre	125	Acuático, Marino, Fresco	t	2026-02-04 21:12:51.404965	2026-02-04 21:12:51.404965	2	push
 10	SAUVAGE DIOR	Notas cálidas de sándalo combinadas con frescura.	30.00	50	12	6	https://www.dior.com/dw/image/v2/BGXS_PRD/on/demandware.static/-/Library-Sites-DiorSharedLibrary/default/dwf80880b6/images/beauty/01-FRAGRANCES/2025/PDP-REVAMP/SAUVAGE/Y0785220/POSTER_DIOR_SAUVAGE_CAPSULE_EDP_VA_916.jpg?sw=800	Dior	Hombre	100	Amaderado, Especiado, Fresco	t	2026-02-04 21:12:51.404965	2026-02-04 21:12:51.404965	2	push
 6	INVICTUS	Notas cálidas de sándalo y cedro para un aroma intenso.	30.00	55	12	6	https://fraganciasfiord.com.mx/wp-content/uploads/2024/06/Decant-o-muestra-del-perfume-Invictus-PARFUM-original-de-Rabanne-en-Fragancias-Fiord.jpg	Paco Rabanne	Hombre	100	Marino, Amaderado, Deportivo	t	2026-02-04 21:12:51.404965	2026-02-19 07:28:50.087246	2	push
+13	BLACK ORCHID	Una fragancia seductora con notas oscuras de orquídea negra y especias.	55.00	3	7	6	https://m.media-amazon.com/images/I/41EXXOm0GBL._AC_UF894,1000_QL80_.jpg	Tom Ford	Mujer	100	Orquídea Negra, Especias, Chocolate	t	2026-03-04 10:00:00.000000	2026-03-04 10:00:00.000000	2	pull
 \.
 
 
@@ -1041,7 +1046,7 @@ SELECT pg_catalog.setval('public.metricas_clientes_id_seq', 18, true);
 -- Name: pedidos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.pedidos_id_seq', 12, true);
+SELECT pg_catalog.setval('public.pedidos_id_seq', 13, true);
 
 
 --
@@ -1050,7 +1055,7 @@ SELECT pg_catalog.setval('public.pedidos_id_seq', 12, true);
 -- Name: productos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.productos_id_seq', 12, true);
+SELECT pg_catalog.setval('public.productos_id_seq', 13, true);
 
 
 --
@@ -1375,6 +1380,13 @@ ALTER TABLE ONLY public.pedidos
 
 ALTER TABLE ONLY public.pedidos
     ADD CONSTRAINT pedidos_usuario_id_fkey FOREIGN KEY (vendedor_id) REFERENCES public.usuarios(id);
+
+--
+-- Name: pedidos pedidos_producto_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pedidos
+    ADD CONSTRAINT pedidos_producto_id_fkey FOREIGN KEY (producto_id) REFERENCES public.productos(id);
 
 
 --
