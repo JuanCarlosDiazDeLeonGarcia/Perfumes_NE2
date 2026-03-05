@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Inventario - PerfumeShop</title>
+
+        <link rel="stylesheet" href="../../css/base.css">
+
+        <style>
+
+            .main-content{
+            padding:20px;
+            margin-left:250px;
+            }
+
+            .admin-header{
+            margin-bottom:30px;
+            background:linear-gradient(135deg,#7e57c2,#5c6bc0);
+            color:white;
+            padding:25px;
+            border-radius:15px;
+            }
+
+            .tabla-admin{
+            background:white;
+            border-radius:15px;
+            padding:25px;
+            box-shadow:0 4px 15px rgba(0,0,0,0.08);
+            }
+
+            table{
+            width:100%;
+            border-collapse:collapse;
+            }
+
+            table th, table td{
+            padding:15px;
+            border-bottom:1px solid #eee;
+            text-align:left;
+            }
+
+            table th{
+            background:#f8f9fa;
+            }
+
+            table tr:hover{
+            background:#f9f9f9;
+            }
+
+            .buscador{
+            width:100%;
+            padding:12px;
+            border:1px solid #ddd;
+            border-radius:8px;
+            margin-bottom:20px;
+            font-size:16px;
+            }
+
+            .tipo-push{
+            color:#4caf50;
+            font-weight:bold;
+            }
+
+            .tipo-pull{
+            color:#ff9800;
+            font-weight:bold;
+            }
+
+        </style>
+    </head>
+
+    <body>
+
+        <!-- Menú lateral -->
+        <aside class="sidebar">
+            <h2>👔 PerfumeShop</h2>
+
+            <nav>
+                <a href="../catalog.html">🢀 Volver</a>
+                <a href="vendedormenu.html">📊 Dashboard</a>
+                <a href="vendedorproductos.html">📦 Productos</a>
+                <a href="vendedorinventario.html" class="active">📋 Movimientos Inventario</a>
+                <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+            </nav>
+
+        </aside>
+        <main class="main-content">
+            <div class="admin-header">
+                <h1>📦 Movimientos de Inventario</h1>
+                <p>Historial de reabastecimiento de productos</p>
+            </div>
+
+            <section class="tabla-admin">
+                <input type="text"
+                class="buscador"
+                id="buscadorInventario"
+                placeholder="🔍 Buscar producto..."
+                onkeyup="filtrarInventario()">
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Método</th>
+                            <th>Fecha</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventarioTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align:center">
+                                Cargando movimientos...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+
+
+        <script>
+            const API_BASE_URL = "http://localhost:3000"
+            async function cargarMovimientosInventario(){
+            try{
+                const response = await fetch(`${API_BASE_URL}/api/inventario/movimientos`)
+                const movimientos = await response.json()
+                const tbody = document.getElementById("inventarioTableBody")
+                tbody.innerHTML = ""
+                movimientos.forEach(mov=>{
+                const tipoClase = mov.tipo_movimiento === "push" ? "tipo-push" : "tipo-pull"
+                const tr = document.createElement("tr")
+
+                tr.innerHTML = `
+
+                <td>${mov.producto_nombre}</td>
+                <td>${mov.cantidad}</td>
+                <td class="${tipoClase}">${mov.tipo_movimiento.toUpperCase()}</td>
+                <td>${new Date(mov.fecha_movimiento).toLocaleDateString()}</td>
+                <td>${mov.descripcion || "-"}</td>
+
+                `
+
+                tbody.appendChild(tr)
+
+                })
+            }catch(error){
+                console.error(error)
+            }
+            }
+
+
+            function filtrarInventario(){
+                const input = document.getElementById("buscadorInventario")
+                const filtro = input.value.toLowerCase()
+                const filas = document.querySelectorAll("#inventarioTableBody tr")
+                filas.forEach(fila=>{
+                const texto = fila.textContent.toLowerCase()
+                fila.style.display = texto.includes(filtro) ? "" : "none"
+                })
+            }
+
+
+            function cerrarSesion(){
+                localStorage.removeItem("usuarioActual")
+                window.location.href = "../adminlogin.html"
+            }
+
+            document.addEventListener("DOMContentLoaded",()=>{
+                cargarMovimientosInventario()
+            })
+        </script>
+    </body>
+</html>
