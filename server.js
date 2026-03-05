@@ -15,8 +15,8 @@ app.use(express.json());
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'perfumes_ne2', //cambiar si el nombre de la BD es diferente
-    password: '1234', //Cambiar por su contraseña segun su BD
+    database: 'perfumes', //cambiar si el nombre de la BD es diferente
+    password: '2244', //Cambiar por su contraseña segun su BD
     port: 5432,
 });
 
@@ -1804,6 +1804,61 @@ app.get('/api/vendedor/:vendedorId/estadisticas', async (req, res) => {
     }
 });
 
+// ==================== ENDPOINTS ADMIN PRODUCTOS ====================
+
+// Obtener todos los productos (admin)
+app.get('/api/admin/productos', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                id, nombre, descripcion, precio, stock, stock_minimo,
+                marca, genero, tamanio_ml, notas_olfativas, imagen_url,
+                proveedor_id, activo, restock, fecha_creacion
+            FROM productos
+            ORDER BY id ASC
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo productos admin:', error);
+        res.status(500).json({ error: 'Error al cargar productos' });
+    }
+});
+
+// Crear producto (admin)
+app.post('/api/admin/productos', async (req, res) => {
+    const {
+        nombre, descripcion, precio, stock, stock_minimo,
+        marca, genero, tamanio_ml, notas_olfativas, imagen_url,
+        proveedor_id, activo, restock
+    } = req.body;
+
+    if (!nombre || !precio || precio < 0) {
+        return res.status(400).json({ error: 'Nombre y precio válido son requeridos' });
+    }
+
+    try {
+        const query = `
+            INSERT INTO productos (
+                nombre, descripcion, precio, stock, stock_minimo,
+                marca, genero, tamanio_ml, notas_olfativas, imagen_url,
+                proveedor_id, activo, restock
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+            RETURNING *
+        `;
+        const result = await pool.query(query, [
+            nombre, descripcion || '', precio, stock || 0, stock_minimo || 10,
+            marca || '', genero || null, tamanio_ml || null, notas_olfativas || '',
+            imagen_url || '', proveedor_id || 2,
+            activo !== undefined ? activo : true, restock || null
+        ]);
+        res.status(201).json({ message: 'Producto creado', producto: result.rows[0] });
+    } catch (error) {
+        console.error('Error creando producto admin:', error);
+        res.status(500).json({ error: 'Error al crear producto' });
+    }
+});
+
 // ==================== ENDPOINTS PARA PRODUCTOS DEL VENDEDOR ====================
 
 // Obtener todos los productos del vendedor
@@ -1907,7 +1962,8 @@ app.put('/api/productos/:productoId', async (req, res) => {
         notas_olfativas,
         imagen_url,
         proveedor_id,
-        activo
+        activo,
+        restock
     } = req.body;
 
     try {
@@ -1936,15 +1992,16 @@ app.put('/api/productos/:productoId', async (req, res) => {
                 imagen_url = COALESCE($10, imagen_url),
                 proveedor_id = COALESCE($11, proveedor_id),
                 activo = COALESCE($12, activo),
+                restock = COALESCE($13, restock),
                 fecha_actualizacion = CURRENT_TIMESTAMP
-            WHERE id = $13
+            WHERE id = $14
             RETURNING *
         `;
 
         const result = await pool.query(query, [
             nombre, descripcion, precio, stock, stock_minimo,
             marca, genero, tamanio_ml, notas_olfativas, imagen_url,
-            proveedor_id, activo, productoId
+            proveedor_id, activo, restock, productoId
         ]);
 
         res.json({

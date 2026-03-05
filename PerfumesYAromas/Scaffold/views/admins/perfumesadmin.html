@@ -4,6 +4,128 @@
   <meta charset="UTF-8">
   <title>Inventario de Perfumes</title>
   <link rel="stylesheet" href="../../css/base.css">
+  <style>
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      width: 520px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .modal h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .modal label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .modal input,
+    .modal select,
+    .modal textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 4px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+    }
+    .modal textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal-actions button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .btn-guardar {
+      background: linear-gradient(90deg, purple, blue);
+      color: white;
+    }
+    .btn-cancelar {
+      background: #ccc;
+      color: #333;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .form-row > div {
+      display: flex;
+      flex-direction: column;
+    }
+    /* Badge restock */
+    .badge-push {
+      background: #e3f2fd;
+      color: #1565c0;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+    .badge-pull {
+      background: #fce4ec;
+      color: #c62828;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+    .badge-na {
+      background: #f5f5f5;
+      color: #999;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+    }
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 14px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      z-index: 3000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .toast.show { opacity: 1; }
+    .toast.success { background: #43a047; }
+    .toast.error { background: #e53935; }
+  </style>
 </head>
 <body>
 
@@ -29,17 +151,17 @@
 
     <!-- Tarjetas -->
     <section class="cards">
-      <div class="card"><h3>Total Productos</h3><p>15</p></div>
-      <div class="card"><h3>Stock Total</h3><p>342</p></div>
-      <div class="card"><h3>Stock Bajo</h3><p>4</p></div>
-      <div class="card"><h3>Sin Existencias</h3><p>2</p></div>
+      <div class="card"><h3>Total Productos</h3><p id="stat-total">0</p></div>
+      <div class="card"><h3>Stock Total</h3><p id="stat-stock">0</p></div>
+      <div class="card"><h3>Stock Bajo</h3><p id="stat-bajo">0</p></div>
+      <div class="card"><h3>Sin Existencias</h3><p id="stat-sin">0</p></div>
     </section>
 
     <!-- Tabla -->
     <section class="tabla-admin">
       <div class="titulo-tabla">
         <h2>🧴 Listado de Perfumes</h2>
-        <button class="btn-agregar">+ Agregar Perfume</button>
+        <button class="btn-agregar" id="btnAgregar">+ Agregar Perfume</button>
       </div>
 
       <table>
@@ -50,36 +172,275 @@
             <th>Marca</th>
             <th>Precio</th>
             <th>Stock</th>
+            <th>Restock</th>
             <th>Acciones</th>
           </tr>
         </thead>
-        <tbody>
-          <tr><td>#001</td><td>Floral Dream</td><td>Chanel</td><td>$120</td><td>15</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#002</td><td>Midnight Musk</td><td>Dior</td><td>$150</td><td>8</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#003</td><td>Vanilla Breeze</td><td>Gucci</td><td>$95</td><td>20</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#004</td><td>Ocean Spirit</td><td>Versace</td><td>$110</td><td>12</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#005</td><td>Amber Touch</td><td>Armani</td><td>$140</td><td>5</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#006</td><td>Pink Blossom</td><td>YSL</td><td>$130</td><td>9</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#007</td><td>Royal Essence</td><td>Givenchy</td><td>$170</td><td>3</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#008</td><td>Wild Bloom</td><td>Dolce & Gabbana</td><td>$105</td><td>14</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#009</td><td>Golden Oud</td><td>Tom Ford</td><td>$220</td><td>6</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#010</td><td>Rose Secret</td><td>Burberry</td><td>$115</td><td>18</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#011</td><td>Citrus Glow</td><td>Hugo Boss</td><td>$90</td><td>25</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#012</td><td>Dark Vanilla</td><td>Prada</td><td>$155</td><td>10</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#013</td><td>Blue Horizon</td><td>Ralph Lauren</td><td>$125</td><td>11</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#014</td><td>Sweet Jasmine</td><td>Lancome</td><td>$135</td><td>7</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
-          <tr><td>#015</td><td>Mystic Rose</td><td>Valentino</td><td>$160</td><td>0</td><td><button class="btn-editar">✏️</button><button class="btn-eliminar">🗑️</button></td></tr>
+        <tbody id="tabla-productos">
+          <!-- Se llena dinámicamente -->
         </tbody>
       </table>
     </section>
   </main>
 
+  <!-- Modal Agregar / Editar -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2 id="modalTitulo">Agregar Perfume</h2>
+      <form id="formPerfume">
+        <input type="hidden" id="perfumeId">
+
+        <div class="form-row">
+          <div>
+            <label for="nombre">Nombre *</label>
+            <input type="text" id="nombre" required>
+          </div>
+          <div>
+            <label for="marca">Marca</label>
+            <input type="text" id="marca">
+          </div>
+        </div>
+
+        <label for="descripcion">Descripción</label>
+        <textarea id="descripcion"></textarea>
+
+        <div class="form-row">
+          <div>
+            <label for="precio">Precio *</label>
+            <input type="number" id="precio" step="0.01" min="0" required>
+          </div>
+          <div>
+            <label for="stock">Stock</label>
+            <input type="number" id="stock" min="0" value="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label for="stock_minimo">Stock Mínimo</label>
+            <input type="number" id="stock_minimo" min="0" value="10">
+          </div>
+          <div>
+            <label for="genero">Género</label>
+            <select id="genero">
+              <option value="">-- Seleccionar --</option>
+              <option value="Hombre">Hombre</option>
+              <option value="Mujer">Mujer</option>
+              <option value="Unisex">Unisex</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label for="tamanio_ml">Tamaño (ml)</label>
+            <input type="number" id="tamanio_ml" min="1">
+          </div>
+          <div>
+            <label for="restock">Tipo de Restock *</label>
+            <select id="restock" required>
+              <option value="">-- Seleccionar --</option>
+              <option value="push">Push</option>
+              <option value="pull">Pull</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="notas_olfativas">Notas Olfativas</label>
+        <input type="text" id="notas_olfativas" placeholder="Ej: Sándalo, vainilla, cedro">
+
+        <label for="imagen_url">URL de Imagen</label>
+        <input type="text" id="imagen_url" placeholder="https://...">
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancelar" id="btnCancelar">Cancelar</button>
+          <button type="submit" class="btn-guardar">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
   <script>
-    document.querySelector('.btn-agregar').addEventListener('click', () => alert('Formulario para agregar nuevo perfume'));
-    document.querySelectorAll('.btn-editar').forEach(btn => btn.addEventListener('click', () => alert('Editar detalles del perfume')));
-    document.querySelectorAll('.btn-eliminar').forEach(btn => btn.addEventListener('click', () => confirm('¿Eliminar este perfume del inventario?')));
+    const API_BASE = 'http://localhost:3000/api';
+    let productosData = [];
+
+    // ========== UTILIDADES ==========
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + type;
+      setTimeout(() => t.className = 'toast', 3000);
+    }
+
+    function restockBadge(val) {
+      if (val === 'push') return '<span class="badge-push">Push</span>';
+      if (val === 'pull') return '<span class="badge-pull">Pull</span>';
+      return '<span class="badge-na">N/A</span>';
+    }
+
+    // ========== CARGAR PRODUCTOS ==========
+    async function cargarProductos() {
+      try {
+        const res = await fetch(`${API_BASE}/admin/productos`);
+        if (!res.ok) throw new Error('Error al obtener productos');
+        productosData = await res.json();
+        renderTabla();
+        actualizarStats();
+      } catch (err) {
+        console.error(err);
+        showToast('Error al cargar productos', 'error');
+      }
+    }
+
+    function renderTabla() {
+      const tbody = document.getElementById('tabla-productos');
+      tbody.innerHTML = productosData.map(p => `
+        <tr>
+          <td>#${String(p.id).padStart(3, '0')}</td>
+          <td>${p.nombre}</td>
+          <td>${p.marca || '-'}</td>
+          <td>$${Number(p.precio).toFixed(2)}</td>
+          <td>${p.stock}</td>
+          <td>${restockBadge(p.restock)}</td>
+          <td>
+            <button class="btn-editar" onclick="abrirEditar(${p.id})">✏️</button>
+            <button class="btn-eliminar" onclick="eliminarProducto(${p.id}, '${p.nombre.replace(/'/g, "\\'")}')">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function actualizarStats() {
+      document.getElementById('stat-total').textContent = productosData.length;
+      document.getElementById('stat-stock').textContent = productosData.reduce((s, p) => s + (p.stock || 0), 0);
+      document.getElementById('stat-bajo').textContent = productosData.filter(p => p.stock > 0 && p.stock <= (p.stock_minimo || 10)).length;
+      document.getElementById('stat-sin').textContent = productosData.filter(p => p.stock === 0).length;
+    }
+
+    // ========== MODAL ==========
+    function abrirModal(titulo) {
+      document.getElementById('modalTitulo').textContent = titulo;
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function cerrarModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
+      document.getElementById('formPerfume').reset();
+      document.getElementById('perfumeId').value = '';
+    }
+
+    // Agregar
+    document.getElementById('btnAgregar').addEventListener('click', () => {
+      abrirModal('Agregar Perfume');
+    });
+
+    // Editar - carga datos en el form
+    function abrirEditar(id) {
+      const prod = productosData.find(p => p.id === id);
+      if (!prod) return;
+
+      document.getElementById('perfumeId').value = prod.id;
+      document.getElementById('nombre').value = prod.nombre || '';
+      document.getElementById('marca').value = prod.marca || '';
+      document.getElementById('descripcion').value = prod.descripcion || '';
+      document.getElementById('precio').value = prod.precio || '';
+      document.getElementById('stock').value = prod.stock || 0;
+      document.getElementById('stock_minimo').value = prod.stock_minimo || 10;
+      document.getElementById('genero').value = prod.genero || '';
+      document.getElementById('tamanio_ml').value = prod.tamanio_ml || '';
+      document.getElementById('restock').value = prod.restock || '';
+      document.getElementById('notas_olfativas').value = prod.notas_olfativas || '';
+      document.getElementById('imagen_url').value = prod.imagen_url || '';
+
+      abrirModal('Editar Perfume');
+    }
+
+    // Cancelar
+    document.getElementById('btnCancelar').addEventListener('click', cerrarModal);
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) cerrarModal();
+    });
+
+    // ========== GUARDAR (crear / editar) ==========
+    document.getElementById('formPerfume').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById('perfumeId').value;
+      const body = {
+        nombre: document.getElementById('nombre').value.trim(),
+        marca: document.getElementById('marca').value.trim(),
+        descripcion: document.getElementById('descripcion').value.trim(),
+        precio: parseFloat(document.getElementById('precio').value),
+        stock: parseInt(document.getElementById('stock').value) || 0,
+        stock_minimo: parseInt(document.getElementById('stock_minimo').value) || 10,
+        genero: document.getElementById('genero').value || null,
+        tamanio_ml: parseInt(document.getElementById('tamanio_ml').value) || null,
+        restock: document.getElementById('restock').value || null,
+        notas_olfativas: document.getElementById('notas_olfativas').value.trim(),
+        imagen_url: document.getElementById('imagen_url').value.trim(),
+      };
+
+      try {
+        let res;
+        if (id) {
+          // Editar
+          res = await fetch(`${API_BASE}/productos/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+        } else {
+          // Crear
+          res = await fetch(`${API_BASE}/admin/productos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+        }
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al guardar');
+
+        showToast(id ? 'Producto actualizado' : 'Producto creado');
+        cerrarModal();
+        cargarProductos();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message, 'error');
+      }
+    });
+
+    // ========== ELIMINAR ==========
+    async function eliminarProducto(id, nombre) {
+      if (!confirm(`¿Eliminar "${nombre}" del inventario?`)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/productos/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al eliminar');
+
+        showToast('Producto eliminado');
+        cargarProductos();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message, 'error');
+      }
+    }
+
+    // ========== SESIÓN ==========
+    function cerrarSesion() {
+      if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+        localStorage.removeItem('usuarioActual');
+        window.location.href = '../catalog.html';
+      }
+    }
+
+    // ========== INIT ==========
+    cargarProductos();
   </script>
-  <script src="../../js/usuarios.js"></script>
 
 </body>
 </html>
