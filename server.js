@@ -15,8 +15,8 @@ app.use(express.json());
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'perfumes_ne2', //cambiar si el nombre de la BD es diferente
-    password: '1234', //Cambiar por su contraseña segun su BD
+    database: 'perfumes', //cambiar si el nombre de la BD es diferente
+    password: '2244', //Cambiar por su contraseña segun su BD
     port: 5432,
 });
 
@@ -2273,10 +2273,13 @@ app.get('/api/movimientos-inventario', async (req, res) => {
 
 const twilio = require('twilio');
 
-const TWILIO_SID   = 'AC01bf901fd8c95799ea2611d024c22192';
-const TWILIO_TOKEN = 'e7615777368015ce28cd286a2f2e9a53';
+const TWILIO_SID   = 'AC84ebe74f3ed5eedec7e702734fbbfcee';
+const TWILIO_TOKEN = '440737f06c5f36078bdb20ed96c6772d';
 const TWILIO_FROM  = 'whatsapp:+14155238886';   // número de Twilio sandbox
-const ADMIN_WA     = 'whatsapp:+5214495128713'; // tu celular Juan Carlos
+const ADMIN_WA     = [                          // números que reciben alertas
+    'whatsapp:+5214495128713',  // Juan Carlos
+    // 'whatsapp:+5214651620340',  // Diego (desactivado para ahorrar mensajes)
+];
 
 const twilioClient = twilio(TWILIO_SID, TWILIO_TOKEN);
 
@@ -2349,13 +2352,11 @@ app.post('/api/restock/:productoId', async (req, res) => {
 📝 *Motivo:* ${motivo || 'Restock manual'}
 🕐 *Fecha:* ${fecha}`;
 
-        await twilioClient.messages.create({
-            from: TWILIO_FROM,
-            to:   ADMIN_WA,
-            body: mensaje
-        });
+        await Promise.all(ADMIN_WA.map(numero =>
+            twilioClient.messages.create({ from: TWILIO_FROM, to: numero, body: mensaje })
+        ));
 
-        console.log(`📦 Restock OK: ${producto.nombre} ${stockAnterior} → ${stockNuevo} | WhatsApp enviado ✅`);
+        console.log(`📦 Restock OK: ${producto.nombre} ${stockAnterior} → ${stockNuevo} | WhatsApp enviado a ${ADMIN_WA.length} números ✅`);
 
         res.json({
             success:       true,
@@ -2380,6 +2381,202 @@ app.get('/api/movimientos-inventario', async (req, res) => {
             LEFT JOIN public.productos p ON mi.producto_id = p.id
             ORDER BY mi.fecha DESC
             LIMIT 100
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ---------- 5. ENDPOINT COMPRA (descuenta stock + registra movimiento + alerta push) ------
+app.post('/api/comprar', async (req, res) => {
+    const { items } = req.body; // [{ producto_id, cantidad }]
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'Se requiere un arreglo de items' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const resultados = [];
+        const alertasPush = [];
+
+        for (const item of items) {
+            const prodId = parseInt(item.producto_id);
+            const cant = parseInt(item.cantidad);
+            if (!prodId || !cant || cant < 1) continue;
+
+            // Obtener producto con lock
+            const prodRes = await client.query(
+                'SELECT p.*, pr.nombre AS proveedor_nombre, pr.telefono AS proveedor_tel FROM public.productos p LEFT JOIN public.proveedores pr ON p.proveedor_id = pr.id WHERE p.id = $1 FOR UPDATE OF p',
+                [prodId]
+            );
+            if (prodRes.rows.length === 0) continue;
+
+            const producto = prodRes.rows[0];
+            if (producto.stock < cant) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: `Stock insuficiente para "${producto.nombre}". Disponible: ${producto.stock}` });
+            }
+
+            const stockNuevo = producto.stock - cant;
+
+            // Actualizar stock
+            await client.query(
+                'UPDATE public.productos SET stock = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
+                [stockNuevo, prodId]
+            );
+
+            // Registrar movimiento de salida
+            await client.query(
+                `INSERT INTO public.movimientos_inventario (producto_id, tipo, cantidad, motivo)
+                 VALUES ($1, 'salida', $2, 'Venta desde catálogo')`,
+                [prodId, cant]
+            );
+
+            resultados.push({ id: prodId, nombre: producto.nombre, stock_anterior: producto.stock, stock_nuevo: stockNuevo });
+
+            // Si es push y llegó al stock mínimo → auto-restock hasta el mínimo y alerta
+            if (producto.restock === 'push' && stockNuevo <= (producto.stock_minimo || 10)) {
+                const minimo = producto.stock_minimo || 10;
+                const autoRestock = minimo - stockNuevo;
+                const stockFinal = minimo;
+
+                await client.query(
+                    'UPDATE public.productos SET stock = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
+                    [stockFinal, prodId]
+                );
+
+                await client.query(
+                    `INSERT INTO public.movimientos_inventario (producto_id, tipo, cantidad, motivo)
+                     VALUES ($1, 'entrada', $2, 'Restock automático (push) - stock mínimo alcanzado')`,
+                    [prodId, autoRestock]
+                );
+
+                // Actualizar el resultado para que refleje el stock final correcto
+                const idx = resultados.findIndex(r => r.id === prodId);
+                if (idx >= 0) resultados[idx].stock_nuevo = stockFinal;
+
+                alertasPush.push({ ...producto, stock_nuevo: stockFinal, stock_antes_restock: stockNuevo, stock_anterior: producto.stock, auto_restock: autoRestock });
+            }
+        }
+
+        await client.query('COMMIT');
+
+        // Enviar WhatsApp para productos push que alcanzaron stock mínimo
+        for (const prod of alertasPush) {
+            const fecha = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+            const mensaje =
+`⚠️ *RESTOCK AUTOMÁTICO - Perfumes NE2*
+
+📦 *Producto:* ${prod.nombre}
+🏷️ *Marca:* ${prod.marca || 'N/A'}
+🔻 *Stock llegó a:* ${prod.stock_antes_restock} unidades (mínimo: ${prod.stock_minimo || 10})
+➕ *Se agregaron:* ${prod.auto_restock} unidades automáticamente
+✅ *Stock nuevo:* ${prod.stock_nuevo} unidades
+🔄 *Modo:* Automático (push)
+🏪 *Proveedor:* ${prod.proveedor_nombre || 'No asignado'} ${prod.proveedor_tel ? '(' + prod.proveedor_tel + ')' : ''}
+🕐 *Fecha:* ${fecha}`;
+
+            try {
+                await Promise.all(ADMIN_WA.map(numero =>
+                    twilioClient.messages.create({ from: TWILIO_FROM, to: numero, body: mensaje })
+                ));
+                prod.whatsapp_enviado = true;
+                console.log(`⚠️ Alerta push enviada: ${prod.nombre} stock: ${prod.stock_nuevo}/${prod.stock_minimo || 10}`);
+            } catch (waErr) {
+                prod.whatsapp_enviado = false;
+                prod.whatsapp_error = waErr.message;
+                console.error(`❌ Error WhatsApp push para ${prod.nombre}:`, waErr.message);
+            }
+        }
+
+        res.json({
+            success: true,
+            resultados,
+            alertas_push: alertasPush.map(p => ({
+                nombre: p.nombre, stock_antes_restock: p.stock_antes_restock,
+                stock_nuevo: p.stock_nuevo, auto_restock: p.auto_restock,
+                stock_minimo: p.stock_minimo || 10,
+                whatsapp_enviado: p.whatsapp_enviado || false,
+                whatsapp_error: p.whatsapp_error || null
+            }))
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('❌ Error en compra:', error.message);
+        res.status(500).json({ error: error.message });
+    } finally {
+        client.release();
+    }
+});
+
+// ---------- 6. ENDPOINT PUSH RESTOCK (solicitud manual a proveedor) ------
+app.post('/api/restock-push', async (req, res) => {
+    const { producto_id, proveedor_id, cantidad, mensaje_extra } = req.body;
+
+    if (!producto_id || !cantidad || parseInt(cantidad) < 1) {
+        return res.status(400).json({ error: 'Producto y cantidad son requeridos' });
+    }
+
+    try {
+        const prodRes = await pool.query(
+            'SELECT p.*, pr.nombre AS proveedor_nombre, pr.telefono AS proveedor_tel, pr.email AS proveedor_email FROM public.productos p LEFT JOIN public.proveedores pr ON pr.id = $2 WHERE p.id = $1',
+            [parseInt(producto_id), parseInt(proveedor_id) || null]
+        );
+
+        if (prodRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        const producto = prodRes.rows[0];
+        const fecha = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+
+        const mensaje =
+`📋 *SOLICITUD DE PEDIDO - Perfumes NE2*
+
+📦 *Producto:* ${producto.nombre}
+🏷️ *Marca:* ${producto.marca || 'N/A'}
+📊 *Stock actual:* ${producto.stock} unidades
+🔻 *Stock mínimo:* ${producto.stock_minimo || 10}
+➕ *Cantidad solicitada:* ${cantidad}
+🏪 *Proveedor:* ${producto.proveedor_nombre || 'No asignado'}
+📝 *Nota:* ${mensaje_extra || 'Pedido de restock push'}
+🕐 *Fecha:* ${fecha}
+
+✅ *Favor de confirmar disponibilidad y tiempo de entrega.*`;
+
+        await Promise.all(ADMIN_WA.map(numero =>
+            twilioClient.messages.create({ from: TWILIO_FROM, to: numero, body: mensaje })
+        ));
+
+        console.log(`📋 Solicitud push enviada: ${producto.nombre} x${cantidad} | Proveedor: ${producto.proveedor_nombre || 'N/A'}`);
+
+        res.json({
+            success: true,
+            mensaje: 'Solicitud de pedido enviada por WhatsApp',
+            producto: producto.nombre,
+            proveedor: producto.proveedor_nombre || 'No asignado'
+        });
+
+    } catch (error) {
+        console.error('❌ Error en restock-push:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ---------- 7. PRODUCTOS PUSH CON STOCK BAJO ------
+app.get('/api/productos-push-bajo', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.id, p.nombre, p.marca, p.stock, p.stock_minimo, p.proveedor_id,
+                   pr.nombre AS proveedor_nombre
+            FROM public.productos p
+            LEFT JOIN public.proveedores pr ON p.proveedor_id = pr.id
+            WHERE p.restock = 'push' AND p.activo = true
+            ORDER BY p.stock ASC
         `);
         res.json(result.rows);
     } catch (error) {

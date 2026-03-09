@@ -255,63 +255,8 @@
         </div>
 
         <!-- ITEMS -->
-        <div class="cart-items">
-            <!-- Producto 1 -->
-            <div class="cart-item">
-                <img src="https://cdn5.coppel.com/mkp/103020481-1.jpg" class="item-image">
-                <div class="item-details">
-                    <h3>NAVIGO</h3>
-                    <p>Aromas frescos y delicados con notas de jazmín y rosa</p>
-                    <p class="item-price">$25.00</p>
-                    <div class="quantity-display">
-                        <span>Cantidad:</span>
-                        <div class="quantity-box">1</div>
-                    </div>
-                </div>
-                <div class="item-controls">
-                    <button class="remove-btn" style="background: none; border: none; color: #ff4444; cursor: pointer;">
-                        🗑️ Eliminar
-                    </button>
-                </div>
-            </div>
-
-            <!-- Producto 2 -->
-            <div class="cart-item">
-                <img src="https://m.media-amazon.com/images/I/41ZQdV659VL.jpg" class="item-image">
-                <div class="item-details">
-                    <h3>9PM</h3>
-                    <p>Perfume nocturno con notas intensas</p>
-                    <p class="item-price">$45.00</p>
-                    <div class="quantity-display">
-                        <span>Cantidad:</span>
-                        <div class="quantity-box">2</div>
-                    </div>
-                </div>
-                <div class="item-controls">
-                    <button class="remove-btn" style="background: none; border: none; color: #ff4444; cursor: pointer;">
-                        🗑️ Eliminar
-                    </button>
-                </div>
-            </div>
-
-            <!-- Producto 3 -->
-            <div class="cart-item">
-                <img src="https://www.versace.com/dw/image/v2/BGWN_PRD/on/demandware.static/-/Sites-ver-master-catalog/default/dw74626350/original/90_R741010-R100MLS_RNUL_20_Eros~Flame~EDP~100~ml-Accessories-Versace-online-store_0_1.jpg?sw=1200&q=85&strip=true" class="item-image">
-                <div class="item-details">
-                    <h3>VERSACE EROS FLAME</h3>
-                    <p>Fragancia intensa y elegante</p>
-                    <p class="item-price">$38.00</p>
-                    <div class="quantity-display">
-                        <span>Cantidad:</span>
-                        <div class="quantity-box">1</div>
-                    </div>
-                </div>
-                <div class="item-controls">
-                    <button class="remove-btn" style="background: none; border: none; color: #ff4444; cursor: pointer;">
-                        🗑️ Eliminar
-                    </button>
-                </div>
-            </div>
+        <div class="cart-items" id="cartItems">
+            <p style="text-align:center; color:#888; padding:40px;">Cargando carrito...</p>
         </div>
 
         <!-- RESUMEN -->
@@ -319,8 +264,8 @@
             <h2>Resumen del Pedido</h2>
 
             <div class="summary-item">
-                <span>Subtotal (4 productos):</span>
-                <span>$153.00</span>
+                <span id="resumenCantidad">Subtotal (0 productos):</span>
+                <span id="resumenSubtotal">$0.00</span>
             </div>
 
             <div class="summary-item">
@@ -328,31 +273,15 @@
                 <span>$5.00</span>
             </div>
 
-            <div class="summary-item">
-                <span>Descuento:</span>
-                <span style="color: #4caf50;">-$10.00</span>
-            </div>
-
             <div class="summary-total">
                 <span>Total a pagar:</span>
-                <span>$148.00</span>
-            </div>
-
-            <!-- MICROPAGOS -->
-            <div class="micro-payment">
-                <h3>Apoya nuestro negocio</h3>
-                <button class="micro-btn" onclick="mockPayment(10)">
-                    Donar $10
-                </button>
-                <button class="micro-btn" onclick="mockPayment(20)">
-                    Donar $20
-                </button>
+                <span id="resumenTotal">$5.00</span>
             </div>
 
             <!-- BOTONES DE ACCIÓN -->
-            <a href="usuario.html" class="checkout-btn">
-                Continuar al Pago
-            </a>
+            <button class="checkout-btn" id="btnComprar" onclick="confirmarCompra()" style="display:block;width:100%;text-align:center;border:none;cursor:pointer;font-size:1rem;font-weight:bold;padding:14px;background:#25D366;color:white;border-radius:10px;margin-top:15px;">
+                ✅ Confirmar Compra
+            </button>
 
             <a href="catalog.html" class="continue-btn">
                 ← Seguir Comprando
@@ -360,13 +289,17 @@
         </div>
     </div>
 
+    <!-- Toast -->
+    <div id="toast" style="position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:8px;color:white;font-weight:bold;z-index:9999;opacity:0;transition:opacity 0.3s;"></div>
+
     <script>
+        const API_BASE = 'http://localhost:3000/api';
+
         // Cargar navbar
         fetch('navbar.html')
             .then(r => r.text())
             .then(html => {
                 document.getElementById('navbar-container').innerHTML = html;
-                // Inicializar dropdown si existe
                 const dropdownBtn = document.querySelector('.dropdown-btn');
                 const dropdownContent = document.querySelector('.dropdown-content');
                 if (dropdownBtn && dropdownContent) {
@@ -377,19 +310,150 @@
                 }
             });
 
-        // 🔥 FUNCIÓN MICROPAGO
-        function mockPayment(amount) {
-            alert("¡Gracias por tu apoyo de $" + amount + "!");
-            localStorage.setItem("mockSupport", "$" + amount);
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.background = type === 'error' ? '#e53935' : '#43a047';
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 3500);
         }
 
-        // Botones eliminar redirigen a error
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.remove-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
+        function getCarrito() {
+            return JSON.parse(localStorage.getItem('carrito') || '[]');
+        }
+        function saveCarrito(carrito) {
+            localStorage.setItem('carrito', JSON.stringify(carrito));
+        }
+
+        function renderCarrito() {
+            const carrito = getCarrito();
+            const container = document.getElementById('cartItems');
+
+            if (carrito.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:50px 20px; color:#888;">
+                        <p style="font-size:3rem;">🛒</p>
+                        <h3>Tu carrito está vacío</h3>
+                        <p>Agrega productos desde el <a href="catalog.html" style="color:#9b5de5;">catálogo</a></p>
+                    </div>`;
+                document.getElementById('btnComprar').style.display = 'none';
+                actualizarResumen(carrito);
+                return;
+            }
+
+            document.getElementById('btnComprar').style.display = 'block';
+
+            container.innerHTML = carrito.map((item, i) => `
+                <div class="cart-item">
+                    <img src="${item.imagen_url || 'https://via.placeholder.com/100x100?text=Perfume'}"
+                         class="item-image"
+                         onerror="this.src='https://via.placeholder.com/100x100?text=Perfume'">
+                    <div class="item-details">
+                        <h3>${item.nombre}</h3>
+                        <p>${item.marca || 'Marca propia'}</p>
+                        <p class="item-price">$${item.precio.toFixed(2)}</p>
+                        <div class="quantity-display">
+                            <span>Cantidad:</span>
+                            <button onclick="cambiarCantidad(${i}, -1)" style="background:#eee;border:1px solid #ccc;border-radius:4px;width:28px;height:28px;cursor:pointer;font-size:1rem;">−</button>
+                            <div class="quantity-box">${item.cantidad}</div>
+                            <button onclick="cambiarCantidad(${i}, 1)" style="background:#eee;border:1px solid #ccc;border-radius:4px;width:28px;height:28px;cursor:pointer;font-size:1rem;">+</button>
+                        </div>
+                    </div>
+                    <div class="item-controls">
+                        <p style="font-weight:bold;color:#333;font-size:1.1rem;">$${(item.precio * item.cantidad).toFixed(2)}</p>
+                        <button class="remove-btn" onclick="eliminarItem(${i})" style="background:none;border:none;color:#ff4444;cursor:pointer;">
+                            🗑️ Eliminar
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            actualizarResumen(carrito);
+        }
+
+        function actualizarResumen(carrito) {
+            const totalItems = carrito.reduce((s, item) => s + item.cantidad, 0);
+            const subtotal = carrito.reduce((s, item) => s + item.precio * item.cantidad, 0);
+            const envio = carrito.length > 0 ? 5 : 0;
+            const total = subtotal + envio;
+
+            document.getElementById('resumenCantidad').textContent = `Subtotal (${totalItems} producto${totalItems !== 1 ? 's' : ''}):`;
+            document.getElementById('resumenSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('resumenTotal').textContent = `$${total.toFixed(2)}`;
+        }
+
+        function cambiarCantidad(index, delta) {
+            const carrito = getCarrito();
+            if (!carrito[index]) return;
+            carrito[index].cantidad += delta;
+            if (carrito[index].cantidad < 1) carrito[index].cantidad = 1;
+            if (carrito[index].cantidad > (carrito[index].stock || 999)) {
+                carrito[index].cantidad = carrito[index].stock || 999;
+                showToast('Stock máximo alcanzado', 'error');
+            }
+            saveCarrito(carrito);
+            renderCarrito();
+        }
+
+        function eliminarItem(index) {
+            const carrito = getCarrito();
+            carrito.splice(index, 1);
+            saveCarrito(carrito);
+            renderCarrito();
+            showToast('Producto eliminado del carrito');
+        }
+
+        async function confirmarCompra() {
+            const carrito = getCarrito();
+            if (carrito.length === 0) return;
+
+            if (!confirm('¿Confirmar la compra de ' + carrito.reduce((s,i) => s+i.cantidad, 0) + ' producto(s)?')) return;
+
+            const btn = document.getElementById('btnComprar');
+            btn.textContent = '⏳ Procesando...';
+            btn.disabled = true;
+
+            try {
+                const items = carrito.map(item => ({
+                    producto_id: item.producto_id,
+                    cantidad: item.cantidad
+                }));
+
+                const res = await fetch(`${API_BASE}/comprar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items })
                 });
-            });
-        });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.removeItem('carrito');
+                    showToast('✅ ¡Compra realizada con éxito!');
+
+                    renderCarrito();
+                    // Redirigir a confirmación después de un momento
+                    setTimeout(() => {
+                        const customerData = {
+                            total: '$' + carrito.reduce((s,i) => s + i.precio * i.cantidad, 0).toFixed(2),
+                            timestamp: new Date().toISOString()
+                        };
+                        localStorage.setItem('customerData', JSON.stringify(customerData));
+                        window.location.href = 'confirmacionpago.html';
+                    }, 1500);
+                } else {
+                    showToast('❌ ' + (data.error || 'Error al procesar'), 'error');
+                }
+            } catch (err) {
+                showToast('❌ Error de conexión: ' + err.message, 'error');
+            } finally {
+                btn.textContent = '✅ Confirmar Compra';
+                btn.disabled = false;
+            }
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', renderCarrito);
     </script>
 </body>
 </html>

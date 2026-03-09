@@ -53,6 +53,7 @@
         <a href="metricasadmin.html">📊 Métricas</a>
         <a href="proveedores.html">🚚 Proveedores</a>
         <a href="movimientos_inventario.html">📊 Movimientos</a>
+        <a href="restock_push.html">📋 Restock Push</a>
         <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
     </nav>
   </aside>
@@ -200,7 +201,7 @@
           <td>
             <button class="btn-editar" onclick="abrirEditar(${p.id})">✏️</button>
             <button class="btn-eliminar" onclick="eliminarProducto(${p.id}, '${p.nombre.replace(/'/g,"\\'")}')">🗑️</button>
-            <button class="btn-restock" onclick="abrirRestock(${p.id}, '${p.nombre.replace(/'/g,"\\'")}', ${p.stock})" title="Restock WhatsApp">🔄</button>
+            ${p.restock !== 'push' ? `<button class="btn-restock" onclick="abrirRestock(${p.id}, '${p.nombre.replace(/'/g,"\\'")  }', ${p.stock})" title="Restock WhatsApp">🔄</button>` : ''}
           </td>
         </tr>
       `).join('');

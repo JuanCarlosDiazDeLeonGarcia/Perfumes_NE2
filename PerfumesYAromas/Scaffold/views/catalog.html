@@ -454,7 +454,7 @@
                         </div>
                         <div class="product-footer">
                             <button class="btn-vermas" onclick="toggleDescripcion(${producto.id})">Ver más</button>
-                            <button class="btn-carrito" ${producto.stock === 0 ? 'disabled style="opacity:0.5"' : ''}>
+                            <button class="btn-carrito" onclick="agregarAlCarrito(${producto.id})" ${producto.stock === 0 ? 'disabled style=\"opacity:0.5\"' : ''}>
                                 ${producto.stock > 0 ? 'Agregar al carrito' : 'Agotado'}
                             </button>
                         </div>
@@ -541,6 +541,43 @@
                         </button>
                     </div>
                 `;
+        }
+
+        // Agregar producto al carrito (localStorage)
+        function agregarAlCarrito(productoId) {
+            const producto = todosLosProductos.find(p => p.id === productoId);
+            if (!producto || producto.stock === 0) return;
+
+            let carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+            const idx = carrito.findIndex(item => item.producto_id === productoId);
+
+            if (idx >= 0) {
+                if (carrito[idx].cantidad >= producto.stock) {
+                    alert('⚠️ No hay más stock disponible para este producto');
+                    return;
+                }
+                carrito[idx].cantidad++;
+            } else {
+                carrito.push({
+                    producto_id: producto.id,
+                    nombre: producto.nombre,
+                    marca: producto.marca,
+                    precio: parseFloat(producto.precio),
+                    imagen_url: producto.imagen_url,
+                    cantidad: 1,
+                    stock: producto.stock
+                });
+            }
+
+            localStorage.setItem('carrito', JSON.stringify(carrito));
+
+            // Toast rápido
+            const toast = document.createElement('div');
+            toast.textContent = `✅ ${producto.nombre} agregado al carrito`;
+            toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#43a047;color:white;padding:12px 24px;border-radius:8px;font-weight:bold;z-index:9999;opacity:0;transition:opacity 0.3s;';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.style.opacity = '1', 10);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2000);
         }
 
         // Inicializar
