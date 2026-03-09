@@ -5,131 +5,44 @@
   <title>Inventario de Perfumes</title>
   <link rel="stylesheet" href="../../css/base.css">
   <style>
-    /* Modal */
     .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 2000;
-      justify-content: center;
-      align-items: center;
+      display: none; position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 2000;
+      justify-content: center; align-items: center;
     }
-    .modal-overlay.active {
-      display: flex;
-    }
+    .modal-overlay.active { display: flex; }
     .modal {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      width: 520px;
-      max-height: 85vh;
-      overflow-y: auto;
+      background: white; border-radius: 12px; padding: 30px;
+      width: 520px; max-height: 85vh; overflow-y: auto;
       box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     }
-    .modal h2 {
-      margin-bottom: 20px;
-      color: #333;
+    .modal h2 { margin-bottom: 20px; color: #333; }
+    .modal label { display: block; margin-top: 12px; font-weight: bold; font-size: 0.9rem; color: #555; }
+    .modal input, .modal select, .modal textarea {
+      width: 100%; padding: 10px; margin-top: 4px;
+      border: 1px solid #ccc; border-radius: 8px; font-size: 0.95rem; box-sizing: border-box;
     }
-    .modal label {
-      display: block;
-      margin-top: 12px;
-      font-weight: bold;
-      font-size: 0.9rem;
-      color: #555;
-    }
-    .modal input,
-    .modal select,
-    .modal textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 4px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      box-sizing: border-box;
-    }
-    .modal textarea {
-      resize: vertical;
-      min-height: 60px;
-    }
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    .modal-actions button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 0.95rem;
-    }
-    .btn-guardar {
-      background: linear-gradient(90deg, purple, blue);
-      color: white;
-    }
-    .btn-cancelar {
-      background: #ccc;
-      color: #333;
-    }
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    .form-row > div {
-      display: flex;
-      flex-direction: column;
-    }
-    /* Badge restock */
-    .badge-push {
-      background: #e3f2fd;
-      color: #1565c0;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-weight: bold;
-      font-size: 0.85rem;
-    }
-    .badge-pull {
-      background: #fce4ec;
-      color: #c62828;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-weight: bold;
-      font-size: 0.85rem;
-    }
-    .badge-na {
-      background: #f5f5f5;
-      color: #999;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 0.85rem;
-    }
-    /* Toast notification */
-    .toast {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 14px 24px;
-      border-radius: 8px;
-      color: white;
-      font-weight: bold;
-      z-index: 3000;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
+    .modal textarea { resize: vertical; min-height: 60px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .modal-actions button { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
+    .btn-guardar { background: linear-gradient(90deg, purple, blue); color: white; }
+    .btn-cancelar { background: #ccc; color: #333; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-row > div { display: flex; flex-direction: column; }
+    .badge-push { background: #e3f2fd; color: #1565c0; padding: 3px 10px; border-radius: 12px; font-weight: bold; font-size: 0.85rem; }
+    .badge-pull { background: #fce4ec; color: #c62828; padding: 3px 10px; border-radius: 12px; font-weight: bold; font-size: 0.85rem; }
+    .badge-na { background: #f5f5f5; color: #999; padding: 3px 10px; border-radius: 12px; font-size: 0.85rem; }
+    .toast { position: fixed; top: 20px; right: 20px; padding: 14px 24px; border-radius: 8px; color: white; font-weight: bold; z-index: 3000; opacity: 0; transition: opacity 0.3s; }
     .toast.show { opacity: 1; }
     .toast.success { background: #43a047; }
     .toast.error { background: #e53935; }
+    .btn-restock { background: #8e44ad; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; margin-left: 4px; }
+    .btn-restock:hover { background: #6c3483; }
   </style>
 </head>
 <body>
 
-  <!-- Menú lateral -->
   <aside class="sidebar">
     <h2>🌸 PerfumeShop</h2>
     <nav>
@@ -138,19 +51,17 @@
         <a href="ventasadmin.html">🛍️ Ventas</a>
         <a href="clientesadmin.html">👥 Clientes</a>
         <a href="metricasadmin.html">📊 Métricas</a>
-        <a href="proveedores.html">🚚 Proveedores </a>
-        <a href="movimientos_inventario.html" class="active">📊 Movimientos</a>
+        <a href="proveedores.html">🚚 Proveedores</a>
+        <a href="movimientos_inventario.html">📊 Movimientos</a>
         <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
     </nav>
   </aside>
 
-  <!-- Contenido principal -->
   <main class="main-content">
     <header class="admin-header">
       <h1>Inventario de Perfumes</h1>
     </header>
 
-    <!-- Tarjetas -->
     <section class="cards">
       <div class="card"><h3>Total Productos</h3><p id="stat-total">0</p></div>
       <div class="card"><h3>Stock Total</h3><p id="stat-stock">0</p></div>
@@ -158,71 +69,41 @@
       <div class="card"><h3>Sin Existencias</h3><p id="stat-sin">0</p></div>
     </section>
 
-    <!-- Tabla -->
     <section class="tabla-admin">
       <div class="titulo-tabla">
         <h2>🧴 Listado de Perfumes</h2>
         <button class="btn-agregar" id="btnAgregar">+ Agregar Perfume</button>
       </div>
-
       <table>
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Marca</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Restock</th>
-            <th>Acciones</th>
+            <th>ID</th><th>Nombre</th><th>Marca</th><th>Precio</th><th>Stock</th><th>Restock</th><th>Acciones</th>
           </tr>
         </thead>
-        <tbody id="tabla-productos">
-          <!-- Se llena dinámicamente -->
-        </tbody>
+        <tbody id="tabla-productos"></tbody>
       </table>
     </section>
   </main>
 
-  <!-- Modal Agregar / Editar -->
+  <!-- Modal Agregar/Editar -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
       <h2 id="modalTitulo">Agregar Perfume</h2>
       <form id="formPerfume">
         <input type="hidden" id="perfumeId">
-
         <div class="form-row">
-          <div>
-            <label for="nombre">Nombre *</label>
-            <input type="text" id="nombre" required>
-          </div>
-          <div>
-            <label for="marca">Marca</label>
-            <input type="text" id="marca">
-          </div>
+          <div><label>Nombre *</label><input type="text" id="nombre" required></div>
+          <div><label>Marca</label><input type="text" id="marca"></div>
         </div>
-
-        <label for="descripcion">Descripción</label>
-        <textarea id="descripcion"></textarea>
-
+        <label>Descripción</label><textarea id="descripcion"></textarea>
         <div class="form-row">
-          <div>
-            <label for="precio">Precio *</label>
-            <input type="number" id="precio" step="0.01" min="0" required>
-          </div>
-          <div>
-            <label for="stock">Stock</label>
-            <input type="number" id="stock" min="0" value="0">
-          </div>
+          <div><label>Precio *</label><input type="number" id="precio" step="0.01" min="0" required></div>
+          <div><label>Stock</label><input type="number" id="stock" min="0" value="0"></div>
         </div>
-
         <div class="form-row">
+          <div><label>Stock Mínimo</label><input type="number" id="stock_minimo" min="0" value="10"></div>
           <div>
-            <label for="stock_minimo">Stock Mínimo</label>
-            <input type="number" id="stock_minimo" min="0" value="10">
-          </div>
-          <div>
-            <label for="genero">Género</label>
+            <label>Género</label>
             <select id="genero">
               <option value="">-- Seleccionar --</option>
               <option value="Hombre">Hombre</option>
@@ -231,14 +112,10 @@
             </select>
           </div>
         </div>
-
         <div class="form-row">
+          <div><label>Tamaño (ml)</label><input type="number" id="tamanio_ml" min="1"></div>
           <div>
-            <label for="tamanio_ml">Tamaño (ml)</label>
-            <input type="number" id="tamanio_ml" min="1">
-          </div>
-          <div>
-            <label for="restock">Tipo de Restock *</label>
+            <label>Tipo de Restock *</label>
             <select id="restock" required>
               <option value="">-- Seleccionar --</option>
               <option value="push">Automático</option>
@@ -246,13 +123,8 @@
             </select>
           </div>
         </div>
-
-        <label for="notas_olfativas">Notas Olfativas</label>
-        <input type="text" id="notas_olfativas" placeholder="Ej: Sándalo, vainilla, cedro">
-
-        <label for="imagen_url">URL de Imagen</label>
-        <input type="text" id="imagen_url" placeholder="https://...">
-
+        <label>Notas Olfativas</label><input type="text" id="notas_olfativas" placeholder="Ej: Sándalo, vainilla, cedro">
+        <label>URL de Imagen</label><input type="text" id="imagen_url" placeholder="https://...">
         <div class="modal-actions">
           <button type="button" class="btn-cancelar" id="btnCancelar">Cancelar</button>
           <button type="submit" class="btn-guardar">Guardar</button>
@@ -261,14 +133,35 @@
     </div>
   </div>
 
-  <!-- Toast -->
+  <!-- MODAL RESTOCK -->
+  <div id="modalRestock" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.55); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px; border-radius:14px; width:420px; max-width:92%; box-shadow:0 10px 40px rgba(0,0,0,0.25);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <h3 style="margin:0; color:#4a235a;">🔄 Solicitar Restock</h3>
+        <button onclick="cerrarRestock()" style="background:none; border:none; font-size:22px; cursor:pointer; color:#888;">×</button>
+      </div>
+      <div style="background:#f8f0ff; padding:12px 16px; border-radius:8px; margin-bottom:18px;">
+        <p style="margin:0 0 4px; font-weight:bold; color:#4a235a;" id="restockNombre">—</p>
+        <p style="margin:0; font-size:13px; color:#666;">Stock actual: <strong id="restockStock">—</strong></p>
+      </div>
+      <label style="display:block; font-weight:600; margin-bottom:6px; color:#333;">Cantidad a agregar: <span style="color:red">*</span></label>
+      <input type="number" id="restockCantidad" min="1" value="10" style="width:100%; padding:9px 12px; border:1.5px solid #ccc; border-radius:7px; font-size:15px; margin-bottom:16px; box-sizing:border-box;">
+      <label style="display:block; font-weight:600; margin-bottom:6px; color:#333;">Motivo (opcional):</label>
+      <input type="text" id="restockMotivo" placeholder="Ej: Pedido mensual, reposición urgente..." style="width:100%; padding:9px 12px; border:1.5px solid #ccc; border-radius:7px; font-size:14px; margin-bottom:22px; box-sizing:border-box;">
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button onclick="cerrarRestock()" style="padding:9px 22px; border:1.5px solid #ccc; background:white; border-radius:7px; cursor:pointer; font-size:14px;">Cancelar</button>
+        <button id="btnConfirmarRestock" onclick="confirmarRestock()" style="padding:9px 22px; background:#27ae60; color:white; border:none; border-radius:7px; cursor:pointer; font-size:14px; font-weight:bold;">✅ Confirmar y Notificar</button>
+      </div>
+      <p style="margin:14px 0 0; font-size:12px; color:#888; text-align:center;">📱 Se enviará WhatsApp automáticamente a Juan Carlos</p>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
     const API_BASE = 'http://localhost:3000/api';
     let productosData = [];
 
-    // ========== UTILIDADES ==========
     function showToast(msg, type = 'success') {
       const t = document.getElementById('toast');
       t.textContent = msg;
@@ -282,7 +175,6 @@
       return '<span class="badge-na">N/A</span>';
     }
 
-    // ========== CARGAR PRODUCTOS ==========
     async function cargarProductos() {
       try {
         const res = await fetch(`${API_BASE}/admin/productos`);
@@ -291,7 +183,6 @@
         renderTabla();
         actualizarStats();
       } catch (err) {
-        console.error(err);
         showToast('Error al cargar productos', 'error');
       }
     }
@@ -300,7 +191,7 @@
       const tbody = document.getElementById('tabla-productos');
       tbody.innerHTML = productosData.map(p => `
         <tr>
-          <td>#${String(p.id).padStart(3, '0')}</td>
+          <td>#${String(p.id).padStart(3,'0')}</td>
           <td>${p.nombre}</td>
           <td>${p.marca || '-'}</td>
           <td>$${Number(p.precio).toFixed(2)}</td>
@@ -308,7 +199,8 @@
           <td>${restockBadge(p.restock)}</td>
           <td>
             <button class="btn-editar" onclick="abrirEditar(${p.id})">✏️</button>
-            <button class="btn-eliminar" onclick="eliminarProducto(${p.id}, '${p.nombre.replace(/'/g, "\\'")}')">🗑️</button>
+            <button class="btn-eliminar" onclick="eliminarProducto(${p.id}, '${p.nombre.replace(/'/g,"\\'")}')">🗑️</button>
+            <button class="btn-restock" onclick="abrirRestock(${p.id}, '${p.nombre.replace(/'/g,"\\'")}', ${p.stock})" title="Restock WhatsApp">🔄</button>
           </td>
         </tr>
       `).join('');
@@ -316,12 +208,11 @@
 
     function actualizarStats() {
       document.getElementById('stat-total').textContent = productosData.length;
-      document.getElementById('stat-stock').textContent = productosData.reduce((s, p) => s + (p.stock || 0), 0);
-      document.getElementById('stat-bajo').textContent = productosData.filter(p => p.stock > 0 && p.stock <= (p.stock_minimo || 10)).length;
+      document.getElementById('stat-stock').textContent = productosData.reduce((s,p) => s+(p.stock||0), 0);
+      document.getElementById('stat-bajo').textContent = productosData.filter(p => p.stock > 0 && p.stock <= (p.stock_minimo||10)).length;
       document.getElementById('stat-sin').textContent = productosData.filter(p => p.stock === 0).length;
     }
 
-    // ========== MODAL ==========
     function abrirModal(titulo) {
       document.getElementById('modalTitulo').textContent = titulo;
       document.getElementById('modalOverlay').classList.add('active');
@@ -333,16 +224,11 @@
       document.getElementById('perfumeId').value = '';
     }
 
-    // Agregar
-    document.getElementById('btnAgregar').addEventListener('click', () => {
-      abrirModal('Agregar Perfume');
-    });
+    document.getElementById('btnAgregar').addEventListener('click', () => abrirModal('Agregar Perfume'));
 
-    // Editar - carga datos en el form
     function abrirEditar(id) {
       const prod = productosData.find(p => p.id === id);
       if (!prod) return;
-
       document.getElementById('perfumeId').value = prod.id;
       document.getElementById('nombre').value = prod.nombre || '';
       document.getElementById('marca').value = prod.marca || '';
@@ -355,20 +241,14 @@
       document.getElementById('restock').value = prod.restock || '';
       document.getElementById('notas_olfativas').value = prod.notas_olfativas || '';
       document.getElementById('imagen_url').value = prod.imagen_url || '';
-
       abrirModal('Editar Perfume');
     }
 
-    // Cancelar
     document.getElementById('btnCancelar').addEventListener('click', cerrarModal);
-    document.getElementById('modalOverlay').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) cerrarModal();
-    });
+    document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarModal(); });
 
-    // ========== GUARDAR (crear / editar) ==========
     document.getElementById('formPerfume').addEventListener('submit', async (e) => {
       e.preventDefault();
-
       const id = document.getElementById('perfumeId').value;
       const body = {
         nombre: document.getElementById('nombre').value.trim(),
@@ -383,55 +263,84 @@
         notas_olfativas: document.getElementById('notas_olfativas').value.trim(),
         imagen_url: document.getElementById('imagen_url').value.trim(),
       };
-
       try {
         let res;
         if (id) {
-          // Editar
-          res = await fetch(`${API_BASE}/productos/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-          });
+          res = await fetch(`${API_BASE}/productos/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
         } else {
-          // Crear
-          res = await fetch(`${API_BASE}/admin/productos`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-          });
+          res = await fetch(`${API_BASE}/admin/productos`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
         }
-
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Error al guardar');
-
         showToast(id ? 'Producto actualizado' : 'Producto creado');
         cerrarModal();
         cargarProductos();
       } catch (err) {
-        console.error(err);
         showToast(err.message, 'error');
       }
     });
 
-    // ========== ELIMINAR ==========
     async function eliminarProducto(id, nombre) {
       if (!confirm(`¿Eliminar "${nombre}" del inventario?`)) return;
-
       try {
-        const res = await fetch(`${API_BASE}/productos/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/productos/${id}`, { method:'DELETE' });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Error al eliminar');
-
         showToast('Producto eliminado');
         cargarProductos();
       } catch (err) {
-        console.error(err);
         showToast(err.message, 'error');
       }
     }
 
-    // ========== SESIÓN ==========
+    // ========== RESTOCK ==========
+    let restockProductoId = null;
+
+    function abrirRestock(id, nombre, stock) {
+      restockProductoId = id;
+      document.getElementById('restockNombre').textContent = nombre;
+      document.getElementById('restockStock').textContent = stock + ' unidades';
+      document.getElementById('restockCantidad').value = 10;
+      document.getElementById('restockMotivo').value = '';
+      document.getElementById('modalRestock').style.display = 'flex';
+    }
+
+    function cerrarRestock() {
+      document.getElementById('modalRestock').style.display = 'none';
+      restockProductoId = null;
+    }
+
+    async function confirmarRestock() {
+      const cantidad = parseInt(document.getElementById('restockCantidad').value);
+      const motivo   = document.getElementById('restockMotivo').value.trim();
+      if (!cantidad || cantidad < 1) { alert('⚠️ Ingresa una cantidad válida'); return; }
+
+      const btn = document.getElementById('btnConfirmarRestock');
+      btn.textContent = '⏳ Enviando...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE}/restock/${restockProductoId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cantidad, motivo })
+        });
+        const data = await res.json();
+        if (data.success) {
+          cerrarRestock();
+          showToast('✅ Restock exitoso - WhatsApp enviado a Juan Carlos');
+          cargarProductos();
+        } else {
+          alert('❌ Error: ' + (data.error || 'Error desconocido'));
+        }
+      } catch (err) {
+        alert('❌ Error de conexión: ' + err.message);
+      } finally {
+        btn.textContent = '✅ Confirmar y Notificar';
+        btn.disabled = false;
+      }
+    }
+
     function cerrarSesion() {
       if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
         localStorage.removeItem('usuarioActual');
@@ -439,7 +348,6 @@
       }
     }
 
-    // ========== INIT ==========
     cargarProductos();
   </script>
 

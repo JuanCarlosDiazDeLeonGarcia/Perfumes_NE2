@@ -15,8 +15,8 @@ app.use(express.json());
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'perfumes', //cambiar si el nombre de la BD es diferente
-    password: '2244', //Cambiar por su contraseña segun su BD
+    database: 'perfumes_ne2', //cambiar si el nombre de la BD es diferente
+    password: '1234', //Cambiar por su contraseña segun su BD
     port: 5432,
 });
 
@@ -89,8 +89,7 @@ pool.connect((err, client, release) => {
     release();
 });
 
-
-app.use(express.static(path.join(__dirname, '..')));
+app.use(express.static(path.join(__dirname, 'PerfumesYAromas', 'Scaffold')));
 
 
 app.get('/', (req, res) => {
@@ -2267,6 +2266,124 @@ app.get('/api/movimientos-inventario', async (req, res) => {
     } catch (error) {
         console.error('Error obteniendo movimientos de inventario:', error);
         res.status(500).json({ error: 'Error al cargar movimientos' });
+    }
+});
+
+
+
+const twilio = require('twilio');
+
+const TWILIO_SID   = 'AC01bf901fd8c95799ea2611d024c22192';
+const TWILIO_TOKEN = 'e7615777368015ce28cd286a2f2e9a53';
+const TWILIO_FROM  = 'whatsapp:+14155238886';   // número de Twilio sandbox
+const ADMIN_WA     = 'whatsapp:+5214495128713'; // tu celular Juan Carlos
+
+const twilioClient = twilio(TWILIO_SID, TWILIO_TOKEN);
+
+// ---------- 2. CREAR TABLA SI NO EXISTE (al arrancar server) ----
+pool.query(`
+    CREATE TABLE IF NOT EXISTS public.movimientos_inventario (
+        id          SERIAL PRIMARY KEY,
+        producto_id INTEGER REFERENCES public.productos(id) ON DELETE SET NULL,
+        tipo        VARCHAR(20) NOT NULL DEFAULT 'entrada',
+        cantidad    INTEGER NOT NULL,
+        motivo      TEXT,
+        fecha       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`).then(() => console.log('✅ Tabla movimientos_inventario lista'))
+  .catch(e  => console.error('❌ Error tabla movimientos:', e.message));
+
+// ---------- 3. ENDPOINT RESTOCK ---------------------------------
+// Llama a este endpoint desde el frontend cuando el admin presione
+// el botón 🔄 Restock en un producto.
+// Actualiza el stock en productos + guarda movimiento + manda WhatsApp
+
+app.post('/api/restock/:productoId', async (req, res) => {
+    const { productoId } = req.params;
+    const { cantidad, motivo } = req.body;
+
+    if (!cantidad || parseInt(cantidad) < 1) {
+        return res.status(400).json({ error: 'Cantidad inválida' });
+    }
+
+    try {
+        // Buscar producto
+        const prodResult = await pool.query(
+            'SELECT p.*, pr.nombre AS proveedor_nombre, pr.telefono AS proveedor_tel FROM public.productos p LEFT JOIN public.proveedores pr ON p.proveedor_id = pr.id WHERE p.id = $1',
+            [parseInt(productoId)]
+        );
+
+        if (prodResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        const producto      = prodResult.rows[0];
+        const stockAnterior = producto.stock;
+        const stockNuevo    = stockAnterior + parseInt(cantidad);
+
+        // Actualizar stock
+        await pool.query(
+            'UPDATE public.productos SET stock = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
+            [stockNuevo, parseInt(productoId)]
+        );
+
+        // Registrar movimiento
+        await pool.query(
+            `INSERT INTO public.movimientos_inventario (producto_id, tipo, cantidad, motivo)
+             VALUES ($1, 'entrada', $2, $3)`,
+            [parseInt(productoId), parseInt(cantidad), motivo || 'Restock manual desde admin']
+        );
+
+        // Mandar WhatsApp a tu celular
+        const fecha = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+
+        const mensaje =
+`🔔 *ALERTA DE RESTOCK - Perfumes NE2*
+
+📦 *Producto:* ${producto.nombre}
+🏷️ *Marca:* ${producto.marca || 'N/A'}
+📊 *Stock anterior:* ${stockAnterior} unidades
+✅ *Stock nuevo:* ${stockNuevo} unidades
+➕ *Cantidad agregada:* ${cantidad}
+🏪 *Proveedor:* ${producto.proveedor_nombre || 'No asignado'} ${producto.proveedor_tel ? '(' + producto.proveedor_tel + ')' : ''}
+📝 *Motivo:* ${motivo || 'Restock manual'}
+🕐 *Fecha:* ${fecha}`;
+
+        await twilioClient.messages.create({
+            from: TWILIO_FROM,
+            to:   ADMIN_WA,
+            body: mensaje
+        });
+
+        console.log(`📦 Restock OK: ${producto.nombre} ${stockAnterior} → ${stockNuevo} | WhatsApp enviado ✅`);
+
+        res.json({
+            success:       true,
+            mensaje:       '✅ Restock aplicado y WhatsApp enviado a Juan Carlos',
+            producto:      producto.nombre,
+            stock_anterior: stockAnterior,
+            stock_nuevo:   stockNuevo
+        });
+
+    } catch (error) {
+        console.error('❌ Error en restock:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ---------- 4. ENDPOINT VER MOVIMIENTOS (opcional) --------------
+app.get('/api/movimientos-inventario', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT mi.*, p.nombre AS producto_nombre, p.marca
+            FROM public.movimientos_inventario mi
+            LEFT JOIN public.productos p ON mi.producto_id = p.id
+            ORDER BY mi.fecha DESC
+            LIMIT 100
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
