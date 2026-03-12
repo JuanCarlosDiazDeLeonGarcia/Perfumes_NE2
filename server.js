@@ -751,31 +751,79 @@ app.get('/api/pedido-detalle/:pedido_id', async (req, res) => {
     }
 });
 
-// Actualizar seguimiento (ubicación, fecha estimada y estado) sobre la tabla pedidos
+// Actualizar seguimiento (solo campos que existen en pedidos)
 app.put('/api/seguimiento/:id', async (req, res) => {
     const { id } = req.params;
-    const { ubicacion_actual, fecha_estimada_entrega, estado_paquete } = req.body;
+    const { estado } = req.body;  // Solo permitimos actualizar el estado
+
+    try {
+        if (!estado) {
+            return res.status(400).json({ error: 'El estado es requerido' });
+        }
+
+        // Validar que el estado sea válido
+        const estadosValidos = ['pendiente', 'confirmado', 'procesando', 'enviado', 'entregado', 'cancelado'];
+        if (!estadosValidos.includes(estado)) {
+            return res.status(400).json({ error: 'Estado no válido' });
+        }
+
+        const query = `
+            UPDATE pedidos 
+            SET estado = $1,
+                ${estado === 'enviado' ? 'fecha_envio = CURRENT_TIMESTAMP,' : ''}
+                ${estado === 'entregado' ? 'fecha_entrega = CURRENT_TIMESTAMP,' : ''}
+                fecha_actualizacion = CURRENT_TIMESTAMP
+            WHERE id = $2
+            RETURNING id, numero_orden, estado, fecha_envio, fecha_entrega
+        `;
+
+        // Limpiamos la query de las comas extras
+        const cleanQuery = query.replace(/,(\s*WHERE)/g, ' $1');
+
+        const result = await pool.query(cleanQuery, [estado, id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+
+        res.json({
+            message: 'Estado actualizado correctamente',
+            pedido: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error actualizando seguimiento:', error);
+        res.status(500).json({ error: 'Error al actualizar el estado' });
+    }
+});
+
+// Marcar como entregado
+app.put('/api/seguimiento/:id/entregar', async (req, res) => {
+    const { id } = req.params;
 
     try {
         const result = await pool.query(
             `UPDATE pedidos
-             SET ubicacion_actual = COALESCE($1, ubicacion_actual),
-                 fecha_entrega_estimada = COALESCE($2, fecha_entrega_estimada),
-                 estado_paquete = COALESCE($3, estado_paquete),
+             SET estado = 'entregado', 
+                 fecha_entrega = CURRENT_TIMESTAMP,
                  fecha_actualizacion = CURRENT_TIMESTAMP
-             WHERE id = $4
-             RETURNING id, numero_orden, cliente_id, vendedor_id, estado_paquete, ubicacion_actual, fecha_entrega_estimada, fecha_actualizacion`,
-            [ubicacion_actual || null, fecha_estimada_entrega || null, estado_paquete || null, id]
+             WHERE id = $1
+             RETURNING id, numero_orden, estado, fecha_entrega`,
+            [id]
         );
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Pedido no encontrado' });
         }
 
-        res.json({ message: 'Seguimiento actualizado', seguimiento: result.rows[0] });
+        res.json({
+            message: 'Pedido marcado como entregado',
+            pedido: result.rows[0]
+        });
+
     } catch (error) {
-        console.error('Error actualizando seguimiento:', error);
-        res.status(500).json({ error: 'Error al actualizar seguimiento' });
+        console.error('Error marcando como entregado:', error);
+        res.status(500).json({ error: 'Error al actualizar estado de entrega' });
     }
 });
 
@@ -1110,58 +1158,48 @@ app.get('/api/seguimiento-detalle/:pedido_id', async (req, res) => {
     }
 });
 
-// Nueva ruta: seguimiento activo para vendedor basada en tabla pedidos (sin usar seguimiento_pedidos)
-app.get('/api/vendedor/:vendedorId/seguimiento-activo-simple', async (req, res) => {
+// Obtener seguimiento activo (solo pedidos no entregados)
+app.get('/api/vendedor/:vendedorId/seguimiento-activo', async (req, res) => {
     const { vendedorId } = req.params;
 
     try {
         const query = `
-            SELECT p.id as pedido_id,
-                   p.numero_orden,
-                   p.total,
-                   p.fecha_pedido,
-                   p.direccion_envio,
-                   COALESCE(p.fecha_entrega, (p.fecha_envio + INTERVAL '7 days'), (p.fecha_pedido + INTERVAL '7 days')) AS fecha_estimada_entrega,
-                   p.estado,
-                   c.id as cliente_id,
-                   c.nombre as cliente_nombre,
-                   STRING_AGG(pr.nombre, ', ') as productos
+            SELECT 
+                p.id,
+                p.numero_orden,
+                p.total,
+                p.fecha_pedido,
+                p.estado,
+                p.direccion_envio,
+                p.fecha_envio,
+                p.fecha_entrega,
+                c.id as cliente_id,
+                c.nombre as cliente_nombre,
+                c.telefono as cliente_telefono,
+                -- Información del producto
+                pr.nombre as producto_nombre,
+                p.cantidad
             FROM pedidos p
             LEFT JOIN clientes c ON p.cliente_id = c.id
-            LEFT JOIN carrito dp ON p.id = dp.pedido_id
-            LEFT JOIN productos pr ON dp.producto_id = pr.id
+            LEFT JOIN productos pr ON p.producto_id = pr.id
             WHERE p.vendedor_id = $1
-              AND p.estado NOT IN ('entregado', 'cancelado', 'devuelto')
-            GROUP BY p.id, c.id, c.nombre
-            ORDER BY
-              CASE p.estado
-                WHEN 'en_reparto' THEN 1
-                WHEN 'en_transito' THEN 2
-                WHEN 'en_proceso' THEN 3
-                WHEN 'procesando' THEN 4
-                WHEN 'pendiente' THEN 5
-                ELSE 6
-              END,
-              fecha_estimada_entrega ASC
+              AND p.estado NOT IN ('entregado', 'cancelado')
+            ORDER BY 
+                CASE p.estado
+                    WHEN 'enviado' THEN 1
+                    WHEN 'procesando' THEN 2
+                    WHEN 'confirmado' THEN 3
+                    WHEN 'pendiente' THEN 4
+                    ELSE 5
+                END,
+                p.fecha_pedido ASC
         `;
 
         const result = await pool.query(query, [vendedorId]);
+        res.json(result.rows);
 
-        // Mapear a la forma que espera el frontend
-        const rows = result.rows.map(r => ({
-            pedido_id: r.pedido_id,
-            pedido_numero: r.numero_orden,
-            cliente_nombre: r.cliente_nombre,
-            productos: r.productos,
-            // usar direccion_envio como ubicación aproximada si no hay tabla de seguimiento
-            seguimiento_ubicacion: r.direccion_envio || null,
-            seguimiento_fecha_entrega_estimada: r.fecha_estimada_entrega,
-            seguimiento_estado: r.estado
-        }));
-
-        res.json(rows);
     } catch (error) {
-        console.error('Error obteniendo seguimiento activo (simple):', error);
+        console.error('Error obteniendo seguimiento activo:', error);
         res.status(500).json({ error: 'Error al cargar seguimiento' });
     }
 });
@@ -1605,6 +1643,118 @@ app.get('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
     }
 });
 
+// Listar clientes activos (para selects en UI)
+app.get('/api/clientes/activos', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT id, nombre, correo FROM clientes WHERE estado_cliente = 'activo' ORDER BY nombre`
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo clientes activos:', error);
+        res.status(500).json({ message: 'Error obteniendo clientes' });
+    }
+});
+
+// Crear pedido para un vendedor
+app.post('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
+    const { vendedorId } = req.params;
+    const { cliente_id, producto_id, cantidad = 1, metodo_pago, direccion_envio, notas, estado = 'pendiente' } = req.body;
+
+    if (!cliente_id || !producto_id) {
+        return res.status(400).json({ message: 'cliente_id y producto_id son requeridos' });
+    }
+
+    try {
+        // Obtener precio del producto
+        const prod = await pool.query('SELECT precio FROM productos WHERE id = $1', [producto_id]);
+        const precio = prod.rows[0] ? parseFloat(prod.rows[0].precio) : 0;
+        const qty = parseInt(cantidad) || 1;
+        const subtotal = precio * qty;
+        const impuestos = 0;
+        const descuento = 0;
+        const total = subtotal + impuestos - descuento;
+
+        const numero_orden = 'P' + Date.now();
+
+        const insert = await pool.query(
+            `INSERT INTO pedidos (numero_orden, cliente_id, vendedor_id, producto_id, cantidad, subtotal, impuestos, descuento, total, estado, metodo_pago, direccion_envio, notas)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+            [numero_orden, cliente_id, vendedorId, producto_id, qty, subtotal, impuestos, descuento, total, estado, metodo_pago, direccion_envio, notas]
+        );
+
+        res.status(201).json(insert.rows[0]);
+    } catch (error) {
+        console.error('Error creando pedido:', error);
+        res.status(500).json({ message: 'Error creando pedido' });
+    }
+});
+
+// Actualizar pedido
+app.put('/api/pedidos/:id', async (req, res) => {
+    const { id } = req.params;
+    const { cliente_id, producto_id, cantidad, metodo_pago, direccion_envio, notas, estado } = req.body;
+
+    try {
+        // Construir dinámicamente
+        const updates = [];
+        const values = [];
+        let idx = 1;
+
+        if (cliente_id !== undefined) { updates.push(`cliente_id = $${idx}`); values.push(cliente_id); idx++; }
+        if (producto_id !== undefined) { updates.push(`producto_id = $${idx}`); values.push(producto_id); idx++; }
+        if (cantidad !== undefined) { updates.push(`cantidad = $${idx}`); values.push(cantidad); idx++; }
+        if (metodo_pago !== undefined) { updates.push(`metodo_pago = $${idx}`); values.push(metodo_pago); idx++; }
+        if (direccion_envio !== undefined) { updates.push(`direccion_envio = $${idx}`); values.push(direccion_envio); idx++; }
+        if (notas !== undefined) { updates.push(`notas = $${idx}`); values.push(notas); idx++; }
+        if (estado !== undefined) { updates.push(`estado = $${idx}`); values.push(estado); idx++; }
+
+        // Recalcular montos si cambiaron producto o cantidad
+        if (producto_id !== undefined || cantidad !== undefined) {
+            // obtener producto y cantidad actuales si faltan
+            const cur = await pool.query('SELECT producto_id, cantidad FROM pedidos WHERE id = $1', [id]);
+            if (cur.rows.length === 0) return res.status(404).json({ message: 'Pedido no encontrado' });
+            const prodId = producto_id !== undefined ? producto_id : cur.rows[0].producto_id;
+            const qty = cantidad !== undefined ? parseInt(cantidad) : parseInt(cur.rows[0].cantidad);
+            const prod = await pool.query('SELECT precio FROM productos WHERE id = $1', [prodId]);
+            const precio = prod.rows[0] ? parseFloat(prod.rows[0].precio) : 0;
+            const subtotal = precio * (qty || 1);
+            const impuestos = 0;
+            const descuento = 0;
+            const total = subtotal + impuestos - descuento;
+
+            updates.push(`subtotal = $${idx}`); values.push(subtotal); idx++;
+            updates.push(`impuestos = $${idx}`); values.push(impuestos); idx++;
+            updates.push(`descuento = $${idx}`); values.push(descuento); idx++;
+            updates.push(`total = $${idx}`); values.push(total); idx++;
+        }
+
+        if (updates.length === 0) return res.status(400).json({ message: 'No hay campos para actualizar' });
+
+        values.push(id);
+        const query = `UPDATE pedidos SET ${updates.join(', ')} WHERE id = $${idx} RETURNING *`;
+        const result = await pool.query(query, values);
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error actualizando pedido:', error);
+        res.status(500).json({ message: 'Error actualizando pedido' });
+    }
+});
+
+// Eliminar pedido
+app.delete('/api/pedidos/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const exists = await pool.query('SELECT id FROM pedidos WHERE id = $1', [id]);
+        if (exists.rows.length === 0) return res.status(404).json({ message: 'Pedido no encontrado' });
+        await pool.query('DELETE FROM pedidos WHERE id = $1', [id]);
+        res.json({ message: 'Pedido eliminado' });
+    } catch (error) {
+        console.error('Error eliminando pedido:', error);
+        res.status(500).json({ message: 'Error eliminando pedido' });
+    }
+});
+
 // Obtener seguimiento activo (pedidos no entregados)
 app.get('/api/vendedor/:vendedorId/seguimiento-activo', async (req, res) => {
     const { vendedorId } = req.params;
@@ -1676,28 +1826,47 @@ app.get('/api/vendedor/:vendedorId/estadisticas', async (req, res) => {
     }
 });
 
-// Obtener detalles de un pedido específico (sin carrito)
+// Obtener detalles de un pedido específico (CORREGIDO - solo campos existentes)
 app.get('/api/pedido/:pedidoId/detalle', async (req, res) => {
     const { pedidoId } = req.params;
 
     try {
         const query = `
             SELECT 
-                p.*,
+                p.id,
+                p.numero_orden,
+                p.cliente_id,
+                p.vendedor_id,
+                p.producto_id,
+                p.cantidad,
+                p.subtotal,
+                p.impuestos,
+                p.descuento,
+                p.total,
+                p.estado,
+                p.metodo_pago,
+                p.direccion_envio,
+                p.notas,
+                p.fecha_pedido,
+                p.fecha_confirmacion,
+                p.fecha_envio,
+                p.fecha_entrega,
+                -- Datos del cliente (existentes)
                 c.nombre as cliente_nombre,
                 c.correo as cliente_email,
                 c.telefono as cliente_telefono,
                 c.direccion as cliente_direccion,
-                v.nombre as vendedor_nombre,
-                s.estado_paquete as seguimiento_estado,
-                s.ubicacion_actual as seguimiento_ubicacion,
-                s.fecha_estimada_entrega,
-                s.numero_guia,
-                s.transportista
+                -- Datos del vendedor (desde usuarios)
+                u.nombre as vendedor_nombre,
+                u.email as vendedor_email,
+                -- Datos del producto (si existe relación)
+                pr.nombre as producto_nombre,
+                pr.precio as producto_precio,
+                pr.marca as producto_marca
             FROM pedidos p
-            JOIN clientes c ON p.cliente_id = c.id
-            LEFT JOIN vendedores v ON p.vendedor_id = v.id
-            LEFT JOIN seguimiento_pedidos s ON p.id = s.pedido_id
+            LEFT JOIN clientes c ON p.cliente_id = c.id
+            LEFT JOIN usuarios u ON p.vendedor_id = u.id
+            LEFT JOIN productos pr ON p.producto_id = pr.id
             WHERE p.id = $1
         `;
 
@@ -1715,7 +1884,7 @@ app.get('/api/pedido/:pedidoId/detalle', async (req, res) => {
     }
 });
 
-// Obtener perfil completo del vendedor
+// Obtener perfil del vendedor (desde usuarios)
 app.get('/api/vendedor/:vendedorId/perfil', async (req, res) => {
     const { vendedorId } = req.params;
 
@@ -1726,17 +1895,17 @@ app.get('/api/vendedor/:vendedorId/perfil', async (req, res) => {
                 nombre,
                 email,
                 telefono,
-                zona_asignada,
+                -- Si no existe zona_asignada en usuarios, puedes agregarla o calcularla
+                'Centro' as zona_asignada,  -- Valor por defecto
                 direccion,
                 ciudad,
                 codigo_postal,
-                fecha_contratacion,
-                fecha_creacion,
-                meta_ventas_mensual,
-                comision_porcentaje,
-                activo
-            FROM vendedores 
-            WHERE id = $1 AND activo = true
+                fecha_creacion as fecha_contratacion,
+                activo,
+                CASE WHEN rol = 'vendedor' THEN 50000 ELSE 0 END as meta_ventas_mensual,
+                10 as comision_porcentaje  -- Comisión por defecto
+            FROM usuarios 
+            WHERE id = $1 AND rol = 'vendedor' AND activo = true
         `;
 
         const result = await pool.query(query, [vendedorId]);
@@ -1753,78 +1922,71 @@ app.get('/api/vendedor/:vendedorId/perfil', async (req, res) => {
     }
 });
 
-// Actualizar perfil del vendedor
+// Actualizar perfil del vendedor (en usuarios)
 app.put('/api/vendedor/:vendedorId/actualizar', async (req, res) => {
     const { vendedorId } = req.params;
     const {
         nombre,
         telefono,
-        zona_asignada,
         direccion,
         ciudad,
         codigo_postal,
-        meta_ventas_mensual,
         password_actual,
         password_nueva
     } = req.body;
 
     try {
-        // Verificar que el vendedor existe
-        const vendedorCheck = await pool.query(
-            'SELECT * FROM vendedores WHERE id = $1',
-            [vendedorId]
+        // Verificar que el usuario existe y es vendedor
+        const usuarioCheck = await pool.query(
+            'SELECT * FROM usuarios WHERE id = $1 AND rol = $2',
+            [vendedorId, 'vendedor']
         );
 
-        if (vendedorCheck.rows.length === 0) {
+        if (usuarioCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Vendedor no encontrado' });
         }
 
-        const vendedor = vendedorCheck.rows[0];
+        const usuario = usuarioCheck.rows[0];
 
         // Si se quiere cambiar la contraseña
         if (password_nueva) {
             // Verificar contraseña actual
-            if (vendedor.password_hash !== '$2b$10$' + password_actual) { // Simulación
+            const passwordValida = (usuario.password_hash === '$2b$10$' + password_actual);
+            if (!passwordValida) {
                 return res.status(401).json({ error: 'Contraseña actual incorrecta' });
             }
 
             // Actualizar con nueva contraseña
             await pool.query(
-                `UPDATE vendedores 
+                `UPDATE usuarios 
                  SET nombre = COALESCE($1, nombre),
                      telefono = COALESCE($2, telefono),
-                     zona_asignada = COALESCE($3, zona_asignada),
-                     direccion = COALESCE($4, direccion),
-                     ciudad = COALESCE($5, ciudad),
-                     codigo_postal = COALESCE($6, codigo_postal),
-                     meta_ventas_mensual = COALESCE($7, meta_ventas_mensual),
-                     password_hash = $8,
+                     direccion = COALESCE($3, direccion),
+                     ciudad = COALESCE($4, ciudad),
+                     codigo_postal = COALESCE($5, codigo_postal),
+                     password_hash = $6,
                      fecha_actualizacion = CURRENT_TIMESTAMP
-                 WHERE id = $9`,
-                [nombre, telefono, zona_asignada, direccion, ciudad,
-                    codigo_postal, meta_ventas_mensual, '$2b$10$' + password_nueva, vendedorId]
+                 WHERE id = $7`,
+                [nombre, telefono, direccion, ciudad, codigo_postal, '$2b$10$' + password_nueva, vendedorId]
             );
         } else {
             // Actualizar sin cambiar contraseña
             await pool.query(
-                `UPDATE vendedores 
+                `UPDATE usuarios 
                  SET nombre = COALESCE($1, nombre),
                      telefono = COALESCE($2, telefono),
-                     zona_asignada = COALESCE($3, zona_asignada),
-                     direccion = COALESCE($4, direccion),
-                     ciudad = COALESCE($5, ciudad),
-                     codigo_postal = COALESCE($6, codigo_postal),
-                     meta_ventas_mensual = COALESCE($7, meta_ventas_mensual),
+                     direccion = COALESCE($3, direccion),
+                     ciudad = COALESCE($4, ciudad),
+                     codigo_postal = COALESCE($5, codigo_postal),
                      fecha_actualizacion = CURRENT_TIMESTAMP
-                 WHERE id = $8`,
-                [nombre, telefono, zona_asignada, direccion, ciudad,
-                    codigo_postal, meta_ventas_mensual, vendedorId]
+                 WHERE id = $6`,
+                [nombre, telefono, direccion, ciudad, codigo_postal, vendedorId]
             );
         }
 
         // Obtener datos actualizados
         const result = await pool.query(
-            'SELECT id, nombre, email, telefono, zona_asignada FROM vendedores WHERE id = $1',
+            'SELECT id, nombre, email, telefono, rol FROM usuarios WHERE id = $1',
             [vendedorId]
         );
 

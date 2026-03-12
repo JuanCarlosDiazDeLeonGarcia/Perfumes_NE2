@@ -265,6 +265,207 @@
                 margin: 8px 0;
                 opacity: 0.9;
             }
+
+        /* Estilos para modales */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+            .modal-overlay.active {
+                display: flex;
+            }
+
+        .modal {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 550px;
+            max-width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+            .modal h2 {
+                margin-bottom: 25px;
+                color: #333;
+                font-size: 1.6rem;
+                border-bottom: 2px solid #f0f0f0;
+                padding-bottom: 15px;
+            }
+
+            .modal h3 {
+                margin: 20px 0 15px;
+                color: #555;
+                font-size: 1.2rem;
+            }
+
+            .modal label {
+                display: block;
+                margin-top: 15px;
+                font-weight: 600;
+                font-size: 0.9rem;
+                color: #555;
+            }
+
+            .modal input, .modal select, .modal textarea {
+                width: 100%;
+                padding: 12px;
+                margin-top: 5px;
+                border: 1.5px solid #e0e0e0;
+                border-radius: 8px;
+                font-size: 0.95rem;
+                box-sizing: border-box;
+                transition: border 0.3s;
+            }
+
+                .modal input:focus, .modal select:focus, .modal textarea:focus {
+                    border-color: #7e57c2;
+                    outline: none;
+                }
+
+            .modal textarea {
+                resize: vertical;
+                min-height: 80px;
+            }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+            .modal-actions button {
+                padding: 12px 25px;
+                border: none;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                font-size: 0.95rem;
+                transition: all 0.3s;
+            }
+
+        .btn-guardar {
+            background: linear-gradient(135deg, #7e57c2, #5c6bc0);
+            color: white;
+        }
+
+            .btn-guardar:hover {
+                opacity: 0.9;
+                transform: translateY(-2px);
+            }
+
+        .btn-cancelar {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+            .btn-cancelar:hover {
+                background: #e0e0e0;
+            }
+
+        .btn-peligro {
+            background: #f44336;
+            color: white;
+        }
+
+            .btn-peligro:hover {
+                background: #d32f2f;
+            }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+
+            .form-row > div {
+                display: flex;
+                flex-direction: column;
+            }
+
+        .info-cliente {
+            background: linear-gradient(135deg, #f5f7fa, #e9eef5);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+            .info-cliente p {
+                margin: 5px 0;
+                color: #444;
+            }
+
+        .resumen-pedido {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #7e57c2;
+        }
+
+            .resumen-pedido p {
+                margin: 8px 0;
+                font-size: 1rem;
+            }
+
+        .total-text {
+            font-size: 1.3rem !important;
+            font-weight: bold;
+            color: #7e57c2;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 3000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+            .toast.show {
+                opacity: 1;
+            }
+
+            .toast.success {
+                background: #4caf50;
+            }
+
+            .toast.error {
+                background: #f44336;
+            }
+
+        .info-adicional {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: #e65100;
+            border-left: 4px solid #ff9800;
+        }
     </style>
 </head>
 <body>
@@ -276,6 +477,7 @@
             <a href="../catalog.html">🢀 Volver</a>
             <a href="vendedormenu.html" class="active">📊 Dashboard</a>
             <a href="vendedorproductos.html">📦 Productos</a>
+            <a href="#">📩 Contacto</a>
             <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
         </nav>
     </aside>
@@ -321,8 +523,7 @@
         <!-- Pestañas -->
         <div class="tabs">
             <div class="tab active" onclick="cambiarTab('clientes')">👥 Mis Clientes</div>
-            <div class="tab" onclick="cambiarTab('pedidos')">📦 Pedidos Recientes</div>
-            <div class="tab" onclick="cambiarTab('seguimiento')">🚚 En Seguimiento</div>
+            <div class="tab" onclick="cambiarTab('pedidos')">📦 Pedidos</div>
         </div>
 
         <!-- Contenido: Clientes -->
@@ -346,11 +547,10 @@
                             <th>Última compra</th>
                             <th>Total compras</th>
                             <th>Estado</th>
-                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="clientesTableBody">
-                        <tr><td colspan="8" style="text-align:center;">Cargando clientes...</td></tr>
+                        <tr><td colspan="7" style="text-align:center;">Cargando clientes...</td></tr>
                     </tbody>
                 </table>
             </section>
@@ -360,7 +560,8 @@
         <div id="tab-pedidos" class="tab-content">
             <section class="tabla-admin">
                 <div class="titulo-tabla">
-                    <h2>📦 Pedidos Recientes</h2>
+                    <h2>📦 Pedidos</h2>
+                    <button class="btn-agregar" onclick="abrirModalPedido()">➕ Nuevo Pedido</button>
                 </div>
 
                 <input type="text" class="buscador" id="buscadorPedidos" placeholder="🔍 Buscar pedido por ID o cliente..." onkeyup="filtrarPedidos()">
@@ -409,9 +610,536 @@
                 </table>
             </section>
         </div>
+
+        <!-- MODAL PARA NUEVO/EDITAR PEDIDO -->
+        <div class="modal-overlay" id="modalPedidoOverlay">
+            <div class="modal">
+                <h2 id="modalPedidoTitulo">➕ Nuevo Pedido</h2>
+                <form id="formPedido">
+                    <input type="hidden" id="pedidoId">
+
+                    <!-- Información del pedido -->
+                    <div class="form-row">
+                        <div>
+                            <label>Cliente *</label>
+                            <select id="pedidoClienteId" required>
+                                <option value="">Cargando clientes...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Producto *</label>
+                            <select id="pedidoProductoId" required onchange="actualizarPrecioProducto()">
+                                <option value="">Cargando productos...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div>
+                            <label>Cantidad *</label>
+                            <input type="number" id="pedidoCantidad" min="1" value="1" required onchange="calcularTotalPedido()">
+                        </div>
+                        <div>
+                            <label>Precio Unitario</label>
+                            <input type="text" id="pedidoPrecioUnitario" readonly style="background:#f5f5f5;">
+                        </div>
+                    </div>
+
+                    <!-- Resumen de montos -->
+                    <div class="resumen-pedido">
+                        <p>Subtotal: <span id="pedidoSubtotal">$0.00</span></p>
+                        <p>IVA (16%): <span id="pedidoImpuestos">$0.00</span></p>
+                        <p>Descuento: <span id="pedidoDescuento">$0.00</span></p>
+                        <p class="total-text">Total: <span id="pedidoTotal">$0.00</span></p>
+                    </div>
+
+                    <div class="form-row">
+                        <div>
+                            <label>Método de Pago</label>
+                            <select id="pedidoMetodoPago">
+                                <option value="efectivo">💵 Efectivo</option>
+                                <option value="tarjeta">💳 Tarjeta</option>
+                                <option value="transferencia">🏦 Transferencia</option>
+                                <option value="monedero">💰 Monedero</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Estado del Pedido</label>
+                            <select id="pedidoEstado">
+                                <option value="pendiente">⏳ Pendiente</option>
+                                <option value="confirmado">📋 Confirmado</option>
+                                <option value="procesando">⚙️ Procesando</option>
+                                <option value="enviado">🚚 Enviado</option>
+                                <option value="entregado">✅ Entregado</option>
+                                <option value="cancelado">❌ Cancelado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label>Dirección de Envío</label>
+                    <textarea id="pedidoDireccion" placeholder="Calle, número, colonia, ciudad, código postal..."></textarea>
+
+                    <label>Notas adicionales</label>
+                    <textarea id="pedidoNotas" placeholder="Instrucciones especiales, referencias, etc."></textarea>
+
+                    <!-- Información adicional para pedidos existentes -->
+                    <div id="infoAdicionalPedido" style="display:none;">
+                        <h3>📊 Información del Pedido</h3>
+                        <div class="info-cliente" id="infoClientePedido">
+                            <!-- Se llenará dinámicamente -->
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancelar" onclick="cerrarModalPedido()">Cancelar</button>
+                        <button type="submit" class="btn-guardar" id="btnGuardarPedido">Guardar Pedido</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL PARA VER DETALLE DE PEDIDO -->
+        <div class="modal-overlay" id="modalVerPedidoOverlay">
+            <div class="modal">
+                <h2 id="modalVerPedidoTitulo">📋 Detalle del Pedido</h2>
+                <div id="detallePedidoContenido">
+                    <!-- Contenido dinámico -->
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancelar" onclick="cerrarModalVerPedido()">Cerrar</button>
+                    <button type="button" class="btn-guardar" onclick="editarDesdeDetalle()">✏️ Editar Pedido</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOAST PARA NOTIFICACIONES -->
+        <div class="toast" id="toast"></div>
     </main>
 
     <script>
+        // ==================== FUNCIONES PARA MODALES DE PEDIDOS ====================
+
+        // Variables globales
+        let productosCatalogo = [];
+        let clientesLista = [];
+        let pedidoActual = null;
+
+        // Función para mostrar toast
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000);
+        }
+
+        // Cargar clientes para el select
+        async function cargarClientesSelect() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/clientes/activos`);
+                if (response.ok) {
+                    clientesLista = await response.json();
+                    const select = document.getElementById('pedidoClienteId');
+                    if (select) {
+                        select.innerHTML = '<option value="">Seleccionar cliente...</option>';
+                        clientesLista.forEach(cliente => {
+                            select.innerHTML += `<option value="${cliente.id}">${cliente.nombre} - ${cliente.correo}</option>`;
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando clientes:', error);
+                showToast('Error al cargar clientes', 'error');
+            }
+        }
+
+        // Cargar productos del vendedor
+        async function cargarProductosVendedorSelect() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('usuarioActual'));
+                const vendedorId = userData.id;
+
+                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/productos`);
+                if (response.ok) {
+                    productosCatalogo = await response.json();
+                    const select = document.getElementById('pedidoProductoId');
+                    if (select) {
+                        select.innerHTML = '<option value="">Seleccionar producto...</option>';
+                        productosCatalogo
+                            .filter(p => p.activo && p.stock > 0)
+                            .forEach(producto => {
+                                select.innerHTML += `<option value="${producto.id}" data-precio="${producto.precio}" data-stock="${producto.stock}">${producto.nombre} - $${producto.precio} (Stock: ${producto.stock})</option>`;
+                            });
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando productos:', error);
+                showToast('Error al cargar productos', 'error');
+            }
+        }
+
+        // Actualizar precio del producto seleccionado
+        function actualizarPrecioProducto() {
+            const select = document.getElementById('pedidoProductoId');
+            const option = select.options[select.selectedIndex];
+            const precio = option.dataset.precio;
+
+            if (precio) {
+                document.getElementById('pedidoPrecioUnitario').value = `$${parseFloat(precio).toFixed(2)}`;
+                calcularTotalPedido();
+            } else {
+                document.getElementById('pedidoPrecioUnitario').value = '';
+            }
+        }
+
+        // Calcular total del pedido
+        function calcularTotalPedido() {
+            const select = document.getElementById('pedidoProductoId');
+            const option = select.options[select.selectedIndex];
+            const precio = parseFloat(option.dataset.precio) || 0;
+            const cantidad = parseInt(document.getElementById('pedidoCantidad').value) || 1;
+
+            const subtotal = precio * cantidad;
+            const impuestos = subtotal * 0.16; // 16% IVA
+            const descuento = 0; // Por ahora sin descuento
+            const total = subtotal + impuestos - descuento;
+
+            document.getElementById('pedidoSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('pedidoImpuestos').textContent = `$${impuestos.toFixed(2)}`;
+            document.getElementById('pedidoDescuento').textContent = `$${descuento.toFixed(2)}`;
+            document.getElementById('pedidoTotal').textContent = `$${total.toFixed(2)}`;
+
+            return total;
+        }
+
+        // Abrir modal para nuevo pedido
+        async function abrirModalPedido() {
+            document.getElementById('modalPedidoTitulo').textContent = '➕ Nuevo Pedido';
+            document.getElementById('formPedido').reset();
+            document.getElementById('pedidoId').value = '';
+            document.getElementById('infoAdicionalPedido').style.display = 'none';
+
+            await cargarClientesSelect();
+            await cargarProductosVendedorSelect();
+
+            // Configurar eventos
+            document.getElementById('pedidoCantidad').addEventListener('input', calcularTotalPedido);
+
+            document.getElementById('modalPedidoOverlay').classList.add('active');
+        }
+
+        // Abrir modal para editar pedido
+        async function abrirModalEditarPedido(pedidoId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedido/${pedidoId}/detalle`);
+                if (!response.ok) throw new Error('Error al cargar pedido');
+
+                const pedido = await response.json();
+                pedidoActual = pedido;
+
+                document.getElementById('modalPedidoTitulo').textContent = `✏️ Editar Pedido #${pedido.numero_orden || pedido.id}`;
+                document.getElementById('pedidoId').value = pedido.id;
+
+                // Cargar selects si no están cargados
+                if (clientesLista.length === 0) await cargarClientesSelect();
+                if (productosCatalogo.length === 0) await cargarProductosVendedorSelect();
+
+                // Llenar formulario
+                document.getElementById('pedidoClienteId').value = pedido.cliente_id || '';
+                document.getElementById('pedidoProductoId').value = pedido.producto_id || '';
+                document.getElementById('pedidoCantidad').value = pedido.cantidad || 1;
+                document.getElementById('pedidoMetodoPago').value = pedido.metodo_pago || 'efectivo';
+                document.getElementById('pedidoEstado').value = pedido.estado || 'pendiente';
+                document.getElementById('pedidoDireccion').value = pedido.direccion_envio || '';
+                document.getElementById('pedidoNotas').value = pedido.notas || '';
+
+                // Actualizar precio y calcular total
+                actualizarPrecioProducto();
+
+                // Mostrar información adicional
+                const infoCliente = document.getElementById('infoClientePedido');
+                infoCliente.innerHTML = `
+            <p><strong>Cliente:</strong> ${pedido.cliente_nombre || 'N/A'}</p>
+            <p><strong>Email:</strong> ${pedido.cliente_email || 'N/A'}</p>
+            <p><strong>Teléfono:</strong> ${pedido.cliente_telefono || 'N/A'}</p>
+            <p><strong>Fecha Pedido:</strong> ${new Date(pedido.fecha_pedido).toLocaleDateString()}</p>
+            ${pedido.fecha_envio ? `<p><strong>Fecha Envío:</strong> ${new Date(pedido.fecha_envio).toLocaleDateString()}</p>` : ''}
+            ${pedido.fecha_entrega ? `<p><strong>Fecha Entrega:</strong> ${new Date(pedido.fecha_entrega).toLocaleDateString()}</p>` : ''}
+        `;
+                document.getElementById('infoAdicionalPedido').style.display = 'block';
+
+                document.getElementById('modalPedidoOverlay').classList.add('active');
+
+            } catch (error) {
+                console.error('Error cargando pedido:', error);
+                showToast('Error al cargar datos del pedido', 'error');
+            }
+        }
+
+        // Cerrar modal de pedido
+        function cerrarModalPedido() {
+            document.getElementById('modalPedidoOverlay').classList.remove('active');
+            document.getElementById('formPedido').reset();
+            pedidoActual = null;
+        }
+
+        // Guardar pedido (nuevo o editado)
+        document.getElementById('formPedido').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const pedidoId = document.getElementById('pedidoId').value;
+            const userData = JSON.parse(localStorage.getItem('usuarioActual'));
+            const vendedorId = userData.id;
+
+            // Obtener precio del producto seleccionado
+            const selectProducto = document.getElementById('pedidoProductoId');
+            const option = selectProducto.options[selectProducto.selectedIndex];
+            const precio = parseFloat(option.dataset.precio) || 0;
+            const cantidad = parseInt(document.getElementById('pedidoCantidad').value) || 1;
+
+            const subtotal = precio * cantidad;
+            const impuestos = subtotal * 0.16;
+            const total = subtotal + impuestos;
+
+            const datosPedido = {
+                cliente_id: parseInt(document.getElementById('pedidoClienteId').value),
+                producto_id: parseInt(document.getElementById('pedidoProductoId').value),
+                cantidad: cantidad,
+                subtotal: subtotal,
+                impuestos: impuestos,
+                total: total,
+                metodo_pago: document.getElementById('pedidoMetodoPago').value,
+                direccion_envio: document.getElementById('pedidoDireccion').value,
+                notas: document.getElementById('pedidoNotas').value
+            };
+
+            // Si es edición, agregar estado
+            if (pedidoId) {
+                datosPedido.estado = document.getElementById('pedidoEstado').value;
+            }
+
+            try {
+                let response;
+                let url;
+
+                if (pedidoId) {
+                    // Actualizar pedido existente
+                    url = `${API_BASE_URL}/api/pedidos/${pedidoId}`;
+                    response = await fetch(url, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(datosPedido)
+                    });
+                } else {
+                    // Crear nuevo pedido
+                    url = `${API_BASE_URL}/api/vendedor/${vendedorId}/pedidos`;
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(datosPedido)
+                    });
+                }
+
+                if (response.ok) {
+                    showToast(pedidoId ? '✅ Pedido actualizado' : '✅ Pedido creado exitosamente');
+                    cerrarModalPedido();
+                    cargarPedidosVendedor(vendedorId);
+                } else {
+                    const error = await response.json();
+                    showToast(error.message || 'Error al guardar pedido', 'error');
+                }
+            } catch (error) {
+                console.error('Error guardando pedido:', error);
+                showToast('Error de conexión', 'error');
+            }
+        });
+
+        // Función para ver detalle de pedido
+        async function verPedido(pedidoId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedido/${pedidoId}/detalle`);
+                if (!response.ok) throw new Error('Error al cargar pedido');
+
+                const pedido = await response.json();
+
+                const contenido = document.getElementById('detallePedidoContenido');
+                contenido.innerHTML = `
+            <div class="info-cliente">
+                <h3>👤 Información del Cliente</h3>
+                <p><strong>Nombre:</strong> ${pedido.cliente_nombre || 'N/A'}</p>
+                <p><strong>Email:</strong> ${pedido.cliente_email || 'N/A'}</p>
+                <p><strong>Teléfono:</strong> ${pedido.cliente_telefono || 'N/A'}</p>
+            </div>
+            
+            <div class="resumen-pedido">
+                <h3>📦 Detalles del Pedido #${pedido.numero_orden || pedido.id}</h3>
+                <p><strong>Producto:</strong> ${pedido.producto_nombre || 'N/A'}</p>
+                <p><strong>Cantidad:</strong> ${pedido.cantidad || 1}</p>
+                <p><strong>Precio Unitario:</strong> $${((pedido.total || 0) / (pedido.cantidad || 1)).toFixed(2)}</p>
+                <p><strong>Subtotal:</strong> $${(pedido.subtotal || 0).toFixed(2)}</p>
+                <p><strong>IVA (16%):</strong> $${(pedido.impuestos || 0).toFixed(2)}</p>
+                <p class="total-text"><strong>Total:</strong> $${(pedido.total || 0).toFixed(2)}</p>
+            </div>
+            
+            <div style="margin:15px 0;">
+                <p><strong>📅 Fecha Pedido:</strong> ${new Date(pedido.fecha_pedido).toLocaleString()}</p>
+                <p><strong>🚚 Estado:</strong> <span class="${getEstadoClass(pedido.estado)}">${getEstadoIcon(pedido.estado)} ${pedido.estado || 'Pendiente'}</span></p>
+                <p><strong>💳 Método de Pago:</strong> ${pedido.metodo_pago || 'No especificado'}</p>
+            </div>
+            
+            ${pedido.direccion_envio ? `
+            <div style="margin:15px 0; padding:15px; background:#f5f5f5; border-radius:8px;">
+                <p><strong>📍 Dirección de Envío:</strong></p>
+                <p>${pedido.direccion_envio}</p>
+            </div>
+            ` : ''}
+            
+            ${pedido.notas ? `
+            <div style="margin:15px 0;">
+                <p><strong>📝 Notas:</strong></p>
+                <p>${pedido.notas}</p>
+            </div>
+            ` : ''}
+            
+            ${pedido.fecha_envio ? `
+            <p><small>📤 Enviado: ${new Date(pedido.fecha_envio).toLocaleString()}</small></p>
+            ` : ''}
+            ${pedido.fecha_entrega ? `
+            <p><small>✅ Entregado: ${new Date(pedido.fecha_entrega).toLocaleString()}</small></p>
+            ` : ''}
+        `;
+
+                // Guardar ID para editar desde detalle
+                document.getElementById('modalVerPedidoOverlay').dataset.pedidoId = pedidoId;
+                document.getElementById('modalVerPedidoOverlay').classList.add('active');
+
+            } catch (error) {
+                console.error('Error cargando detalle:', error);
+                showToast('Error al cargar detalle del pedido', 'error');
+            }
+        }
+
+        // Cerrar modal de ver pedido
+        function cerrarModalVerPedido() {
+            document.getElementById('modalVerPedidoOverlay').classList.remove('active');
+        }
+
+        // Editar desde el modal de detalle
+        function editarDesdeDetalle() {
+            const pedidoId = document.getElementById('modalVerPedidoOverlay').dataset.pedidoId;
+            cerrarModalVerPedido();
+            abrirModalEditarPedido(pedidoId);
+        }
+
+        // Función para obtener clase de estado
+        function getEstadoClass(estado) {
+            const clases = {
+                'pendiente': 'estado-pendiente',
+                'confirmado': 'estado-confirmado',
+                'procesando': 'estado-procesando',
+                'enviado': 'estado-enviado',
+                'entregado': 'estado-entregado',
+                'cancelado': 'estado-cancelado'
+            };
+            return clases[estado?.toLowerCase()] || 'estado-pendiente';
+        }
+
+        // Función para confirmar eliminación
+        function confirmarEliminarPedido(pedidoId, numeroOrden) {
+            if (confirm(`¿Estás seguro de eliminar el pedido #${numeroOrden}?\n\nEsta acción no se puede deshacer.`)) {
+                eliminarPedido(pedidoId);
+            }
+        }
+
+        // Función para eliminar pedido
+        async function eliminarPedido(pedidoId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showToast('✅ Pedido eliminado correctamente');
+                    const userData = JSON.parse(localStorage.getItem('usuarioActual'));
+                    cargarPedidosVendedor(userData.id);
+                } else {
+                    const error = await response.json();
+                    showToast(error.message || 'Error al eliminar pedido', 'error');
+                }
+            } catch (error) {
+                console.error('Error eliminando pedido:', error);
+                showToast('Error de conexión', 'error');
+            }
+        }
+
+        // Actualizar tabla de pedidos (versión corregida)
+        function actualizarTablaPedidos(pedidos) {
+            const tbody = document.getElementById('pedidosTableBody');
+            tbody.innerHTML = '';
+
+            if (!pedidos || pedidos.length === 0) {
+                mostrarSinPedidos();
+                return;
+            }
+
+            pedidos.forEach(pedido => {
+                const estadoClass = `estado-${pedido.estado}`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+            <td><strong>#${pedido.numero_orden || pedido.id}</strong></td>
+            <td>${pedido.cliente_nombre || '—'}</td>
+            <td>${pedido.productos || ('Pedido #' + (pedido.numero_orden || pedido.id))}</td>
+            <td>$${parseFloat(pedido.total || 0).toFixed(2)}</td>
+            <td>${pedido.fecha_pedido ? new Date(pedido.fecha_pedido).toLocaleDateString() : ''}</td>
+            <td class="${estadoClass}">${getEstadoIcon(pedido.estado || '')} ${pedido.estado || ''}</td>
+            <td>
+                <button class="btn-accion" onclick="verPedido(${pedido.id})" title="Ver detalles">👁️</button>
+                <button class="btn-accion editar" onclick="abrirModalEditarPedido(${pedido.id})" title="Editar pedido">✏️</button>
+                <button class="btn-accion eliminar" onclick="confirmarEliminarPedido(${pedido.id}, '${(pedido.numero_orden || pedido.id)}')" title="Eliminar pedido">🗑️</button>
+            </td>
+        `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Actualizar función cargarPedidosVendedor para usar el endpoint correcto
+        async function cargarPedidosVendedor(vendedorId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/pedidos`);
+
+                if (response.ok) {
+                    const pedidos = await response.json();
+                    actualizarTablaPedidos(pedidos);
+
+                    // Calcular métricas del mes
+                    const ventasMes = calcularVentasMes(pedidos);
+                    const pendientes = pedidos.filter(p =>
+                        p.estado === 'pendiente' || p.estado === 'procesando' || p.estado === 'confirmado'
+                    ).length;
+
+                    document.getElementById('ventasMes').textContent = `$${ventasMes.toFixed(2)}`;
+                    document.getElementById('pedidosPendientes').textContent = pendientes;
+                } else {
+                    console.error('Error al cargar pedidos');
+                    mostrarSinPedidos();
+                }
+            } catch (error) {
+                console.error('Error cargando pedidos:', error);
+                mostrarSinPedidos();
+            }
+        }
+
+        // Cerrar modales al hacer clic fuera
+        document.getElementById('modalPedidoOverlay').addEventListener('click', function (e) {
+            if (e.target === this) cerrarModalPedido();
+        });
+
+        document.getElementById('modalVerPedidoOverlay').addEventListener('click', function (e) {
+            if (e.target === this) cerrarModalVerPedido();
+        });
+
         // URL base del servidor
         const API_BASE_URL = 'http://localhost:3000';
 
@@ -696,22 +1424,14 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
             <td><strong>#${pedido.numero_orden || pedido.id}</strong></td>
-            <td>${pedido.cliente_nombre}</td>
-            <td>Pedido #${pedido.numero_orden}</td>
-            <td>$${parseFloat(pedido.total).toFixed(2)}</td>
-            <td>${new Date(pedido.fecha_pedido).toLocaleDateString()}</td>
-            <td class="${estadoClass}">${getEstadoIcon(pedido.estado)} ${pedido.estado}</td>
+            <td>${pedido.cliente_nombre || '—'}</td>
+            <td>${pedido.productos || ('Pedido #' + (pedido.numero_orden || pedido.id))}</td>
+            <td>$${parseFloat(pedido.total || 0).toFixed(2)}</td>
+            <td>${pedido.fecha_pedido ? new Date(pedido.fecha_pedido).toLocaleDateString() : ''}</td>
+            <td class="${estadoClass}">${getEstadoIcon(pedido.estado || '')} ${pedido.estado || ''}</td>
             <td>
-                <button class="btn-accion" onclick="verPedido('${pedido.id}')" title="Ver detalles">
-                    👁️
-                </button>
-                <button class="btn-accion ${pedido.estado === 'pendiente' ? 'verde' : ''}" 
-                        onclick="actualizarEstado('${pedido.id}')" title="Actualizar estado">
-                    📝
-                </button>
-                <button class="btn-accion" onclick="verSeguimiento(${pedido.id})" title="Ver seguimiento">
-                    📦
-                </button>
+                <button class="btn-accion editar" onclick="abrirModalEditarPedido(${pedido.id})" title="Editar pedido">✏️</button>
+                <button class="btn-accion eliminar" onclick="confirmarEliminarPedido(${pedido.id}, '${(pedido.numero_orden||pedido.id)}')" title="Eliminar pedido">🗑️</button>
             </td>
         `;
                 tbody.appendChild(tr);
@@ -923,6 +1643,267 @@
                 cargarDatosVendedor();
             }
         });
+
+        // Cargar clientes en el select del modal
+        async function cargarClientesSelect() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/clientes/activos`);
+                if (response.ok) {
+                    const clientes = await response.json();
+                    const select = document.getElementById('pedidoClienteId');
+                    if (select) {
+                        select.innerHTML = '<option value="">Seleccionar cliente...</option>';
+                        clientes.forEach(cliente => {
+                            select.innerHTML += `<option value="${cliente.id}">${cliente.nombre} (${cliente.correo})</option>`;
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando clientes:', error);
+            }
+        }
+
+        // Cargar productos en el select del modal
+        async function cargarProductosSelect() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('usuarioActual'));
+                const vendedorId = userData.id;
+
+                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/productos`);
+                if (response.ok) {
+                    const productos = await response.json();
+                    const select = document.getElementById('pedidoProductoId');
+                    if (select) {
+                        select.innerHTML = '<option value="">Seleccionar producto...</option>';
+                        productos
+                            .filter(p => p.activo && p.stock > 0)
+                            .forEach(producto => {
+                                select.innerHTML += `<option value="${producto.id}" data-precio="${producto.precio}">${producto.nombre} - $${producto.precio} (Stock: ${producto.stock})</option>`;
+                            });
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando productos:', error);
+            }
+        }
+
+        // Guardar nuevo pedido
+        async function guardarNuevoPedido() {
+            const clienteId = document.getElementById('pedidoClienteId').value;
+            const productoId = document.getElementById('pedidoProductoId').value;
+            const cantidad = document.getElementById('pedidoCantidad').value;
+            const metodoPago = document.getElementById('pedidoMetodoPago').value;
+            const direccion = document.getElementById('pedidoDireccion').value;
+            const notas = document.getElementById('pedidoNotas').value;
+
+            if (!clienteId || !productoId) {
+                showMessage('error', 'Debes seleccionar un cliente y un producto');
+                return;
+            }
+
+            try {
+                const userData = JSON.parse(localStorage.getItem('usuarioActual'));
+                const vendedorId = userData.id;
+
+                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/pedidos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cliente_id: parseInt(clienteId),
+                        producto_id: parseInt(productoId),
+                        cantidad: parseInt(cantidad),
+                        metodo_pago: metodoPago,
+                        direccion_envio: direccion,
+                        notas: notas
+                    })
+                });
+
+                if (response.ok) {
+                    showMessage('success', '✅ Pedido creado exitosamente');
+                    cerrarModalPedido();
+                    // Recargar pedidos
+                    cargarPedidosVendedor(vendedorId);
+                } else {
+                    const error = await response.json();
+                    showMessage('error', error.message || 'Error al crear pedido');
+                }
+            } catch (error) {
+                console.error('Error creando pedido:', error);
+                showMessage('error', 'Error de conexión al crear pedido');
+            }
+        }
+
+        // Editar pedido (abre modal con datos existentes)
+        async function editarPedido(pedidoId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedido/${pedidoId}/detalle`);
+                if (!response.ok) {
+                    showMessage('error', 'No se pudo cargar el pedido');
+                    return;
+                }
+
+                const pedido = await response.json();
+
+                // Crear modal de edición
+                const modalHtml = `
+            <div id="modalEditarPedido" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000;">
+                <div style="background:white; padding:30px; border-radius:15px; width:500px; max-width:90%;">
+                    <h2 style="margin-bottom:20px; color:#333;">✏️ Editar Pedido #${pedido.numero_orden || pedido.id}</h2>
+                    
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Cliente</label>
+                        <input type="text" value="${pedido.cliente_nombre}" disabled style="width:100%; padding:10px; background:#f5f5f5; border:1px solid #ddd; border-radius:5px;">
+                    </div>
+
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Estado</label>
+                        <select id="editEstado" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
+                            <option value="pendiente" ${pedido.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                            <option value="procesando" ${pedido.estado === 'procesando' ? 'selected' : ''}>Procesando</option>
+                            <option value="confirmado" ${pedido.estado === 'confirmado' ? 'selected' : ''}>Confirmado</option>
+                            <option value="enviado" ${pedido.estado === 'enviado' ? 'selected' : ''}>Enviado</option>
+                            <option value="entregado" ${pedido.estado === 'entregado' ? 'selected' : ''}>Entregado</option>
+                            <option value="cancelado" ${pedido.estado === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Dirección de Envío</label>
+                        <textarea id="editDireccion" rows="2" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">${pedido.direccion_envio || ''}</textarea>
+                    </div>
+
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Notas</label>
+                        <textarea id="editNotas" rows="2" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">${pedido.notas || ''}</textarea>
+                    </div>
+
+                    <div style="display:flex; gap:10px; justify-content:flex-end;">
+                        <button onclick="cerrarModalEditar()" style="padding:10px 20px; border:1px solid #ddd; background:white; border-radius:5px; cursor:pointer;">Cancelar</button>
+                        <button onclick="guardarEdicionPedido(${pedidoId})" style="padding:10px 20px; background:#7e57c2; color:white; border:none; border-radius:5px; cursor:pointer;">Guardar Cambios</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+                const modalContainer = document.createElement('div');
+                modalContainer.innerHTML = modalHtml;
+                document.body.appendChild(modalContainer.firstChild);
+
+            } catch (error) {
+                console.error('Error cargando pedido para editar:', error);
+                showMessage('error', 'Error al cargar datos del pedido');
+            }
+        }
+
+        // Cerrar modal de edición
+        function cerrarModalEditar() {
+            const modal = document.getElementById('modalEditarPedido');
+            if (modal) modal.remove();
+        }
+
+        // Guardar cambios en pedido editado
+        async function guardarEdicionPedido(pedidoId) {
+            const estado = document.getElementById('editEstado').value;
+            const direccion = document.getElementById('editDireccion').value;
+            const notas = document.getElementById('editNotas').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        estado,
+                        direccion_envio: direccion,
+                        notas
+                    })
+                });
+
+                if (response.ok) {
+                    showMessage('success', '✅ Pedido actualizado');
+                    cerrarModalEditar();
+                    const userData = JSON.parse(localStorage.getItem('usuarioActual'));
+                    cargarPedidosVendedor(userData.id);
+                } else {
+                    const error = await response.json();
+                    showMessage('error', error.message || 'Error al actualizar');
+                }
+            } catch (error) {
+                console.error('Error actualizando pedido:', error);
+                showMessage('error', 'Error de conexión');
+            }
+        }
+
+        // Confirmar y eliminar pedido
+        function confirmarEliminarPedido(pedidoId, numeroOrden) {
+            if (confirm(`¿Estás seguro de eliminar el pedido #${numeroOrden}?`)) {
+                eliminarPedido(pedidoId);
+            }
+        }
+
+        // Eliminar pedido
+        async function eliminarPedido(pedidoId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showMessage('success', '✅ Pedido eliminado');
+                    const userData = JSON.parse(localStorage.getItem('usuarioActual'));
+                    cargarPedidosVendedor(userData.id);
+                } else {
+                    const error = await response.json();
+                    showMessage('error', error.message || 'Error al eliminar');
+                }
+            } catch (error) {
+                console.error('Error eliminando pedido:', error);
+                showMessage('error', 'Error de conexión');
+            }
+        }
+
+        // ==================== FUNCIONES AUXILIARES ====================
+
+        // Función para nuevo cliente (desde el botón)
+        function nuevoCliente() {
+            showMessage('success', 'Funcionalidad: Crear nuevo cliente (en desarrollo)');
+            // Aquí puedes implementar un modal similar al de pedidos
+        }
+
+        // Función para ver detalle de cliente
+        function verCliente(clienteId) {
+            showMessage('success', `Ver detalles de cliente (ID): ${clienteId}`);
+            // Implementar redirección a página de detalle o modal
+        }
+
+        // Función para contactar cliente
+        function contactarCliente(email) {
+            window.location.href = `mailto:${email}`;
+        }
+
+        // Función para nuevo pedido desde cliente específico
+        function nuevoPedido(clienteId) {
+            abrirModalPedido();
+            // Preseleccionar el cliente si es posible
+            setTimeout(() => {
+                const selectCliente = document.getElementById('pedidoClienteId');
+                if (selectCliente) {
+                    selectCliente.value = clienteId;
+                }
+            }, 500);
+        }
+
+        // Función para ver detalle de pedido (puedes implementar)
+        function verPedido(pedidoId) {
+            showMessage('success', `Ver detalles del pedido: ${pedidoId}`);
+        }
+
+        // Función para actualizar estado rápido (opcional)
+        function actualizarEstado(pedidoId) {
+            showMessage('success', `Actualizar estado del pedido: ${pedidoId}`);
+            editarPedido(pedidoId); // Reutilizamos el modal de edición
+        }
+
+
     </script>
 </body>
 </html>
