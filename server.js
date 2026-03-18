@@ -103,6 +103,88 @@ app.get('/api', (req, res) => {
     });
 });
 
+// ==================== ENDPOINTS PARA PEDIDOS (ESTADÍSTICA) ====================
+
+// Obtener todos los pedidos
+app.get('/api/pedidos/todos', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                id,
+                numero_orden,
+                cliente_id,
+                vendedor_id,
+                producto_id,
+                cantidad,
+                subtotal,
+                impuestos,
+                descuento,
+                total,
+                estado,
+                metodo_pago,
+                direccion_envio,
+                notas,
+                fecha_pedido,
+                fecha_confirmacion,
+                fecha_envio,
+                fecha_entrega
+            FROM pedidos 
+            ORDER BY fecha_pedido DESC
+        `;
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo pedidos:', error);
+        res.status(500).json({ error: 'Error al cargar pedidos' });
+    }
+});
+
+// Obtener pedidos por rango de fechas (opcional)
+app.get('/api/pedidos/rango', async (req, res) => {
+    const { desde, hasta } = req.query;
+
+    try {
+        let query = 'SELECT * FROM pedidos';
+        let params = [];
+
+        if (desde && hasta) {
+            query += ' WHERE fecha_pedido BETWEEN $1 AND $2';
+            params = [desde, hasta];
+        }
+
+        query += ' ORDER BY fecha_pedido DESC';
+
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo pedidos por rango:', error);
+        res.status(500).json({ error: 'Error al cargar pedidos' });
+    }
+});
+
+// Obtener estadísticas de pedidos
+app.get('/api/pedidos/estadisticas', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                COUNT(*) as total_pedidos,
+                COUNT(*) FILTER (WHERE estado = 'pendiente' OR estado = 'procesando') as pendientes,
+                COUNT(*) FILTER (WHERE estado = 'enviado') as enviados,
+                COUNT(*) FILTER (WHERE estado = 'entregado') as entregados,
+                COUNT(*) FILTER (WHERE estado = 'cancelado') as cancelados,
+                COALESCE(SUM(total), 0) as ventas_totales,
+                COALESCE(AVG(total), 0) as ticket_promedio
+            FROM pedidos
+        `);
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error obteniendo estadísticas:', error);
+        res.status(500).json({ error: 'Error al cargar estadísticas' });
+    }
+});
+
 // ENDPOINT DE DIAGNÓSTICO - para verificar tablas y columnas
 app.get('/api/debug-tablas', async (req, res) => {
     try {
@@ -1643,16 +1725,59 @@ app.get('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
     }
 });
 
-// Listar clientes activos (para selects en UI)
+// ==================== ENDPOINT PARA OBTENER TODOS LOS CLIENTES (COMPLETO) ====================
+app.get('/api/clientes/todos', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                id,
+                nombre,
+                correo,
+                telefono,
+                direccion,
+                ciudad,
+                fecha_registro,
+                estado_cliente,
+                empresa,
+                codigo_postal,
+                etapa_crm
+            FROM clientes 
+            ORDER BY id ASC
+        `;
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo clientes:', error);
+        res.status(500).json({ error: 'Error al cargar clientes' });
+    }
+});
+
+// ==================== ENDPOINT PARA CLIENTES ACTIVOS (VERSIÓN MEJORADA) ====================
 app.get('/api/clientes/activos', async (req, res) => {
     try {
-        const result = await pool.query(
-            `SELECT id, nombre, correo FROM clientes WHERE estado_cliente = 'activo' ORDER BY nombre`
-        );
+        const query = `
+            SELECT 
+                id,
+                nombre,
+                correo,
+                telefono,
+                direccion,
+                ciudad,
+                fecha_registro,
+                estado_cliente,
+                empresa,
+                etapa_crm
+            FROM clientes 
+            WHERE estado_cliente = 'activo'
+            ORDER BY nombre ASC
+        `;
+
+        const result = await pool.query(query);
         res.json(result.rows);
     } catch (error) {
         console.error('Error obteniendo clientes activos:', error);
-        res.status(500).json({ message: 'Error obteniendo clientes' });
+        res.status(500).json({ error: 'Error al cargar clientes' });
     }
 });
 

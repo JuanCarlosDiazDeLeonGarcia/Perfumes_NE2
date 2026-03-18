@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Pedidos - Perfumes NE2</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <style>
+        /* Estilos específicos para panel de pedidos */
+        .main-content {
+            padding: 20px;
+            margin-left: 250px;
+        }
+
+        .admin-header {
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #2c3e50, #e67e22);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+        }
+
+            .admin-header h1 {
+                color: white;
+                margin: 0;
+                font-size: 2rem;
+            }
+
+            .admin-header p {
+                margin: 10px 0 0;
+                opacity: 0.9;
+            }
+
+        /* Tarjetas de métricas */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 4px solid #e67e22;
+        }
+
+            .card h3 {
+                color: #666;
+                font-size: 0.9rem;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+            }
+
+            .card .numero {
+                font-size: 2rem;
+                font-weight: bold;
+                color: #2c3e50;
+                margin: 5px 0;
+            }
+
+            .card .label {
+                color: #999;
+                font-size: 0.8rem;
+            }
+
+        /* Contenedor principal de la tabla */
+        .tabla-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .tabla-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+            .tabla-header h2 {
+                color: #333;
+                font-size: 1.5rem;
+                margin: 0;
+            }
+
+        .filtros {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .buscador {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            width: 250px;
+        }
+
+        .filtro-select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            min-width: 150px;
+        }
+
+        .btn-accion {
+            background: #e67e22;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .btn-accion:hover {
+                background: #d35400;
+            }
+
+        .btn-exportar {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .btn-exportar:hover {
+                background: #219a52;
+            }
+
+        /* Tabla */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+            table th {
+                background: #f8f9fa;
+                padding: 12px;
+                text-align: left;
+                font-weight: 600;
+                color: #555;
+                border-bottom: 2px solid #dee2e6;
+                font-size: 0.9rem;
+            }
+
+            table td {
+                padding: 12px;
+                border-bottom: 1px solid #e9ecef;
+                font-size: 0.9rem;
+            }
+
+            table tr:hover {
+                background: #f8f9fa;
+            }
+
+        /* Estados de pedido */
+        .estado-badge {
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .estado-pendiente {
+            background: #fff3e0;
+            color: #e67e22;
+        }
+
+        .estado-confirmado {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        .estado-procesando {
+            background: #e8f5e8;
+            color: #4caf50;
+        }
+
+        .estado-enviado {
+            background: #e0f7fa;
+            color: #00acc1;
+        }
+
+        .estado-entregado {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .estado-cancelado {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        /* Método de pago */
+        .metodo-badge {
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        /* Montos */
+        .monto {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Paginación */
+        .paginacion {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .pagina {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            min-width: 35px;
+            text-align: center;
+        }
+
+            .pagina:hover {
+                background: #f5f5f5;
+            }
+
+            .pagina.active {
+                background: #e67e22;
+                color: white;
+                border-color: #e67e22;
+            }
+
+        /* Info cliente/vendedor */
+        .info-link {
+            color: #e67e22;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+            .info-link:hover {
+                text-decoration: underline;
+            }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+            .loading::after {
+                content: '';
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                margin-left: 10px;
+                border: 2px solid #f3f3f3;
+                border-top: 2px solid #e67e22;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Tooltip para información adicional */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+
+            .tooltip .tooltip-text {
+                visibility: hidden;
+                width: 200px;
+                background-color: #2c3e50;
+                color: #fff;
+                text-align: left;
+                padding: 8px;
+                border-radius: 6px;
+                position: absolute;
+                z-index: 1;
+                bottom: 125%;
+                left: 50%;
+                margin-left: -100px;
+                opacity: 0;
+                transition: opacity 0.3s;
+                font-size: 0.8rem;
+                font-weight: normal;
+            }
+
+            .tooltip:hover .tooltip-text {
+                visibility: visible;
+                opacity: 1;
+            }
+
+        /* Mensaje informativo */
+        .mensaje-info {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            border-left: 4px solid #2196f3;
+        }
+
+        /* Resumen de filtros */
+        .resumen-filtros {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filtro-activo {
+            background: #e67e22;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .filtro-activo button {
+                background: none;
+                border: none;
+                color: white;
+                cursor: pointer;
+                font-size: 1rem;
+                padding: 0 2px;
+            }
+    </style>
+</head>
+<body>
+    <!-- Menú lateral -->
+    <aside class="sidebar">
+        <h2>📦 Perfumes NE2</h2>
+        <nav>
+            <a href="../catalog.html">🢀 Volver</a>
+            <a href="statspanel.html" class="active">🏠 Dashboard</a>
+            <a href="statspedidos.html" class="active">🚚 Pedidos</a>
+            <a href="statsmetricas.html" class="active">📈 Metricas</a>
+            <a href="#" class="active">⚙️ Operaciones</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+        <div class="sidebar-footer" style="position: absolute; bottom: 20px; left: 20px; color: #aaa; font-size: 0.8rem;">
+            <p>Panel de Pedidos</p>
+            <p>Acceso de solo lectura</p>
+        </div>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <!-- Header con información del usuario -->
+        <div class="admin-header">
+            <h1>Panel de Pedidos</h1>
+            <p id="welcomeMessage">Bienvenido, <span id="userName">Cargando...</span> (Acceso de solo lectura)</p>
+        </div>
+
+        <!-- Tarjetas de métricas -->
+        <section class="cards">
+            <div class="card">
+                <h3>Total Pedidos</h3>
+                <div class="numero" id="totalPedidos">0</div>
+                <span class="label">Todos los registros</span>
+            </div>
+            <div class="card">
+                <h3>Pendientes</h3>
+                <div class="numero" id="pedidosPendientes">0</div>
+                <span class="label">Por procesar</span>
+            </div>
+            <div class="card">
+                <h3>Enviados</h3>
+                <div class="numero" id="pedidosEnviados">0</div>
+                <span class="label">En tránsito</span>
+            </div>
+            <div class="card">
+                <h3>Entregados</h3>
+                <div class="numero" id="pedidosEntregados">0</div>
+                <span class="label">Completados</span>
+            </div>
+            <div class="card">
+                <h3>Ventas Totales</h3>
+                <div class="numero" id="ventasTotales">$0</div>
+                <span class="label">Suma de todos los pedidos</span>
+            </div>
+        </section>
+
+        <!-- Contenido principal: Tabla de pedidos -->
+        <div class="tabla-container">
+            <div class="tabla-header">
+                <h2>📋 Historial de Pedidos</h2>
+                <div class="filtros">
+                    <input type="text" class="buscador" id="buscadorPedidos" placeholder="🔍 Buscar por orden o cliente..." onkeyup="filtrarPedidos()">
+                    <select class="filtro-select" id="filtroEstado" onchange="filtrarPedidos()">
+                        <option value="todos">Todos los estados</option>
+                        <option value="pendiente">⏳ Pendiente</option>
+                        <option value="confirmado">📋 Confirmado</option>
+                        <option value="procesando">⚙️ Procesando</option>
+                        <option value="enviado">🚚 Enviado</option>
+                        <option value="entregado">✅ Entregado</option>
+                        <option value="cancelado">❌ Cancelado</option>
+                    </select>
+                    <button class="btn-exportar" onclick="exportarPedidos()">
+                        📥 Exportar CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resumen de filtros activos -->
+            <div class="resumen-filtros" id="resumenFiltros" style="display: none;">
+                <span>Filtros activos:</span>
+                <span class="filtro-activo" id="filtroEstadoActivo" style="display: none;">
+                    Estado: <span id="estadoSeleccionado"></span>
+                    <button onclick="limpiarFiltroEstado()">✕</button>
+                </span>
+            </div>
+
+            <!-- Tabla de pedidos -->
+            <div class="table-wrapper">
+                <table id="tablaPedidos">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>N° Orden</th>
+                            <th>Cliente ID</th>
+                            <th>Vendedor ID</th>
+                            <th>Producto ID</th>
+                            <th>Cantidad</th>
+                            <th>Subtotal</th>
+                            <th>Impuestos</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Método Pago</th>
+                            <th>Fecha Pedido</th>
+                            <th>Fecha Envío</th>
+                            <th>Fecha Entrega</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pedidosTableBody">
+                        <tr><td colspan="14" class="loading">Cargando pedidos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            <div class="paginacion" id="paginacionPedidos">
+                <!-- Se llena con JavaScript -->
+            </div>
+
+            <!-- Información adicional -->
+            <div style="margin-top: 20px; font-size: 0.85rem; color: #999; text-align: right;">
+                Total de registros: <span id="totalRegistros">0</span>
+            </div>
+        </div>
+
+        <!-- Modal para ver detalles del pedido (opcional) -->
+        <div class="modal-overlay" id="modalDetalle" style="display: none;">
+            <div class="modal" style="width: 600px;">
+                <h2>📦 Detalle del Pedido</h2>
+                <div id="detallePedido">
+                    <!-- Contenido dinámico -->
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancelar" onclick="cerrarModal()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+        let pedidosData = [];
+        let pedidosFiltrados = [];
+        let clientesMap = new Map(); // Para cache de nombres de clientes
+        let vendedoresMap = new Map(); // Para cache de nombres de vendedores
+        let productosMap = new Map(); // Para cache de nombres de productos
+
+        // Variables para paginación
+        let paginaActual = 1;
+        const itemsPorPagina = 15;
+
+        // Verificar sesión al cargar
+        document.addEventListener('DOMContentLoaded', function () {
+            const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
+            const userType = localStorage.getItem('userType');
+
+            if (!usuario || userType !== 'estadistica') {
+                window.location.href = '../adminlogin.html';
+                return;
+            }
+
+            // Mostrar nombre del usuario
+            document.getElementById('userName').textContent = usuario.nombre || 'Usuario';
+
+            // Cargar datos
+            cargarPedidos();
+        });
+
+        // ==================== ENDPOINTS NECESARIOS EN SERVER.JS ====================
+        // NOTA: Estos endpoints deben ser agregados a tu server.js
+
+        // Para obtener todos los pedidos:
+        // app.get('/api/pedidos/todos', async (req, res) => {
+        //     try {
+        //         const result = await pool.query(`
+        //             SELECT * FROM pedidos ORDER BY fecha_pedido DESC
+        //         `);
+        //         res.json(result.rows);
+        //     } catch (error) {
+        //         res.status(500).json({ error: error.message });
+        //     }
+        // });
+
+        // Para obtener nombres de clientes (opcional, para mejorar la visualización):
+        // app.get('/api/clientes/nombres', async (req, res) => {
+        //     try {
+        //         const result = await pool.query(`
+        //             SELECT id, nombre FROM clientes
+        //         `);
+        //         res.json(result.rows);
+        //     } catch (error) {
+        //         res.status(500).json({ error: error.message });
+        //     }
+        // });
+
+        // Cargar pedidos
+        async function cargarPedidos() {
+            try {
+                // Intentar cargar desde un endpoint específico para pedidos
+                // Si no existe, puedes usar el endpoint de vendedor pero necesitarás uno general
+                const response = await fetch(`${API_BASE_URL}/api/pedidos/todos`);
+
+                if (!response.ok) {
+                    // Si no existe el endpoint, usar datos de ejemplo para demostración
+                    console.warn('Endpoint no disponible, usando datos de ejemplo');
+                    usarDatosEjemplo();
+                    return;
+                }
+
+                pedidosData = await response.json();
+                procesarPedidos();
+
+            } catch (error) {
+                console.error('Error:', error);
+                // Usar datos de ejemplo para demostración
+                usarDatosEjemplo();
+            }
+        }
+
+        // Función para usar datos de ejemplo (mientras no exista el endpoint)
+        function usarDatosEjemplo() {
+            pedidosData = [
+                {
+                    id: 1,
+                    numero_orden: 'ORD-001',
+                    cliente_id: 101,
+                    vendedor_id: 201,
+                    producto_id: 301,
+                    cantidad: 2,
+                    subtotal: 1600.00,
+                    impuestos: 256.00,
+                    total: 1856.00,
+                    estado: 'entregado',
+                    metodo_pago: 'tarjeta',
+                    direccion_envio: 'Av. Principal 123',
+                    notas: 'Entregar en horario laboral',
+                    fecha_pedido: '2024-01-15T10:30:00',
+                    fecha_envio: '2024-01-16T09:00:00',
+                    fecha_entrega: '2024-01-18T14:30:00'
+                },
+                {
+                    id: 2,
+                    numero_orden: 'ORD-002',
+                    cliente_id: 102,
+                    vendedor_id: 202,
+                    producto_id: 302,
+                    cantidad: 1,
+                    subtotal: 850.00,
+                    impuestos: 136.00,
+                    total: 986.00,
+                    estado: 'enviado',
+                    metodo_pago: 'efectivo',
+                    direccion_envio: 'Calle Reforma 456',
+                    notas: 'Llamar antes de entregar',
+                    fecha_pedido: '2024-01-20T15:45:00',
+                    fecha_envio: '2024-01-21T11:00:00',
+                    fecha_entrega: null
+                },
+                {
+                    id: 3,
+                    numero_orden: 'ORD-003',
+                    cliente_id: 103,
+                    vendedor_id: 201,
+                    producto_id: 303,
+                    cantidad: 3,
+                    subtotal: 2100.00,
+                    impuestos: 336.00,
+                    total: 2436.00,
+                    estado: 'pendiente',
+                    metodo_pago: 'transferencia',
+                    direccion_envio: 'Blvd. Independencia 789',
+                    notas: '',
+                    fecha_pedido: '2024-01-25T09:15:00',
+                    fecha_envio: null,
+                    fecha_entrega: null
+                },
+                {
+                    id: 4,
+                    numero_orden: 'ORD-004',
+                    cliente_id: 104,
+                    vendedor_id: 203,
+                    producto_id: 304,
+                    cantidad: 1,
+                    subtotal: 1200.00,
+                    impuestos: 192.00,
+                    total: 1392.00,
+                    estado: 'cancelado',
+                    metodo_pago: 'tarjeta',
+                    direccion_envio: 'Av. Universidad 234',
+                    notas: 'Cliente canceló por cambio de opinión',
+                    fecha_pedido: '2024-01-18T13:20:00',
+                    fecha_envio: null,
+                    fecha_entrega: null
+                },
+                {
+                    id: 5,
+                    numero_orden: 'ORD-005',
+                    cliente_id: 105,
+                    vendedor_id: 202,
+                    producto_id: 305,
+                    cantidad: 2,
+                    subtotal: 1900.00,
+                    impuestos: 304.00,
+                    total: 2204.00,
+                    estado: 'procesando',
+                    metodo_pago: 'efectivo',
+                    direccion_envio: 'Calle Juárez 567',
+                    notas: 'Urgente',
+                    fecha_pedido: '2024-01-22T11:30:00',
+                    fecha_envio: null,
+                    fecha_entrega: null
+                }
+            ];
+
+            procesarPedidos();
+        }
+
+        // Procesar pedidos (calcular métricas y renderizar)
+        function procesarPedidos() {
+            // Calcular métricas
+            actualizarMetricas();
+
+            // Inicializar filtrados
+            pedidosFiltrados = [...pedidosData];
+            paginaActual = 1;
+
+            // Renderizar tabla
+            renderizarTablaPedidos();
+        }
+
+        // Actualizar tarjetas de métricas
+        function actualizarMetricas() {
+            const total = pedidosData.length;
+            const pendientes = pedidosData.filter(p => p.estado === 'pendiente' || p.estado === 'procesando').length;
+            const enviados = pedidosData.filter(p => p.estado === 'enviado').length;
+            const entregados = pedidosData.filter(p => p.estado === 'entregado').length;
+            const ventas = pedidosData.reduce((sum, p) => sum + parseFloat(p.total || 0), 0);
+
+            document.getElementById('totalPedidos').textContent = total;
+            document.getElementById('pedidosPendientes').textContent = pendientes;
+            document.getElementById('pedidosEnviados').textContent = enviados;
+            document.getElementById('pedidosEntregados').textContent = entregados;
+            document.getElementById('ventasTotales').textContent = `$${ventas.toFixed(2)}`;
+            document.getElementById('totalRegistros').textContent = pedidosFiltrados.length;
+        }
+
+        // Renderizar tabla de pedidos con paginación
+        function renderizarTablaPedidos() {
+            const tbody = document.getElementById('pedidosTableBody');
+            tbody.innerHTML = '';
+
+            const inicio = (paginaActual - 1) * itemsPorPagina;
+            const fin = inicio + itemsPorPagina;
+            const pedidosPagina = pedidosFiltrados.slice(inicio, fin);
+
+            if (pedidosPagina.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="14" style="text-align: center; padding: 40px;">No hay pedidos para mostrar</td></tr>';
+                return;
+            }
+
+            pedidosPagina.forEach(p => {
+                const estadoClass = `estado-badge estado-${p.estado || 'pendiente'}`;
+                const estadoTexto = p.estado || 'pendiente';
+
+                // Formatear fechas
+                const fechaPedido = p.fecha_pedido ? new Date(p.fecha_pedido).toLocaleString('es-MX') : '—';
+                const fechaEnvio = p.fecha_envio ? new Date(p.fecha_envio).toLocaleDateString('es-MX') : '—';
+                const fechaEntrega = p.fecha_entrega ? new Date(p.fecha_entrega).toLocaleDateString('es-MX') : '—';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                        <td>#${p.id}</td>
+                        <td><strong>${p.numero_orden || '—'}</strong></td>
+                        <td>
+                            <span class="tooltip">
+                                ${p.cliente_id || '—'}
+                                <span class="tooltip-text">ID Cliente: ${p.cliente_id || 'N/A'}</span>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="tooltip">
+                                ${p.vendedor_id || '—'}
+                                <span class="tooltip-text">ID Vendedor: ${p.vendedor_id || 'N/A'}</span>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="tooltip">
+                                ${p.producto_id || '—'}
+                                <span class="tooltip-text">ID Producto: ${p.producto_id || 'N/A'}</span>
+                            </span>
+                        </td>
+                        <td style="text-align: center;">${p.cantidad || 1}</td>
+                        <td class="monto">$${parseFloat(p.subtotal || 0).toFixed(2)}</td>
+                        <td class="monto">$${parseFloat(p.impuestos || 0).toFixed(2)}</td>
+                        <td class="monto">$${parseFloat(p.total || 0).toFixed(2)}</td>
+                        <td><span class="${estadoClass}">${estadoTexto}</span></td>
+                        <td><span class="metodo-badge">${p.metodo_pago || '—'}</span></td>
+                        <td>${fechaPedido}</td>
+                        <td>${fechaEnvio}</td>
+                        <td>${fechaEntrega}</td>
+                    `;
+                tbody.appendChild(tr);
+            });
+
+            // Actualizar contador de registros
+            document.getElementById('totalRegistros').textContent = pedidosFiltrados.length;
+
+            // Renderizar paginación
+            renderizarPaginacion(Math.ceil(pedidosFiltrados.length / itemsPorPagina));
+        }
+
+        // Renderizar paginación
+        function renderizarPaginacion(totalPaginas) {
+            const container = document.getElementById('paginacionPedidos');
+            container.innerHTML = '';
+
+            if (totalPaginas <= 1) return;
+
+            // Botón anterior
+            if (paginaActual > 1) {
+                const prevBtn = document.createElement('span');
+                prevBtn.className = 'pagina';
+                prevBtn.innerHTML = '←';
+                prevBtn.onclick = () => {
+                    paginaActual--;
+                    renderizarTablaPedidos();
+                };
+                container.appendChild(prevBtn);
+            }
+
+            // Números de página
+            for (let i = 1; i <= totalPaginas; i++) {
+                // Mostrar solo páginas cercanas
+                if (i === 1 || i === totalPaginas || (i >= paginaActual - 2 && i <= paginaActual + 2)) {
+                    const btn = document.createElement('span');
+                    btn.className = `pagina ${paginaActual === i ? 'active' : ''}`;
+                    btn.textContent = i;
+                    btn.onclick = () => {
+                        paginaActual = i;
+                        renderizarTablaPedidos();
+                    };
+                    container.appendChild(btn);
+                } else if (i === paginaActual - 3 || i === paginaActual + 3) {
+                    const btn = document.createElement('span');
+                    btn.className = 'pagina';
+                    btn.textContent = '...';
+                    btn.disabled = true;
+                    container.appendChild(btn);
+                }
+            }
+
+            // Botón siguiente
+            if (paginaActual < totalPaginas) {
+                const nextBtn = document.createElement('span');
+                nextBtn.className = 'pagina';
+                nextBtn.innerHTML = '→';
+                nextBtn.onclick = () => {
+                    paginaActual++;
+                    renderizarTablaPedidos();
+                };
+                container.appendChild(nextBtn);
+            }
+        }
+
+        // Filtrar pedidos
+        function filtrarPedidos() {
+            const texto = document.getElementById('buscadorPedidos').value.toLowerCase();
+            const estado = document.getElementById('filtroEstado').value;
+
+            pedidosFiltrados = pedidosData.filter(p => {
+                // Filtro por texto
+                const cumpleTexto = texto === '' ||
+                    (p.numero_orden && p.numero_orden.toLowerCase().includes(texto)) ||
+                    (p.cliente_id && p.cliente_id.toString().includes(texto)) ||
+                    (p.notas && p.notas.toLowerCase().includes(texto));
+
+                // Filtro por estado
+                const cumpleEstado = estado === 'todos' || p.estado === estado;
+
+                return cumpleTexto && cumpleEstado;
+            });
+
+            // Actualizar resumen de filtros
+            actualizarResumenFiltros(estado);
+
+            paginaActual = 1;
+            renderizarTablaPedidos();
+        }
+
+        // Actualizar resumen de filtros activos
+        function actualizarResumenFiltros(estado) {
+            const resumenDiv = document.getElementById('resumenFiltros');
+            const filtroEstadoDiv = document.getElementById('filtroEstadoActivo');
+            const estadoSpan = document.getElementById('estadoSeleccionado');
+
+            let filtrosActivos = false;
+
+            if (estado && estado !== 'todos') {
+                filtroEstadoDiv.style.display = 'inline-flex';
+                estadoSpan.textContent = estado;
+                filtrosActivos = true;
+            } else {
+                filtroEstadoDiv.style.display = 'none';
+            }
+
+            resumenDiv.style.display = filtrosActivos ? 'flex' : 'none';
+        }
+
+        // Limpiar filtro de estado
+        function limpiarFiltroEstado() {
+            document.getElementById('filtroEstado').value = 'todos';
+            filtrarPedidos();
+        }
+
+        // Exportar pedidos a CSV
+        function exportarPedidos() {
+            const headers = [
+                'ID', 'N° Orden', 'Cliente ID', 'Vendedor ID', 'Producto ID',
+                'Cantidad', 'Subtotal', 'Impuestos', 'Total', 'Estado',
+                'Método Pago', 'Dirección Envío', 'Notas', 'Fecha Pedido',
+                'Fecha Confirmación', 'Fecha Envío', 'Fecha Entrega'
+            ];
+
+            const contenido = pedidosFiltrados.map(p => [
+                p.id,
+                p.numero_orden || '',
+                p.cliente_id || '',
+                p.vendedor_id || '',
+                p.producto_id || '',
+                p.cantidad || 1,
+                p.subtotal || 0,
+                p.impuestos || 0,
+                p.total || 0,
+                p.estado || '',
+                p.metodo_pago || '',
+                p.direccion_envio || '',
+                p.notas || '',
+                p.fecha_pedido ? new Date(p.fecha_pedido).toLocaleString('es-MX') : '',
+                p.fecha_confirmacion ? new Date(p.fecha_confirmacion).toLocaleString('es-MX') : '',
+                p.fecha_envio ? new Date(p.fecha_envio).toLocaleString('es-MX') : '',
+                p.fecha_entrega ? new Date(p.fecha_entrega).toLocaleString('es-MX') : ''
+            ]);
+
+            let csv = headers.join(',') + '\n';
+            csv += contenido.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `pedidos_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        // Función para cerrar sesión
+        function cerrarSesion() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                localStorage.removeItem('usuarioActual');
+                localStorage.removeItem('token');
+                localStorage.removeItem('userType');
+                window.location.href = '../adminlogin.html';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -17,7 +17,7 @@
                 <p class="acceso-restringido">ACCESO RESTRINGIDO</p>
             </div>
 
-            <form id="formLogin" class="login-form" onsubmit="iniciarSesionAdmin(event)">
+            <form id="formLogin" class="login-form" onsubmit="iniciarSesion(event)">
                 <div class="form-group">
                     <label for="email">📧 Correo Electrónico</label>
                     <input type="email"
@@ -60,10 +60,15 @@
             </form>
 
             <div class="login-footer">
-                <p style="margin-top: 20px; font-size: 0.85rem;">
-                    ¿Olvidaste tu contraseña? 
-                    <a href="#">Recuperar acceso</a>
-                </p>
+                <div style="margin-top: 20px; font-size: 0.85rem; text-align: center;">
+                    <p style="margin: 5px 0;">
+                        ¿Olvidaste tu contraseña?
+                        <a href="#">Recuperar acceso</a>
+                    </p>
+                    <p style="margin: 10px 0 0; color: #7e57c2; font-size: 0.8rem; border-top: 1px dashed #e0e0e0; padding-top: 10px;">
+                        <strong>Accesos del sistema:</strong> Administrador, Vendedor, Estadística
+                    </p>
+                </div>
             </div>
         </div>
     </div>
