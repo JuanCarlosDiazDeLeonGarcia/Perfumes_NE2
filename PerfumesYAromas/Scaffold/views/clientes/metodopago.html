@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Métodos de Pago - PerfumeShop</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <style>
+        /* Estilos adicionales para los nuevos métodos */
+        .payment-instructions {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #25D366;
+        }
+
+            .payment-instructions h4 {
+                margin-top: 0;
+                color: #333;
+            }
+
+        .bank-details {
+            background: #e8f4ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #cce5ff;
+        }
+
+            .bank-details p {
+                margin: 8px 0;
+                font-family: monospace;
+                font-size: 0.95rem;
+            }
+
+        .reference-code {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .store-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .store-option {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .store-option:hover {
+                border-color: #25D366;
+                background: #f0fff4;
+            }
+
+            .store-option.selected {
+                border-color: #25D366;
+                background: #e8f5e9;
+            }
+
+        .store-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        /* Estilos adicionales */
+        .main-content {
+            padding: 20px;
+        }
+
+        .admin-header {
+            margin-bottom: 30px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+            .card h3 {
+                margin-bottom: 10px;
+                color: #555;
+                font-size: 16px;
+            }
+
+            .card p {
+                font-size: 18px;
+                font-weight: bold;
+                color: #333;
+            }
+
+        .tabla-admin {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .titulo-tabla {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .titulo-tabla h2 {
+                color: #333;
+                margin: 0;
+            }
+
+        /* Botones */
+        .btn-agregar {
+            background: linear-gradient(90deg, #7e57c2, #5c6bc0);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+            .btn-agregar:hover {
+                opacity: 0.9;
+            }
+
+        .btn-editar {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+            .btn-editar:hover {
+                background: #45a049;
+            }
+
+        .btn-eliminar {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+            .btn-eliminar:hover {
+                background: #d32f2f;
+            }
+
+        .btn-sesion {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+            .btn-sesion:hover {
+                opacity: 0.9;
+            }
+
+        /* Estilos de la tabla */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+            table th, table td {
+                padding: 12px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+
+            table th {
+                background-color: #f8f9fa;
+                font-weight: bold;
+                color: #333;
+            }
+
+            table tr:hover {
+                background-color: #f9f9f9;
+            }
+
+        /* Mensajes */
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+            display: none;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Formularios */
+        form label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        form input, form select, form textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+            form input:focus, form select:focus, form textarea:focus {
+                outline: none;
+                border-color: #7e57c2;
+            }
+
+        /* Sidebar debe usar estilos de base.css */
+        .main-content {
+            margin-left: 250px;
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h2>🌸 PerfumeShop</h2>
+        <nav>
+            <a href="../catalog.html">🢀 Volver</a>
+            <a href="usuariomenu.html">🏠 Inicio</a>
+            <a href="miscompras.html">🛍️ Mis Compras</a>
+            <a href="#" class="active">💳 Métodos de Pago</a>
+            <a href="seguimiento.html">📦 Seguimiento</a>
+            <a href="usuariomenu.html">📩 Contacto</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="admin-header">
+            <h1>Métodos de Pago</h1>
+        </header>
+
+        <!-- Mensajes -->
+        <div id="successMessage" class="message success"></div>
+        <div id="errorMessage" class="message error"></div>
+
+        <section class="cards">
+            <div class="card"><h3>Tarjetas Registradas</h3><p id="tarjetasRegistradas">0</p></div>
+            <div class="card"><h3>Último Pago</h3><p id="ultimoPago">-</p></div>
+            <div class="card"><h3>Método Principal</h3><p id="metodoPrincipal">No configurado</p></div>
+            <div class="card"><h3>Saldo Disponible</h3><p id="saldoMonedero">$0</p></div>
+        </section>
+
+        <!-- NUEVA SECCIÓN: TIPOS DE MÉTODO DE PAGO -->
+        <section class="tabla-admin" style="margin-top:20px;">
+            <div class="titulo-tabla">
+                <h2>💰 Formas de Pago Disponibles</h2>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:15px; max-width:700px; margin:auto;">
+                <button class="btn-agregar" onclick="mostrarTarjetas()">💳 Pago con Tarjeta</button>
+                <button class="btn-agregar" onclick="mostrarMonedero()">👛 Pago con Monedero Digital</button>
+                <button class="btn-agregar" onclick="mostrarTransferencia()">🏦 Transferencia Bancaria</button>
+                <button class="btn-agregar" onclick="mostrarEfectivo()">💵 Pago en Efectivo</button>
+                <button class="btn-agregar" onclick="mostrarCheque()">📄 Transferencia</button>
+                <button class="btn-agregar" onclick="mostrarCajero()">🏧 Pago en efectivo</button>
+            </div>
+        </section>
+
+        <!-- Ya existente: tarjetas guardadas -->
+        <section class="tabla-admin" id="tarjetas-guardadas" style="display:none;">
+            <div class="titulo-tabla">
+                <h2>💳 Mis Tarjetas Guardadas</h2>
+                <button class="btn-agregar" onclick="mostrarFormulario()">+ Agregar Tarjeta</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr><th>Tipo</th><th>Titular</th><th>Número</th><th>Expiración</th><th>Principal</th><th>Acciones</th></tr>
+                </thead>
+                <tbody id="tarjetasTableBody">
+                    <tr><td colspan="6" style="text-align:center; padding:30px;">Cargando tarjetas...</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Formulario nueva tarjeta -->
+        <section class="tabla-admin" id="formulario-tarjeta" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>➕ Registrar Nueva Tarjeta</h2></div>
+
+            <form id="formTarjeta" style="max-width:600px; margin:auto; text-align:left;">
+                <label><strong>Tipo de tarjeta:</strong></label>
+                <select id="tipoTarjeta" required>
+                    <option value="">Seleccionar</option>
+                    <option value="Visa">Visa</option>
+                    <option value="Mastercard">Mastercard</option>
+                    <option value="American Express">American Express</option>
+                    <option value="Otra">Otra</option>
+                </select>
+
+                <label><strong>Nombre del titular:</strong></label>
+                <input type="text" id="titular" required>
+
+                <label><strong>Número de tarjeta:</strong></label>
+                <input type="text" id="numero" maxlength="19" required placeholder="1234 5678 9012 3456">
+
+                <label><strong>Fecha de expiración:</strong></label>
+                <input type="month" id="expiracion" required>
+
+                <label><strong>Código CVV:</strong></label>
+                <input type="password" id="cvv" maxlength="4" required placeholder="123">
+
+                <label style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+                    <input type="checkbox" id="predeterminada"> Establecer como método principal
+                </label>
+
+                <div style="display:flex;justify-content:space-between;margin-top:20px;">
+                    <button type="submit" class="btn-agregar">💾 Guardar Tarjeta</button>
+                    <button type="button" class="btn-sesion" style="background:gray;" onclick="cancelarFormulario()">Cancelar</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECCIÓN: Monedero digital -->
+        <section class="tabla-admin" id="monedero" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>👛 Monedero Digital</h2></div>
+
+            <div style="text-align:center; margin:20px 0;">
+                <h3>Saldo disponible: <span id="saldoMonederoDetalle" style="color:#4caf50; font-size:1.5em;">$0</span></h3>
+            </div>
+
+            <div style="max-width:500px; margin:auto;">
+                <div style="margin-bottom:20px;">
+                    <label><strong>Agregar saldo:</strong></label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="number" id="montoRecarga" placeholder="Monto" min="10" step="10">
+                        <button class="btn-agregar" onclick="recargarMonedero()">Recargar</button>
+                    </div>
+                </div>
+
+                <div style="text-align:center; margin-top:30px;">
+                    <h4>Historial de transacciones:</h4>
+                    <div id="historialMonedero" style="text-align:left; margin-top:10px;">
+                        <p>Cargando historial...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NUEVA SECCIÓN: Transferencia Bancaria -->
+        <section class="tabla-admin" id="transferencia" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>🏦 Transferencia Bancaria</h2></div>
+
+            <div class="payment-instructions">
+                <h4>📋 Instrucciones:</h4>
+                <p>1. Realiza una transferencia desde tu banca en línea o aplicación móvil</p>
+                <p>2. Utiliza los datos bancarios proporcionados a continuación</p>
+                <p>3. Envía el comprobante de transferencia por WhatsApp o email</p>
+                <p>4. Tu pedido se procesará en 1-2 horas hábiles después de la confirmación</p>
+            </div>
+
+            <div class="bank-details">
+                <h4>📊 Datos Bancarios:</h4>
+                <p><strong>Banco:</strong> BBVA</p>
+                <p><strong>Beneficiario:</strong> PERFUMES & AROMAS S.A. DE C.V.</p>
+                <p><strong>CLABE Interbancaria:</strong> 012 180 00123456789 1</p>
+                <p><strong>Número de Cuenta:</strong> 1234 5678 9012 3456</p>
+                <p><strong>RFC:</strong> PFA250301ABC</p>
+                <p><strong>Concepto de pago:</strong> PEDIDO <span id="transferReference">#PFA-0000</span></p>
+            </div>
+
+            <form id="formTransferencia" style="max-width:600px; margin:auto; margin-top:20px;">
+                <label><strong>Número de comprobante:</strong></label>
+                <input type="text" id="comprobante" placeholder="Ej: TRF2025123456789" required>
+
+                <label><strong>Fecha de transferencia:</strong></label>
+                <input type="date" id="fechaTransferencia" required>
+
+                <label><strong>Monto transferido:</strong></label>
+                <input type="number" id="montoTransferencia" placeholder="$148.00" required>
+
+                <label><strong>Banco origen:</strong></label>
+                <select id="bancoOrigen" style="width:100%; padding:10px; border-radius:8px;" required>
+                    <option value="">Selecciona tu banco</option>
+                    <option value="bbva">BBVA</option>
+                    <option value="banamex">Citibanamex</option>
+                    <option value="santander">Santander</option>
+                    <option value="hsbc">HSBC</option>
+                    <option value="scotiabank">Scotiabank</option>
+                    <option value="banorte">Banorte</option>
+                    <option value="inbursa">Inbursa</option>
+                    <option value="otro">Otro</option>
+                </select>
+
+                <label><strong>Referencia (opcional):</strong></label>
+                <input type="text" id="referenciaPedido" placeholder="Número de pedido relacionado">
+
+                <div style="text-align:center; margin-top:20px;">
+                    <button type="submit" class="btn-agregar">📤 Registrar Transferencia</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- NUEVA SECCIÓN: Pago en Efectivo -->
+        <section class="tabla-admin" id="efectivo" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>💵 Pago en Efectivo</h2></div>
+
+            <div class="payment-instructions">
+                <h4>📋 Instrucciones:</h4>
+                <p>1. Selecciona la tienda donde realizarás el pago</p>
+                <p>2. Genera tu código de referencia</p>
+                <p>3. Acude a la tienda seleccionada con el código</p>
+                <p>4. Realiza el pago en efectivo</p>
+                <p>5. Guarda tu comprobante</p>
+            </div>
+
+            <div class="reference-code">
+                Tu código de referencia: <span id="cashReference">PFA-EF-0000</span>
+            </div>
+
+            <h4 style="text-align:center; margin:20px 0 10px 0;">🏪 Selecciona una tienda:</h4>
+            <div class="store-options">
+                <div class="store-option" onclick="selectStore(this, 'oxxo')">
+                    <div class="store-icon">🏪</div>
+                    <strong>OXXO</strong>
+                    <p style="font-size:0.8rem; margin:5px 0 0 0;">Comisión: $10 MXN</p>
+                </div>
+                <div class="store-option" onclick="selectStore(this, 'seven')">
+                    <div class="store-icon">🏪</div>
+                    <strong>7-Eleven</strong>
+                    <p style="font-size:0.8rem; margin:5px 0 0 0;">Comisión: $12 MXN</p>
+                </div>
+                <div class="store-option" onclick="selectStore(this, 'farmacia')">
+                    <div class="store-icon">💊</div>
+                    <strong>Farmacias Guadalajara</strong>
+                    <p style="font-size:0.8rem; margin:5px 0 0 0;">Comisión: $8 MXN</p>
+                </div>
+                <div class="store-option" onclick="selectStore(this, 'soriana')">
+                    <div class="store-icon">🛒</div>
+                    <strong>Soriana</strong>
+                    <p style="font-size:0.8rem; margin:5px 0 0 0;">Comisión: $15 MXN</p>
+                </div>
+            </div>
+
+            <div style="max-width:600px; margin:20px auto; text-align:center;">
+                <label><strong>Monto a pagar:</strong></label>
+                <input type="text" id="montoEfectivo" value="$148.00" readonly style="text-align:center; font-weight:bold; font-size:1.2rem;">
+
+                <div style="margin-top:20px;">
+                    <button class="btn-agregar" onclick="generarCodigoPago()">🖨️ Generar Código</button>
+                    <button class="btn-agregar" style="background:#4CAF50;" onclick="confirmarPagoEfectivo()">✅ Confirmar Pago</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: Cheque electrónico -->
+        <section class="tabla-admin" id="cheque" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>📄 Transferencia electrónica</h2></div>
+
+            <ul style="max-width:600px; margin:auto; margin-bottom:20px;">
+                <li>✔ Usados principalmente en empresas</li>
+                <li>✔ Permiten registrar un pago formal</li>
+                <li>✔ Ofrecen respaldo como comprobante</li>
+                <li>✔ Son rastreables y verificables</li>
+                <li>✔ No es un cheque físico, sino un documento digital con validez</li>
+            </ul>
+
+            <form id="formCheque" style="max-width:600px; margin:auto;">
+                <label><strong>Número de cheque:</strong></label>
+                <input type="text" id="numCheque" required>
+
+                <label><strong>Monto:</strong></label>
+                <input type="number" id="montoCheque" required>
+
+                <label><strong>Banco:</strong></label>
+                <input type="text" id="bancoCheque" required>
+
+                <label><strong>Fecha de emisión:</strong></label>
+                <input type="date" id="fechaCheque" required>
+
+                <button type="submit" class="btn-agregar" style="margin-top:15px;">Enviar Comprobante</button>
+            </form>
+        </section>
+
+        <!-- SECCIÓN: Pago desde cajero -->
+        <section class="tabla-admin" id="cajero" style="display:none; margin-top:30px;">
+            <div class="titulo-tabla"><h2>🏧 Pago en efectivo</h2></div>
+
+            <div class="payment-instructions">
+                <h4>📋 Instrucciones:</h4>
+                <ol>
+                    <li>Ve a un cajero autorizado.</li>
+                    <li>Selecciona "Pago de servicios".</li>
+                    <li>Ingresa el código de empresa: <strong>84293</strong></li>
+                    <li>Ingresa tu referencia: <strong><span id="cajeroReference">PFA-CAJ-0000</span></strong></li>
+                    <li>Realiza el depósito y guarda tu comprobante.</li>
+                </ol>
+            </div>
+
+            <form id="formCajero" style="max-width:600px; margin:auto; margin-top:20px;">
+                <label><strong>Monto depositado:</strong></label>
+                <input type="number" id="montoCajero" required>
+
+                <label><strong>Número de comprobante:</strong></label>
+                <input type="text" id="comprobanteCajero" placeholder="Número del ticket" required>
+
+                <label><strong>Fecha de depósito:</strong></label>
+                <input type="date" id="fechaCajero" required>
+
+                <div style="text-align:center; margin-top:20px;">
+                    <button type="submit" class="btn-agregar">✅ Registrar Pago</button>
+                </div>
+            </form>
+        </section>
+
+    </main>
+
+    <script>
+        // URL base del servidor
+        const API_BASE_URL = 'http://localhost:3000';
+
+        // Variables globales
+        let tarjetasCliente = [];
+        let metodoPagoPrincipal = null;
+
+        // Mostrar mensajes
+        function showMessage(type, text) {
+            const successDiv = document.getElementById('successMessage');
+            const errorDiv = document.getElementById('errorMessage');
+
+            if (type === 'success') {
+                successDiv.textContent = text;
+                successDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+            } else {
+                errorDiv.textContent = text;
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+            }
+
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Cargar datos del cliente y sus métodos de pago
+        async function cargarDatosPago() {
+            try {
+                const clienteData = localStorage.getItem('cliente');
+                if (!clienteData) {
+                    showMessage('error', 'No hay sesión activa');
+                    setTimeout(() => window.location.href = '../clientelogin.html', 2000);
+                    return;
+                }
+
+                const cliente = JSON.parse(clienteData);
+
+                // Cargar tarjetas del cliente
+                await cargarTarjetasCliente(cliente.id);
+
+                // Cargar información del monedero
+                await cargarInfoMonedero(cliente.id);
+
+                // Cargar último pago
+                await cargarUltimoPago(cliente.id);
+
+            } catch (error) {
+                console.error('Error cargando datos de pago:', error);
+                showMessage('error', 'Error al cargar información de pagos');
+            }
+        }
+
+        // Cargar tarjetas del cliente
+        async function cargarTarjetasCliente(clienteId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/tarjetas-cliente/${clienteId}`);
+
+                if (response.ok) {
+                    tarjetasCliente = await response.json();
+                    actualizarTarjetasUI();
+
+                    // Actualizar contador
+                    document.getElementById('tarjetasRegistradas').textContent = tarjetasCliente.length;
+
+                    // Buscar tarjeta principal
+                    const principal = tarjetasCliente.find(t => t.principal);
+                    if (principal) {
+                        metodoPagoPrincipal = principal;
+                        const ultimos4 = principal.numero.slice(-4);
+                        document.getElementById('metodoPrincipal').textContent = `${principal.tipo} terminación ${ultimos4}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando tarjetas:', error);
+            }
+        }
+
+        function actualizarTarjetasUI() {
+            const tbody = document.getElementById('tarjetasTableBody');
+
+            if (tarjetasCliente.length === 0) {
+                tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding:30px;">
+                                No tienes tarjetas registradas.
+                                <br>
+                                <button class="btn-agregar" style="margin-top:10px;" onclick="mostrarFormulario()">
+                                    + Agregar tu primera tarjeta
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                return;
+            }
+
+            tbody.innerHTML = '';
+
+            tarjetasCliente.forEach(tarjeta => {
+                const tr = document.createElement('tr');
+
+                // Icono según tipo de tarjeta
+                let icono = '💳';
+                if (tarjeta.tipo === 'Visa') icono = '💳';
+                else if (tarjeta.tipo === 'Mastercard') icono = '💳';
+                else if (tarjeta.tipo === 'American Express') icono = '💳';
+
+                // Mostrar solo últimos 4 dígitos
+                const numeroOculto = tarjeta.numero.replace(/\d(?=\d{4})/g, '*');
+
+                // Formatear fecha de expiración
+                const fechaExp = new Date(tarjeta.expiracion);
+                const expiracionFormateada = `${fechaExp.getMonth() + 1}/${fechaExp.getFullYear().toString().slice(-2)}`;
+
+                tr.innerHTML = `
+                        <td>${icono} ${tarjeta.tipo}</td>
+                        <td>${tarjeta.titular}</td>
+                        <td>${numeroOculto}</td>
+                        <td>${expiracionFormateada}</td>
+                        <td>${tarjeta.principal ? '✅ Sí' : '❌ No'}</td>
+                        <td>
+                            <button class="btn-editar" onclick="editarTarjeta(${tarjeta.id})">✏️</button>
+                            <button class="btn-eliminar" onclick="eliminarTarjeta(${tarjeta.id})">🗑️</button>
+                        </td>
+                    `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Guardar nueva tarjeta
+        async function guardarTarjeta(event) {
+            event.preventDefault();
+
+            const clienteData = localStorage.getItem('cliente');
+            if (!clienteData) {
+                showMessage('error', 'Sesión expirada');
+                return;
+            }
+
+            const cliente = JSON.parse(clienteData);
+
+            const tarjetaData = {
+                tipo: document.getElementById('tipoTarjeta').value,
+                titular: document.getElementById('titular').value,
+                numero: document.getElementById('numero').value.replace(/\s/g, ''),
+                expiracion: document.getElementById('expiracion').value + '-01', // Agregar día para formato DATE
+                cvv: document.getElementById('cvv').value,
+                principal: document.getElementById('predeterminada').checked,
+                cliente_id: cliente.id
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/tarjetas`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(tarjetaData)
+                });
+
+                if (response.ok) {
+                    showMessage('success', '✅ Tarjeta registrada correctamente');
+                    cancelarFormulario();
+                    await cargarTarjetasCliente(cliente.id);
+                } else {
+                    const errorData = await response.json();
+                    showMessage('error', errorData.message || 'Error al guardar tarjeta');
+                }
+            } catch (error) {
+                console.error('Error guardando tarjeta:', error);
+                showMessage('error', 'Error de conexión');
+            }
+        }
+
+        // Cargar información del monedero
+        async function cargarInfoMonedero(clienteId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/monedero-cliente/${clienteId}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('saldoMonedero').textContent = `$${data.saldo.toFixed(2)}`;
+                    document.getElementById('saldoMonederoDetalle').textContent = `$${data.saldo.toFixed(2)}`;
+
+                    // Actualizar historial
+                    actualizarHistorialMonedero(data.historial);
+                }
+            } catch (error) {
+                console.error('Error cargando monedero:', error);
+            }
+        }
+
+        function actualizarHistorialMonedero(historial) {
+            const container = document.getElementById('historialMonedero');
+
+            if (!historial || historial.length === 0) {
+                container.innerHTML = '<p>No hay transacciones recientes</p>';
+                return;
+            }
+
+            let html = '';
+            historial.forEach(trans => {
+                const fecha = new Date(trans.fecha).toLocaleDateString();
+                const tipo = trans.tipo === 'recarga' ? 'Recarga' : 'Pago';
+                const signo = trans.tipo === 'recarga' ? '+' : '-';
+                const color = trans.tipo === 'recarga' ? '#4caf50' : '#f44336';
+
+                html += `
+                        <div style="padding:8px; border-bottom:1px solid #eee;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>${tipo}</span>
+                                <span style="color:${color}; font-weight:bold;">${signo}$${trans.monto.toFixed(2)}</span>
+                            </div>
+                            <div style="font-size:0.9em; color:#666;">${fecha} - ${trans.descripcion}</div>
+                        </div>
+                    `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Cargar último pago
+        async function cargarUltimoPago(clienteId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/ultimo-pago/${clienteId}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data) {
+                        const fecha = new Date(data.fecha_pago).toLocaleDateString();
+                        document.getElementById('ultimoPago').textContent = `$${data.monto.toFixed(2)} - ${fecha}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando último pago:', error);
+            }
+        }
+
+        // Funciones de navegación
+        function mostrarTarjetas() {
+            ocultarTodo();
+            document.getElementById('tarjetas-guardadas').style.display = 'block';
+            cargarTarjetasCliente(JSON.parse(localStorage.getItem('cliente')).id);
+        }
+
+        function mostrarMonedero() {
+            ocultarTodo();
+            document.getElementById('monedero').style.display = 'block';
+            cargarInfoMonedero(JSON.parse(localStorage.getItem('cliente')).id);
+        }
+
+        function mostrarTransferencia() {
+            ocultarTodo();
+            document.getElementById('transferencia').style.display = 'block';
+            generarReferencia();
+        }
+
+        function mostrarEfectivo() {
+            ocultarTodo();
+            document.getElementById('efectivo').style.display = 'block';
+            generarCodigoEfectivo();
+        }
+
+        function mostrarCheque() {
+            ocultarTodo();
+            document.getElementById('cheque').style.display = 'block';
+        }
+
+        function mostrarCajero() {
+            ocultarTodo();
+            document.getElementById('cajero').style.display = 'block';
+            generarCodigoCajero();
+        }
+
+        function ocultarTodo() {
+            document.getElementById('tarjetas-guardadas').style.display = 'none';
+            document.getElementById('monedero').style.display = 'none';
+            document.getElementById('transferencia').style.display = 'none';
+            document.getElementById('efectivo').style.display = 'none';
+            document.getElementById('cheque').style.display = 'none';
+            document.getElementById('cajero').style.display = 'none';
+            document.getElementById('formulario-tarjeta').style.display = 'none';
+        }
+
+        function mostrarFormulario() {
+            ocultarTodo();
+            document.getElementById('formulario-tarjeta').style.display = 'block';
+            document.getElementById('formTarjeta').reset();
+        }
+
+        function cancelarFormulario() {
+            document.getElementById('formulario-tarjeta').style.display = 'none';
+        }
+
+        // Función para generar referencia de transferencia
+        function generarReferencia() {
+            const ref = 'PFA-' + Math.floor(Math.random() * 9000 + 1000);
+            document.getElementById('transferReference').textContent = ref;
+        }
+
+        // Función para generar código de efectivo
+        function generarCodigoEfectivo() {
+            const codigo = 'PFA-EF-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            document.getElementById('cashReference').textContent = codigo;
+        }
+
+        // Función para generar código de cajero
+        function generarCodigoCajero() {
+            const codigo = 'PFA-CAJ-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            document.getElementById('cajeroReference').textContent = codigo;
+        }
+
+        // Función para seleccionar tienda de pago en efectivo
+        function selectStore(element, storeType) {
+            // Remover selección anterior
+            document.querySelectorAll('.store-option').forEach(store => {
+                store.classList.remove('selected');
+            });
+
+            // Agregar selección actual
+            element.classList.add('selected');
+
+            // Actualizar comisión según tienda
+            let commission = 0;
+            switch (storeType) {
+                case 'oxxo': commission = 10; break;
+                case 'seven': commission = 12; break;
+                case 'farmacia': commission = 8; break;
+                case 'soriana': commission = 15; break;
+            }
+
+            // Calcular total con comisión
+            const total = 148 + commission;
+            document.getElementById('montoEfectivo').value = `$${total}.00 MXN (incluye $${commission} comisión)`;
+        }
+
+        // Funciones para procesar pagos
+        async function recargarMonedero() {
+            const monto = parseFloat(document.getElementById('montoRecarga').value);
+            if (!monto || monto < 10) {
+                showMessage('error', 'El monto mínimo de recarga es $10');
+                return;
+            }
+
+            const cliente = JSON.parse(localStorage.getItem('cliente'));
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/recargar-monedero`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cliente_id: cliente.id,
+                        monto: monto
+                    })
+                });
+
+                if (response.ok) {
+                    showMessage('success', `✅ Recarga de $${monto.toFixed(2)} realizada`);
+                    document.getElementById('montoRecarga').value = '';
+                    await cargarInfoMonedero(cliente.id);
+                } else {
+                    showMessage('error', 'Error al realizar la recarga');
+                }
+            } catch (error) {
+                console.error('Error recargando monedero:', error);
+                showMessage('error', 'Error de conexión');
+            }
+        }
+
+        function generarCodigoPago() {
+            const codigo = document.getElementById('cashReference').textContent;
+            showMessage('success', `Código generado: ${codigo}\nGuarda este código para realizar tu pago en la tienda seleccionada.`);
+        }
+
+        function confirmarPagoEfectivo() {
+            const codigo = document.getElementById('cashReference').textContent;
+            const tiendaSeleccionada = document.querySelector('.store-option.selected');
+
+            if (!tiendaSeleccionada) {
+                showMessage('error', 'Por favor selecciona una tienda');
+                return;
+            }
+
+            showMessage('success', `✅ Pago en efectivo registrado\nCódigo: ${codigo}\nTu pedido se procesará al confirmar el pago en tienda.`);
+        }
+
+        // Cerrar sesión
+        function cerrarSesion() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                localStorage.removeItem('cliente');
+                localStorage.removeItem('token');
+                localStorage.removeItem('userType');
+                window.location.href = '../catalog.html';
+            }
+        }
+
+        // Verificar sesión al cargar la página
+        function verificarSesion() {
+            const cliente = localStorage.getItem('cliente');
+            const userType = localStorage.getItem('userType');
+
+            if (!cliente || userType !== 'cliente') {
+                window.location.href = '../clientelogin.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function () {
+            if (verificarSesion()) {
+                cargarDatosPago();
+                generarReferencia();
+                generarCodigoEfectivo();
+                generarCodigoCajero();
+
+                // Asignar eventos a formularios
+                document.getElementById('formTarjeta').addEventListener('submit', guardarTarjeta);
+                document.getElementById('formTransferencia').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    showMessage('success', '✅ Comprobante de transferencia registrado\nTe contactaremos para confirmar.');
+                });
+
+                document.getElementById('formCheque').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    showMessage('success', '✅ Comprobante de cheque enviado');
+                });
+
+                document.getElementById('formCajero').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    showMessage('success', '✅ Pago en cajero registrado');
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>

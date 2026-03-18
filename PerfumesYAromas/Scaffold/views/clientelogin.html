@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio de Sesión - Perfumes & Aromas</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/menuusuario.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://via.placeholder.com/32?text=P&A" type="image/x-icon">
+    <style>
+        /* ESTILOS ESPECÍFICOS PARA LA PÁGINA DE LOGIN */
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f3f3f3;
+        }
+
+        .content {
+            padding-top: 90px;
+            text-align: center;
+        }
+
+        /* Estilos del formulario de login */
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+            .login-container h2 {
+                margin-bottom: 20px;
+                color: #333;
+            }
+
+            .login-container input {
+                width: 100%;
+                padding: 12px;
+                margin: 10px 0;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                font-size: 1rem;
+                box-sizing: border-box;
+            }
+
+            .login-container button {
+                width: 100%;
+                background: linear-gradient(90deg, purple, blue);
+                color: white;
+                padding: 12px;
+                font-size: 1rem;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: background 0.3s;
+                font-weight: bold;
+            }
+
+                .login-container button:hover {
+                    background: linear-gradient(90deg, darkmagenta, darkblue);
+                }
+
+            .login-container p {
+                margin-top: 15px;
+                font-size: 0.9rem;
+            }
+
+            .login-container a {
+                color: blue;
+                text-decoration: none;
+                font-weight: bold;
+            }
+
+                .login-container a:hover {
+                    text-decoration: underline;
+                }
+
+        /* Mensajes de error */
+        .error-message {
+            color: red;
+            background-color: #ffe6e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            color: green;
+            background-color: #e6ffe6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Asegurar que el navbar importado se vea bien */
+        #navbar-container .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenedor para el navbar importado -->
+    <div id="navbar-container"></div>
+
+    <!-- Contenido principal -->
+    <div class="content">
+        <div class="login-container">
+            <h2>Iniciar Sesión</h2>
+            <form id="loginForm">
+                <input type="email" placeholder="Correo electrónico" id="email" required>
+                <input type="password" placeholder="Contraseña" id="password" required>
+                <button type="submit" id="loginBtn">Entrar</button>
+                <div id="errorMessage" class="error-message"></div>
+                <div id="successMessage" class="success-message"></div>
+            </form>
+            <p>¿No tienes cuenta? <a href="#" id="registerLink">Regístrate</a></p>
+            <p><a href="#" id="forgotPassword">¿Olvidaste tu contraseña?</a></p>
+        </div>
+    </div>
+
+    <script>
+        // URL base del servidor (ajusta si es necesario)
+        const API_BASE_URL = 'http://localhost:3000';
+
+        // Cargar navbar
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('navbar-container').innerHTML = data;
+                initializeDropdown();
+            })
+            .catch(error => console.error('Error loading navbar:', error));
+
+        // Función para inicializar el dropdown
+        function initializeDropdown() {
+            const dropdownBtn = document.querySelector('.dropdown-btn');
+            const dropdownContent = document.querySelector('.dropdown-content');
+
+            if (dropdownBtn && dropdownContent) {
+                dropdownBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    dropdownContent.classList.toggle('show');
+                });
+
+                document.addEventListener('click', function () {
+                    dropdownContent.classList.remove('show');
+                });
+
+                dropdownContent.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+            }
+        }
+
+        // Función para mostrar mensajes de error
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        // Función para mostrar mensajes de éxito
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        // Función para determinar la redirección según el tipo de usuario (clientes siempre al menú de cliente)
+        function getRedirectUrl(cliente) {
+            return 'clientes/usuariomenu.html';
+        }
+
+        // Función para manejar el inicio de sesión
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const loginBtn = document.getElementById('loginBtn');
+            const originalButtonText = loginBtn.textContent;
+
+            // Validación básica
+            if (!email || !password) {
+                showError('Por favor, completa todos los campos.');
+                return;
+            }
+
+            if (!email.includes('@')) {
+                showError('Por favor, ingresa un correo electrónico válido.');
+                return;
+            }
+
+            // Mostrar estado de carga
+            loginBtn.textContent = 'Iniciando sesión...';
+            loginBtn.classList.add('loading');
+
+            try {
+                // Intentar autenticar (usar endpoint dedicado para clientes)
+                const response = await fetch(`${API_BASE_URL}/api/login-cliente`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+
+                // El endpoint /api/login-cliente devuelve { message, cliente, token }
+                if (response.ok && (data.success || data.cliente)) {
+                    // Login exitoso
+                    showSuccess('¡Inicio de sesión exitoso! Redirigiendo...');
+
+                    // Guardar datos del cliente en localStorage
+                    localStorage.setItem('cliente', JSON.stringify(data.cliente));
+                    localStorage.setItem('token', data.token || 'authenticated');
+                    // Guardar específicamente el tipo de usuario como cliente
+                    localStorage.setItem('userType', 'cliente');
+
+                    // Determinar la URL de redirección
+                    const redirectUrl = getRedirectUrl(data.cliente);
+
+                    showSuccess('¡Bienvenido! Redirigiendo a tu cuenta...');
+
+                    // Redirigir después de un breve delay
+                    setTimeout(() => { window.location.href = redirectUrl; }, 1500);
+
+                } else {
+                    // Error en el login
+                    showError(data.message || 'Credenciales incorrectas.');
+
+                    // Restaurar botón
+                    loginBtn.textContent = originalButtonText;
+                    loginBtn.classList.remove('loading');
+                }
+
+            } catch (error) {
+                console.error('Error en login:', error);
+                showError('Error de conexión. Verifica tu conexión a internet.');
+
+                // Restaurar botón
+                loginBtn.textContent = originalButtonText;
+                loginBtn.classList.remove('loading');
+            }
+        }
+
+        // Función para verificar si ya hay una sesión activa
+        function checkExistingSession() {
+            const cliente = localStorage.getItem('cliente');
+            const userType = localStorage.getItem('userType');
+
+            if (cliente && userType) {
+                // Redirigir según el tipo de usuario
+                if (userType === 'vendedor') {
+                    window.location.href = 'vendedores/vendedormenu.html';
+                } else {
+                    window.location.href = 'clientes/usuariomenu.html';
+                }
+            }
+        }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function () {
+            // Verificar sesión existente
+            checkExistingSession();
+
+            // Asignar evento al formulario
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+            // Asignar eventos a los enlaces
+            document.getElementById('registerLink').addEventListener('click', function (e) {
+                e.preventDefault();
+                window.location.href = 'registro.html';
+            });
+
+            document.getElementById('forgotPassword').addEventListener('click', function (e) {
+                e.preventDefault();
+                alert('Funcionalidad de recuperación en desarrollo.');
+            });
+
+            // Permitir enviar con Enter
+            document.getElementById('email').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('loginBtn').click();
+                }
+            });
+
+            document.getElementById('password').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('loginBtn').click();
+                }
+            });
+        });
+
+        // Función para depuración (puedes eliminarla en producción)
+        window.debugLogin = function () {
+            console.log('Estado actual:');
+            console.log('- Token:', localStorage.getItem('token'));
+            console.log('- Usuario:', localStorage.getItem('user'));
+            console.log('- Tipo:', localStorage.getItem('userType'));
+        };
+    </script>
+</body>
+</html>

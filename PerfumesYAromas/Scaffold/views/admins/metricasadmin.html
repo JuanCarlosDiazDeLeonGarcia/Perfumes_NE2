@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Métricas del Sitio - PerfumeShop</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #24243e, #302b63);
+            color: #f5f7ff;
+            border-radius: 14px;
+            padding: 22px;
+            text-align: center;
+            transition: .3s;
+            border: 1px solid rgba(255,255,255,.15);
+        }
+
+            .metric-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            }
+
+            .metric-card h3 {
+                margin-bottom: 8px;
+                font-size: 0.95rem;
+            }
+
+            .metric-card .metric-value {
+                font-size: 2.2rem;
+                font-weight: 800;
+                color: #25D366;
+            }
+
+            .metric-card.warning .metric-value {
+                color: #ff6b6b;
+            }
+
+            .metric-card.info .metric-value {
+                color: #54a0ff;
+            }
+
+            .metric-card.gold .metric-value {
+                color: #feca57;
+            }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .chart-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+            .chart-box h3 {
+                margin-bottom: 14px;
+                color: #333;
+            }
+
+            .chart-box canvas {
+                max-height: 300px;
+            }
+
+        .risk-table {
+            margin-top: 10px;
+        }
+
+            .risk-table .badge-danger {
+                background: #ff6b6b;
+                color: #fff;
+                padding: 3px 10px;
+                border-radius: 12px;
+                font-size: .8rem;
+                font-weight: 600;
+            }
+
+            .risk-table .badge-warning {
+                background: #feca57;
+                color: #333;
+                padding: 3px 10px;
+                border-radius: 12px;
+                font-size: .8rem;
+                font-weight: 600;
+            }
+
+        /* Tabs */
+        .tabs-menu {
+            display: flex;
+            gap: 0;
+            margin-bottom: 28px;
+            border-bottom: 3px solid #e0e0e0;
+        }
+        .tab-btn {
+            padding: 12px 28px;
+            border: none;
+            background: none;
+            font-size: 1.05rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: #888;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -3px;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover {
+            color: #555;
+        }
+        .tab-btn.active {
+            color: #6c5ce7;
+            border-bottom-color: #6c5ce7;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Product badges */
+        .badge-agotado {
+            background: #ff6b6b;
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: .8rem;
+            font-weight: 600;
+        }
+        .badge-critico {
+            background: #feca57;
+            color: #333;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: .8rem;
+            font-weight: 600;
+        }
+        .badge-push-m {
+            background: #dfe6fd;
+            color: #1565c0;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: .85rem;
+            font-weight: 600;
+        }
+        .badge-pull-m {
+            background: #fce4ec;
+            color: #c62828;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: .85rem;
+            font-weight: 600;
+        }
+        .ranking-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        .ranking-num.gold { background: linear-gradient(135deg, #f9ca24, #f0932b); }
+        .ranking-num.silver { background: linear-gradient(135deg, #bdc3c7, #95a5a6); }
+        .ranking-num.bronze { background: linear-gradient(135deg, #e17055, #d63031); }
+
+        @media (max-width: 768px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menú lateral -->
+    <aside class="sidebar">
+        <h2>🌸 PerfumeShop</h2>
+        <nav>
+            <a href="paneladmin.html">📊 Dashboard</a>
+            <a href="perfumesadmin.html">🧴 Perfumes</a>
+            <a href="ventasadmin.html">🛍️ Ventas</a>
+            <a href="clientesadmin.html">👥 Clientes</a>
+            <a href="metricasadmin.html" class="active">📊 Métricas</a>
+            <a href="proveedores.html">🚚 Proveedores </a>
+            <a href="movimientos_inventario.html" class="active">📊 Movimientos</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <header class="admin-header">
+            <h1>📊 Métricas</h1>
+        </header>
+
+        <!-- Menú de pestañas -->
+        <div class="tabs-menu">
+            <button class="tab-btn active" onclick="switchTab('clientes')">👥 Métricas de Clientes</button>
+            <button class="tab-btn" onclick="switchTab('productos')">🧴 Métricas de Productos</button>
+        </div>
+
+        <!-- ==================== TAB CLIENTES ==================== -->
+        <div class="tab-content active" id="tab-clientes">
+            <!-- Contadores -->
+            <section class="metrics-grid" id="counters">
+                <div class="metric-card">
+                    <h3>👥 Total Clientes</h3>
+                    <p class="metric-value" id="total-clientes">—</p>
+                </div>
+                <div class="metric-card info">
+                    <h3>✅ Clientes Activos</h3>
+                    <p class="metric-value" id="clientes-activos">—</p>
+                </div>
+                <div class="metric-card warning">
+                    <h3>⛔ Clientes Inactivos</h3>
+                    <p class="metric-value" id="clientes-inactivos">—</p>
+                </div>
+                <div class="metric-card gold">
+                    <h3>⭐ Satisfacción Promedio</h3>
+                    <p class="metric-value" id="prom-satisfaccion">—</p>
+                    <small style="color:#ccc">/10</small>
+                </div>
+            </section>
+
+            <!-- Gráficas -->
+            <section class="charts-row">
+                <div class="chart-box">
+                    <h3>📊 Interacciones por Cliente</h3>
+                    <canvas id="chartInteracciones"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>🟢 Activos vs Inactivos</h3>
+                    <canvas id="chartPie"></canvas>
+                </div>
+            </section>
+
+            <!-- Tabla clientes en riesgo -->
+            <section class="tabla-admin risk-table">
+                <div class="titulo-tabla">
+                    <h2>⚠️ Clientes en Riesgo (sin interacción reciente)</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Correo</th>
+                            <th>Interacciones</th>
+                            <th>Días sin Contacto</th>
+                            <th>Compras</th>
+                            <th>Valor Total</th>
+                            <th>Satisfacción</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-riesgo">
+                        <tr><td colspan="9" style="text-align:center">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Tabla interacciones completa -->
+            <section class="tabla-admin" style="margin-top:30px">
+                <div class="titulo-tabla">
+                    <h2>📋 Interacciones por Cliente</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Cliente</th>
+                            <th>Nombre</th>
+                            <th>Interacciones</th>
+                            <th>Días sin Contacto</th>
+                            <th>Compras</th>
+                            <th>Valor Total</th>
+                            <th>Ticket Promedio</th>
+                            <th>Satisfacción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-interacciones">
+                        <tr><td colspan="8" style="text-align:center">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+
+        <!-- ==================== TAB PRODUCTOS ==================== -->
+        <div class="tab-content" id="tab-productos">
+            <!-- Contadores productos -->
+            <section class="metrics-grid">
+                <div class="metric-card">
+                    <h3>📦 Total Productos</h3>
+                    <p class="metric-value" id="prod-total">—</p>
+                </div>
+                <div class="metric-card info">
+                    <h3>📊 Stock Total</h3>
+                    <p class="metric-value" id="prod-stock-total">—</p>
+                </div>
+                <div class="metric-card warning">
+                    <h3>⚠️ Inventario Crítico</h3>
+                    <p class="metric-value" id="prod-criticos">—</p>
+                </div>
+                <div class="metric-card gold">
+                    <h3>🚫 Agotados</h3>
+                    <p class="metric-value" id="prod-agotados">—</p>
+                </div>
+            </section>
+
+            <!-- Gráficas productos -->
+            <section class="charts-row">
+                <div class="chart-box">
+                    <h3>🏆 Productos Más Vendidos (por pedidos)</h3>
+                    <canvas id="chartMasVendidos"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>🔄 Tipo de Restock</h3>
+                    <canvas id="chartRestock"></canvas>
+                </div>
+            </section>
+
+            <!-- Tabla productos más vendidos -->
+            <section class="tabla-admin" style="margin-top:10px">
+                <div class="titulo-tabla">
+                    <h2>🏆 Ranking de Productos Más Vendidos</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th>Marca</th>
+                            <th>Precio</th>
+                            <th>Pedidos</th>
+                            <th>Uds. Vendidas</th>
+                            <th>Stock Actual</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-mas-vendidos">
+                        <tr><td colspan="7" style="text-align:center">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Tabla inventario crítico -->
+            <section class="tabla-admin risk-table" style="margin-top:30px">
+                <div class="titulo-tabla">
+                    <h2>⚠️ Inventario Crítico</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Producto</th>
+                            <th>Marca</th>
+                            <th>Stock Actual</th>
+                            <th>Stock Mínimo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-inv-critico">
+                        <tr><td colspan="6" style="text-align:center">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // ==================== TABS ====================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+
+            // Cargar datos de producto si es la primera vez
+            if (tab === 'productos' && !productosMetricasCargadas) {
+                cargarMetricasProductos();
+            }
+        }
+
+        // ==================== CLIENTES ====================
+        const API_URLS = [
+            'http://localhost:3000/api/metricas',
+            'http://127.0.0.1:3000/api/metricas',
+            'http://' + window.location.hostname + ':3000/api/metricas'
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            intentarConexion(0);
+        });
+
+        function intentarConexion(index) {
+            if (index >= API_URLS.length) {
+                mostrarErrorConexion();
+                return;
+            }
+
+            const url = API_URLS[index];
+            fetch(url, { signal: AbortSignal.timeout(5000) })
+                .then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(data => {
+                    if (data.error) throw new Error(data.error);
+                    renderCounters(data);
+                    renderBarChart(data.interacciones_por_cliente || []);
+                    renderPieChart(data.activos, data.inactivos);
+                    renderRiskTable(data.clientes_riesgo || []);
+                    renderInteraccionesTable(data.interacciones_por_cliente || []);
+                })
+                .catch(err => {
+                    console.warn(`❌ Falló URL ${url}:`, err.message);
+                    intentarConexion(index + 1);
+                });
+        }
+
+        function mostrarErrorConexion() {
+            const msg = `
+                <div style="background:#fff3cd;border:1px solid #ffc107;padding:20px;border-radius:8px;margin:20px 0;">
+                    <h3 style="color:#856404;">⚠️ No se puede conectar al servidor</h3>
+                    <p>Verifica que el servidor esté corriendo: <code>node server.js</code></p>
+                </div>
+            `;
+            const header = document.querySelector('.admin-header');
+            if (header) header.insertAdjacentHTML('afterend', msg);
+
+            document.getElementById('tbody-riesgo').innerHTML =
+                '<tr><td colspan="9" style="text-align:center;color:red;">❌ Servidor no disponible</td></tr>';
+            document.getElementById('tbody-interacciones').innerHTML =
+                '<tr><td colspan="8" style="text-align:center;color:red;">❌ Servidor no disponible</td></tr>';
+            ['total-clientes', 'clientes-activos', 'clientes-inactivos', 'prom-satisfaccion'].forEach(id => {
+                document.getElementById(id).textContent = '⚠️';
+            });
+        }
+
+        function renderCounters(d) {
+            document.getElementById('total-clientes').textContent = d.total_clientes ?? 0;
+            document.getElementById('clientes-activos').textContent = d.activos ?? 0;
+            document.getElementById('clientes-inactivos').textContent = d.inactivos ?? 0;
+            document.getElementById('prom-satisfaccion').textContent = d.promedio_satisfaccion ?? 0;
+        }
+
+        function renderBarChart(clientes) {
+            if (!clientes || !clientes.length) {
+                document.getElementById('chartInteracciones').parentElement.innerHTML += '<p style="text-align:center;color:#999">Sin datos de interacciones</p>';
+                return;
+            }
+            const labels = clientes.map(c => (c.nombre_completo || '').trim() || 'Cliente ' + c.cliente_id);
+            const valores = clientes.map(c => parseInt(c.total_interacciones) || 0);
+            new Chart(document.getElementById('chartInteracciones'), {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Interacciones',
+                        data: valores,
+                        backgroundColor: '#6c5ce7',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        function renderPieChart(activos, inactivos) {
+            new Chart(document.getElementById('chartPie'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Activos', 'Inactivos'],
+                    datasets: [{
+                        data: [activos || 0, inactivos || 0],
+                        backgroundColor: ['#25D366', '#ff6b6b']
+                    }]
+                },
+                options: { responsive: true }
+            });
+        }
+
+        function renderRiskTable(clientes) {
+            const tbody = document.getElementById('tbody-riesgo');
+            if (!clientes || !clientes.length) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center">No hay clientes en riesgo 🎉</td></tr>';
+                return;
+            }
+            tbody.innerHTML = clientes.map(c => {
+                const dias = parseInt(c.dias_sin_contacto) || 0;
+                const badge = dias > 60
+                    ? '<span class="badge-danger">Crítico</span>'
+                    : '<span class="badge-warning">En riesgo</span>';
+                return `<tr>
+                      <td>${c.cliente_id}</td>
+                      <td>${c.nombre_completo || '—'}</td>
+                      <td>${c.correo || '—'}</td>
+                      <td>${c.total_interacciones ?? 0}</td>
+                      <td>${c.dias_sin_contacto ?? 0}</td>
+                      <td>${c.total_compras ?? 0}</td>
+                      <td>$${parseFloat(c.valor_total_compras || 0).toFixed(2)}</td>
+                      <td>${c.puntuacion_satisfaccion != null ? c.puntuacion_satisfaccion + '/10' : '—'}</td>
+                      <td>${badge}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        function renderInteraccionesTable(clientes) {
+            const tbody = document.getElementById('tbody-interacciones');
+            if (!clientes || !clientes.length) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">Sin datos</td></tr>';
+                return;
+            }
+            tbody.innerHTML = clientes.map(c => `<tr>
+                    <td>${c.cliente_id}</td>
+                    <td>${(c.nombre_completo || '').trim() || '—'}</td>
+                    <td>${c.total_interacciones ?? 0}</td>
+                    <td>${c.dias_sin_contacto ?? 0}</td>
+                    <td>${c.total_compras ?? 0}</td>
+                    <td>$${parseFloat(c.valor_total_compras || 0).toFixed(2)}</td>
+                    <td>$${parseFloat(c.ticket_promedio || 0).toFixed(2)}</td>
+                    <td>${c.puntuacion_satisfaccion != null ? c.puntuacion_satisfaccion + '/10' : '—'}</td>
+                  </tr>`).join('');
+        }
+
+        // ==================== PRODUCTOS ====================
+        let productosMetricasCargadas = false;
+
+        async function cargarMetricasProductos() {
+            try {
+                const res = await fetch('http://localhost:3000/api/metricas-productos');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                productosMetricasCargadas = true;
+                renderProductStats(data.stats);
+                renderChartMasVendidos(data.mas_vendidos || []);
+                renderChartRestock(data.restock);
+                renderTablaMasVendidos(data.mas_vendidos || []);
+                renderTablaInvCritico(data.inventario_critico || []);
+            } catch (err) {
+                console.error('Error métricas productos:', err);
+                document.getElementById('tbody-mas-vendidos').innerHTML =
+                    '<tr><td colspan="7" style="text-align:center;color:red;">❌ Error al cargar datos</td></tr>';
+                document.getElementById('tbody-inv-critico').innerHTML =
+                    '<tr><td colspan="6" style="text-align:center;color:red;">❌ Error al cargar datos</td></tr>';
+                ['prod-total','prod-stock-total','prod-criticos','prod-agotados'].forEach(id => {
+                    document.getElementById(id).textContent = '⚠️';
+                });
+            }
+        }
+
+        function renderProductStats(s) {
+            document.getElementById('prod-total').textContent = s.total_productos ?? 0;
+            document.getElementById('prod-stock-total').textContent = s.stock_total ?? 0;
+            document.getElementById('prod-criticos').textContent = s.criticos ?? 0;
+            document.getElementById('prod-agotados').textContent = s.agotados ?? 0;
+        }
+
+        function renderChartMasVendidos(productos) {
+            if (!productos.length) {
+                document.getElementById('chartMasVendidos').parentElement.innerHTML +=
+                    '<p style="text-align:center;color:#999">Sin datos de ventas</p>';
+                return;
+            }
+            const top = productos.filter(p => parseInt(p.total_pedidos) > 0);
+            if (!top.length) {
+                document.getElementById('chartMasVendidos').parentElement.innerHTML +=
+                    '<p style="text-align:center;color:#999">Ningún producto tiene pedidos aún</p>';
+                return;
+            }
+            const colores = ['#f9ca24','#6c5ce7','#e17055','#00cec9','#fd79a8','#55efc4','#74b9ff','#a29bfe','#ffeaa7','#dfe6e9'];
+            new Chart(document.getElementById('chartMasVendidos'), {
+                type: 'bar',
+                data: {
+                    labels: top.map(p => p.nombre),
+                    datasets: [{
+                        label: 'Pedidos',
+                        data: top.map(p => parseInt(p.total_pedidos)),
+                        backgroundColor: colores.slice(0, top.length),
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        function renderChartRestock(r) {
+            new Chart(document.getElementById('chartRestock'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Automático (Push)', 'Bajo Pedido (Pull)', 'Sin definir'],
+                    datasets: [{
+                        data: [
+                            parseInt(r.push_count) || 0,
+                            parseInt(r.pull_count) || 0,
+                            parseInt(r.sin_definir) || 0
+                        ],
+                        backgroundColor: ['#54a0ff', '#ff6b6b', '#dfe6e9']
+                    }]
+                },
+                options: { responsive: true }
+            });
+        }
+
+        function renderTablaMasVendidos(productos) {
+            const tbody = document.getElementById('tbody-mas-vendidos');
+            if (!productos.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Sin datos</td></tr>';
+                return;
+            }
+            tbody.innerHTML = productos.map((p, i) => {
+                let rankClass = '';
+                if (i === 0) rankClass = 'gold';
+                else if (i === 1) rankClass = 'silver';
+                else if (i === 2) rankClass = 'bronze';
+                return `<tr>
+                    <td><span class="ranking-num ${rankClass}">${i + 1}</span></td>
+                    <td>${p.nombre}</td>
+                    <td>${p.marca || '—'}</td>
+                    <td>$${Number(p.precio).toFixed(2)}</td>
+                    <td><strong>${p.total_pedidos}</strong></td>
+                    <td>${p.total_unidades}</td>
+                    <td>${p.stock}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderTablaInvCritico(productos) {
+            const tbody = document.getElementById('tbody-inv-critico');
+            if (!productos.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No hay productos en estado crítico 🎉</td></tr>';
+                return;
+            }
+            tbody.innerHTML = productos.map(p => {
+                const badge = p.estado_stock === 'agotado'
+                    ? '<span class="badge-agotado">Agotado</span>'
+                    : '<span class="badge-critico">Crítico</span>';
+                return `<tr>
+                    <td>#${String(p.id).padStart(3, '0')}</td>
+                    <td>${p.nombre}</td>
+                    <td>${p.marca || '—'}</td>
+                    <td>${p.stock}</td>
+                    <td>${p.stock_minimo}</td>
+                    <td>${badge}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // ==================== SESIÓN ====================
+        function cerrarSesion() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                localStorage.removeItem('usuarioActual');
+                window.location.href = '../catalog.html';
+            }
+        }
+    </script>
+</body>
+</html>
+

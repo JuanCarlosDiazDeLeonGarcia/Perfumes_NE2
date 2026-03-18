@@ -105,10 +105,10 @@ async function actualizarUltimoLogin(usuarioId) {
 function redirigirSegunRol(rol) {
     switch(rol) {
         case 'admin':
-            window.location.href = 'usuarios.html';
+            window.location.href = 'admins/paneladmin.html';
             break;
         case 'vendedor':
-            window.location.href = 'usuarios.html'; 
+            window.location.href = 'admins/paneladmin.html'; 
             break;
         case 'usuario':
             window.location.href = 'index.html';

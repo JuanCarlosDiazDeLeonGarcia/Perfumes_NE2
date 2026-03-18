@@ -18,7 +18,7 @@ function verificarSesion() {
     const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
     
     if (!usuario) {
-        window.location.href = 'login.html';
+        window.location.href = 'clientelogin.html';
         return;
     }
     
@@ -34,7 +34,7 @@ function verificarSesion() {
 function cerrarSesion() {
     if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
         localStorage.removeItem('usuarioActual');
-        window.location.href = 'login.html';
+        window.location.href = '../catalog.html';
     }
 }
 
@@ -48,8 +48,8 @@ async function cargarUsuarios() {
         
         usuarios = await response.json();
         
-        const usuariosIniciales = usuarios.filter(u => u.id <= 4);
-        mostrarUsuarios(usuariosIniciales);
+        // Mostrar todos los usuarios obtenidos de la API
+        mostrarUsuarios(usuarios);
         
     } catch (error) {
         console.error('Error:', error);
@@ -83,8 +83,8 @@ function mostrarUsuarios(listaUsuarios) {
             case 'vendedor':
                 badgeRol = '<span class="badge-rol badge-vendedor">VENDEDOR</span>';
                 break;
-            case 'usuario':
-                badgeRol = '<span class="badge-rol badge-usuario">USUARIO</span>';
+            case 'estadistica':
+                badgeRol = '<span class="badge-rol badge-usuario">ESTADISTICAS</span>';
                 break;
         }
         
@@ -125,8 +125,8 @@ function buscarUsuarios() {
     const termino = document.getElementById('buscarUsuario').value.toLowerCase().trim();
     
     if (termino === '') {
-        const usuariosIniciales = usuarios.filter(u => u.id <= 4);
-        mostrarUsuarios(usuariosIniciales);
+        // Mostrar todos si no hay término de búsqueda
+        mostrarUsuarios(usuarios);
         return;
     }
     

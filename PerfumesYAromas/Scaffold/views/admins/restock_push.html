@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Restock Push - Solicitud de Pedido</title>
+  <link rel="stylesheet" href="../../css/base.css">
+  <style>
+    .form-container {
+      max-width: 600px; margin: 30px auto; background: white;
+      border-radius: 14px; padding: 35px; box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+    }
+    .form-container h2 { color: #4a235a; margin-bottom: 8px; }
+    .form-container p.sub { color: #888; font-size: 0.9rem; margin-bottom: 24px; }
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.92rem; }
+    .field select, .field input, .field textarea {
+      width: 100%; padding: 10px 12px; border: 1.5px solid #ccc;
+      border-radius: 8px; font-size: 0.95rem; box-sizing: border-box;
+    }
+    .field textarea { resize: vertical; min-height: 60px; }
+    .producto-info {
+      background: #f8f0ff; padding: 14px 18px; border-radius: 8px; margin-bottom: 18px; display: none;
+    }
+    .producto-info p { margin: 4px 0; font-size: 0.9rem; color: #555; }
+    .producto-info strong { color: #4a235a; }
+    .badge-bajo { color: #c62828; font-weight: bold; }
+    .badge-ok { color: #2e7d32; font-weight: bold; }
+    .btn-enviar {
+      width: 100%; padding: 13px; background: linear-gradient(90deg, #8e44ad, #3498db);
+      color: white; border: none; border-radius: 8px; font-size: 1rem;
+      font-weight: bold; cursor: pointer; margin-top: 10px;
+    }
+    .btn-enviar:hover { opacity: 0.9; }
+    .btn-enviar:disabled { opacity: 0.5; cursor: not-allowed; }
+    .toast { position: fixed; top: 20px; right: 20px; padding: 14px 24px; border-radius: 8px; color: white; font-weight: bold; z-index: 3000; opacity: 0; transition: opacity 0.3s; }
+    .toast.show { opacity: 1; }
+    .toast.success { background: #43a047; }
+    .toast.error { background: #e53935; }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <h2>🌸 PerfumeShop</h2>
+    <nav>
+      <a href="paneladmin.html">📊 Dashboard</a>
+      <a href="perfumesadmin.html">🧴 Perfumes</a>
+      <a href="ventasadmin.html">🛍️ Ventas</a>
+      <a href="clientesadmin.html">👥 Clientes</a>
+      <a href="metricasadmin.html">📊 Métricas</a>
+      <a href="proveedores.html">🚚 Proveedores</a>
+      <a href="movimientos_inventario.html">📊 Movimientos</a>
+      <a href="restock_push.html" class="active">📋 Restock Push</a>
+      <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <header class="admin-header">
+      <h1>📋 Solicitud de Pedido (Push)</h1>
+    </header>
+
+    <div class="form-container">
+      <h2>Enviar solicitud por WhatsApp</h2>
+      <p class="sub">Selecciona un proveedor y un producto con modo push para solicitar restock.</p>
+
+      <div class="field">
+        <label>🚚 Proveedor *</label>
+        <select id="selProveedor">
+          <option value="">-- Seleccionar proveedor --</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>📦 Producto (modo push) *</label>
+        <select id="selProducto" disabled>
+          <option value="">-- Primero selecciona un proveedor --</option>
+        </select>
+      </div>
+
+      <div class="producto-info" id="productoInfo">
+        <p><strong>Producto:</strong> <span id="infoNombre">—</span></p>
+        <p><strong>Marca:</strong> <span id="infoMarca">—</span></p>
+        <p><strong>Stock actual:</strong> <span id="infoStock">—</span></p>
+        <p><strong>Stock mínimo:</strong> <span id="infoMinimo">—</span></p>
+      </div>
+
+      <div class="field">
+        <label>📊 Cantidad a solicitar *</label>
+        <input type="number" id="cantidad" min="1" value="20">
+      </div>
+
+      <div class="field">
+        <label>📝 Mensaje adicional (opcional)</label>
+        <textarea id="mensajeExtra" placeholder="Ej: Urgente, necesitamos entrega antes del viernes..."></textarea>
+      </div>
+
+      <button class="btn-enviar" id="btnEnviar" onclick="enviarSolicitud()" disabled>
+        📱 Enviar Solicitud por WhatsApp
+      </button>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API = 'http://localhost:3000/api';
+    let proveedores = [];
+    let productosPush = [];
+
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + type;
+      setTimeout(() => t.className = 'toast', 3500);
+    }
+
+    async function cargarDatos() {
+      try {
+        const [provRes, prodRes] = await Promise.all([
+          fetch(`${API}/proveedores`),
+          fetch(`${API}/productos-push-bajo`)
+        ]);
+        proveedores = await provRes.json();
+        productosPush = await prodRes.json();
+
+        const selProv = document.getElementById('selProveedor');
+        proveedores.forEach(pr => {
+          const opt = document.createElement('option');
+          opt.value = pr.id;
+          opt.textContent = `${pr.nombre} — ${pr.ciudad || ''}`;
+          selProv.appendChild(opt);
+        });
+      } catch (err) {
+        showToast('Error al cargar datos', 'error');
+      }
+    }
+
+    document.getElementById('selProveedor').addEventListener('change', function() {
+      const provId = parseInt(this.value);
+      const selProd = document.getElementById('selProducto');
+      selProd.innerHTML = '<option value="">-- Seleccionar producto --</option>';
+      document.getElementById('productoInfo').style.display = 'none';
+      document.getElementById('btnEnviar').disabled = true;
+
+      if (!provId) {
+        selProd.disabled = true;
+        return;
+      }
+
+      // Mostrar productos push (los del proveedor seleccionado primero, luego los demás)
+      const delProv = productosPush.filter(p => p.proveedor_id === provId);
+      const otros = productosPush.filter(p => p.proveedor_id !== provId);
+      const todos = [...delProv, ...otros];
+
+      if (todos.length === 0) {
+        selProd.innerHTML = '<option value="">No hay productos push disponibles</option>';
+        selProd.disabled = true;
+        return;
+      }
+
+      todos.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        const estado = p.stock <= (p.stock_minimo || 10) ? ' ⚠️ BAJO' : '';
+        const provTag = p.proveedor_id === provId ? '' : ` (Prov: ${p.proveedor_nombre || 'otro'})`;
+        opt.textContent = `${p.nombre} — Stock: ${p.stock}${estado}${provTag}`;
+        selProd.appendChild(opt);
+      });
+
+      selProd.disabled = false;
+    });
+
+    document.getElementById('selProducto').addEventListener('change', function() {
+      const prodId = parseInt(this.value);
+      const info = document.getElementById('productoInfo');
+
+      if (!prodId) {
+        info.style.display = 'none';
+        document.getElementById('btnEnviar').disabled = true;
+        return;
+      }
+
+      const prod = productosPush.find(p => p.id === prodId);
+      if (!prod) return;
+
+      document.getElementById('infoNombre').textContent = prod.nombre;
+      document.getElementById('infoMarca').textContent = prod.marca || 'N/A';
+
+      const stockEl = document.getElementById('infoStock');
+      stockEl.textContent = prod.stock + ' unidades';
+      stockEl.className = prod.stock <= (prod.stock_minimo || 10) ? 'badge-bajo' : 'badge-ok';
+
+      document.getElementById('infoMinimo').textContent = (prod.stock_minimo || 10) + ' unidades';
+      info.style.display = 'block';
+      document.getElementById('btnEnviar').disabled = false;
+    });
+
+    async function enviarSolicitud() {
+      const producto_id = parseInt(document.getElementById('selProducto').value);
+      const proveedor_id = parseInt(document.getElementById('selProveedor').value);
+      const cantidad = parseInt(document.getElementById('cantidad').value);
+      const mensaje_extra = document.getElementById('mensajeExtra').value.trim();
+
+      if (!producto_id || !proveedor_id || !cantidad || cantidad < 1) {
+        showToast('Completa todos los campos requeridos', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btnEnviar');
+      btn.textContent = '⏳ Enviando...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API}/restock-push`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ producto_id, proveedor_id, cantidad, mensaje_extra })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast(`✅ Solicitud enviada — ${data.producto} → ${data.proveedor}`);
+          document.getElementById('mensajeExtra').value = '';
+        } else {
+          showToast('❌ ' + (data.error || 'Error desconocido'), 'error');
+        }
+      } catch (err) {
+        showToast('❌ Error de conexión: ' + err.message, 'error');
+      } finally {
+        btn.textContent = '📱 Enviar Solicitud por WhatsApp';
+        btn.disabled = false;
+      }
+    }
+
+    function cerrarSesion() {
+      if (confirm('¿Cerrar sesión?')) {
+        localStorage.removeItem('usuarioActual');
+        window.location.href = '../catalog.html';
+      }
+    }
+
+    cargarDatos();
+  </script>
+
+</body>
+</html>
