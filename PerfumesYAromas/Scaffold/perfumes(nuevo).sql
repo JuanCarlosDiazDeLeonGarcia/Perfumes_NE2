@@ -1541,6 +1541,109 @@ ALTER TABLE ONLY public.seguimiento_pedidos
     ADD CONSTRAINT seguimiento_pedidos_vendedor_id_fkey FOREIGN KEY (vendedor_id) REFERENCES public.usuarios(id);
 
 
+--
+-- Tabla: recursos_empresa - Recursos físicos de la empresa (impresoras, computadoras, etc.)
+--
+
+CREATE TABLE public.recursos_empresa (
+    id SERIAL PRIMARY KEY,
+    nombre character varying(100) NOT NULL,
+    categoria character varying(50) NOT NULL,
+    descripcion text,
+    numero_serie character varying(100),
+    marca character varying(50),
+    modelo character varying(50),
+    ubicacion character varying(100),
+    estado character varying(20) DEFAULT 'disponible',
+    cantidad integer DEFAULT 1,
+    fecha_adquisicion date,
+    costo_adquisicion numeric(12,2),
+    activo boolean DEFAULT true,
+    fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT recursos_empresa_estado_check CHECK ((estado)::text = ANY ((ARRAY['disponible'::character varying, 'en_uso'::character varying, 'mantenimiento'::character varying, 'baja'::character varying])::text[]))
+);
+
+ALTER TABLE public.recursos_empresa OWNER TO postgres;
+
+--
+-- Secuencia para movimientos_recursos
+--
+
+CREATE SEQUENCE public.movimientos_recursos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.movimientos_recursos_id_seq OWNER TO postgres;
+
+--
+-- Tabla: movimientos_recursos - Registro de entradas y salidas de recursos empresariales
+--
+
+CREATE TABLE public.movimientos_recursos (
+    id integer NOT NULL DEFAULT nextval('public.movimientos_recursos_id_seq'::regclass),
+    recurso_id integer NOT NULL,
+    tipo character varying(10) NOT NULL,
+    cantidad integer NOT NULL,
+    motivo character varying(50) NOT NULL,
+    responsable character varying(100),
+    observaciones text,
+    fecha timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT movimientos_recursos_pkey PRIMARY KEY (id),
+    CONSTRAINT movimientos_recursos_cantidad_check CHECK (cantidad > 0),
+    CONSTRAINT movimientos_recursos_tipo_check CHECK ((tipo)::text = ANY ((ARRAY['entrada'::character varying, 'salida'::character varying])::text[])),
+    CONSTRAINT fk_movimiento_recurso FOREIGN KEY (recurso_id) REFERENCES public.recursos_empresa(id) ON DELETE CASCADE
+);
+
+ALTER TABLE public.movimientos_recursos OWNER TO postgres;
+ALTER SEQUENCE public.movimientos_recursos_id_seq OWNED BY public.movimientos_recursos.id;
+
+--
+-- Datos iniciales para recursos_empresa
+--
+
+COPY public.recursos_empresa (id, nombre, categoria, descripcion, numero_serie, marca, modelo, ubicacion, estado, cantidad, fecha_adquisicion, costo_adquisicion, activo) FROM stdin;
+1	Impresora Multifuncional	Impresora	Impresora láser multifuncional para oficina	SN-IMP-001	HP	LaserJet Pro M428	Oficina Principal	disponible	2	2024-01-15	8500.00	t
+2	Computadora Desktop	Computadora	PC de escritorio para administración	SN-PC-001	Dell	OptiPlex 7090	Recepción	en_uso	1	2024-02-20	15000.00	t
+3	Laptop Dell	Computadora	Laptop para trabajo móvil	SN-LAP-001	Dell	Latitude 5520	Almacén	disponible	3	2024-03-10	18000.00	t
+4	Monitor 24 Pulgadas	Monitor	Monitor LED Full HD	SN-MON-001	LG	24MK430H	Oficina Principal	en_uso	5	2024-01-20	3500.00	t
+5	Scanner Documentos	Scanner	Scanner de alta velocidad para documentos	SN-SCAN-001	Epson	WorkForce ES-580W	Oficina Principal	disponible	1	2024-04-05	6000.00	t
+6	Proyector	Equipo Audiovisual	Proyector para presentaciones	SN-PROY-001	BenQ	MH733	Sala de Juntas	disponible	1	2024-05-12	12000.00	t
+7	Router WiFi	Red	Router empresarial de alta velocidad	SN-ROUT-001	Cisco	RV340	Cuarto de Servidores	en_uso	2	2024-02-01	4500.00	t
+8	UPS Respaldo	Energía	Sistema de respaldo de energía	SN-UPS-001	APC	Smart-UPS 1500	Cuarto de Servidores	en_uso	3	2024-01-10	5500.00	t
+9	Silla Ergonómica	Mobiliario	Silla de oficina ergonómica	SN-SILLA-001	Herman Miller	Aeron	Oficina Principal	disponible	10	2024-06-01	8000.00	t
+10	Escritorio Ejecutivo	Mobiliario	Escritorio de madera para oficina	SN-ESC-001	Steelcase	Currency	Oficina Principal	en_uso	5	2024-03-15	6500.00	t
+\.
+
+SELECT pg_catalog.setval('public.recursos_empresa_id_seq', 10, true);
+
+--
+-- Datos iniciales para movimientos_recursos
+--
+
+COPY public.movimientos_recursos (id, recurso_id, tipo, cantidad, motivo, responsable, observaciones, fecha) FROM stdin;
+1	1	entrada	2	compra_inicial	Admin Sistema	Adquisición inicial de impresoras	2024-01-15 10:00:00
+2	2	entrada	1	compra_inicial	Admin Sistema	PC para recepción	2024-02-20 09:00:00
+3	3	entrada	5	compra_inicial	Admin Sistema	Laptops para equipo de ventas	2024-03-10 14:00:00
+4	3	salida	2	asignacion	Juan Pérez	Asignadas a vendedores nuevos	2024-03-15 11:00:00
+5	4	entrada	5	compra_inicial	Admin Sistema	Monitores para oficina	2024-01-20 10:30:00
+6	5	entrada	1	compra_inicial	Admin Sistema	Scanner para digitalización	2024-04-05 15:00:00
+7	6	entrada	1	compra_inicial	Admin Sistema	Proyector sala de juntas	2024-05-12 09:30:00
+8	7	entrada	2	compra_inicial	Admin Sistema	Routers de red	2024-02-01 08:00:00
+9	8	entrada	3	compra_inicial	Admin Sistema	UPS para respaldo	2024-01-10 10:00:00
+10	9	entrada	10	compra_inicial	Admin Sistema	Sillas ergonómicas	2024-06-01 11:00:00
+11	10	entrada	5	compra_inicial	Admin Sistema	Escritorios ejecutivos	2024-03-15 14:30:00
+12	1	salida	1	mantenimiento	Soporte TI	Envío a reparación	2025-01-20 09:00:00
+13	1	entrada	1	devolucion	Soporte TI	Regreso de reparación	2025-02-05 16:00:00
+14	9	salida	2	asignacion	RRHH	Asignadas a nuevos empleados	2025-03-01 10:00:00
+\.
+
+SELECT pg_catalog.setval('public.movimientos_recursos_id_seq', 14, true);
+
 -- Completed on 2026-03-18 07:53:53
 
 --

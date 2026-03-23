@@ -2675,6 +2675,46 @@ app.get('/api/movimientos-inventario', async (req, res) => {
     }
 });
 
+// ==================== ENDPOINTS PARA RECURSOS EMPRESARIALES ====================
+
+// Obtener todos los recursos de la empresa
+app.get('/api/recursos-empresa', async (req, res) => {
+    try {
+        const query = `
+            SELECT id, nombre, categoria, descripcion, numero_serie, marca, modelo,
+                   ubicacion, estado, cantidad, fecha_adquisicion, costo_adquisicion,
+                   activo, fecha_creacion, fecha_actualizacion
+            FROM recursos_empresa
+            WHERE activo = true
+            ORDER BY categoria, nombre
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo recursos empresa:', error);
+        res.status(500).json({ error: 'Error al cargar recursos de la empresa' });
+    }
+});
+
+// Obtener movimientos de recursos empresariales
+app.get('/api/movimientos-recursos', async (req, res) => {
+    try {
+        const query = `
+            SELECT m.id, m.recurso_id, r.nombre as recurso_nombre, r.categoria,
+                   m.tipo, m.cantidad, m.motivo, m.responsable, m.observaciones, m.fecha
+            FROM movimientos_recursos m
+            LEFT JOIN recursos_empresa r ON m.recurso_id = r.id
+            ORDER BY m.fecha DESC
+            LIMIT 1000
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo movimientos de recursos:', error);
+        res.status(500).json({ error: 'Error al cargar movimientos de recursos' });
+    }
+});
+
 // ---------- 5. ENDPOINT COMPRA (descuenta stock + registra movimiento + alerta push) ------
 app.post('/api/comprar', async (req, res) => {
     const { items } = req.body; // [{ producto_id, cantidad }]
