@@ -15,8 +15,8 @@ app.use(express.json());
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'perfumes', //cambiar si el nombre de la BD es diferente
-    password: '2244', //Cambiar por su contraseña segun su BD
+    database: 'perfumes_ne2', //cambiar si el nombre de la BD es diferente
+    password: '1234', //Cambiar por su contraseña segun su BD
     port: 5432,
 });
 
@@ -2905,6 +2905,60 @@ app.get('/api/productos-push-bajo', async (req, res) => {
             WHERE p.restock = 'push' AND p.activo = true
             ORDER BY p.stock ASC
         `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ==================== RUTAS FALTANTES PARA REPORTE ERP ====================
+
+// Alias para movimientos (el HTML llama /api/movimientos)
+app.get('/api/movimientos', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT mi.*, p.nombre AS producto_nombre, p.marca
+            FROM public.movimientos_inventario mi
+            LEFT JOIN public.productos p ON mi.producto_id = p.id
+            ORDER BY mi.fecha DESC
+            LIMIT 100
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Alias para proveedores (el HTML llama /api/proveedores)
+app.get('/api/proveedores', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM proveedores ORDER BY nombre ASC'
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Alias para clientes (el HTML llama /api/clientes)
+app.get('/api/clientes', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, nombre, correo, telefono, ciudad, estado_cliente, etapa_crm FROM clientes ORDER BY id ASC'
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Pedidos para admin (el HTML llama /api/admin/pedidos)
+app.get('/api/admin/pedidos', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM pedidos ORDER BY fecha_pedido DESC'
+        );
         res.json(result.rows);
     } catch (error) {
         res.status(500).json({ error: error.message });

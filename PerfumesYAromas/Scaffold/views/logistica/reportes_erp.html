@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte ERP - Perfumes NE2</title>
+  <link rel="stylesheet" href="../../css/base.css">
+  <style>
+    body { background: #0f0f18; color: #e8e8f0; font-family: 'Segoe UI', sans-serif; }
+    .main-content { padding: 28px 32px; }
+
+    .erp-header {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 28px; padding-bottom: 18px; border-bottom: 1px solid #2a2a3a;
+    }
+    .erp-header h1 { font-size: 30px; color: #c8a96e; letter-spacing: 2px; margin-bottom: 4px; }
+    .erp-header p  { font-size: 12px; color: #6b6b8a; }
+    .fecha-badge {
+      background: #1c1c27; border: 1px solid #2a2a3a;
+      padding: 8px 14px; border-radius: 8px; font-size: 12px; color: #6b6b8a;
+    }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; margin-bottom: 28px; }
+    .kpi-card {
+      background: #13131a; border: 1px solid #2a2a3a; border-radius: 12px;
+      padding: 18px; position: relative; overflow: hidden;
+    }
+    .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+    .kpi-card.gold::before   { background: #c8a96e; }
+    .kpi-card.teal::before   { background: #4ecdc4; }
+    .kpi-card.purple::before { background: #7c6ef5; }
+    .kpi-card.green::before  { background: #51cf66; }
+    .kpi-card.red::before    { background: #ff6b6b; }
+    .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #6b6b8a; margin-bottom: 8px; }
+    .kpi-value { font-size: 32px; font-weight: 700; line-height: 1; }
+    .kpi-card.gold   .kpi-value { color: #c8a96e; }
+    .kpi-card.teal   .kpi-value { color: #4ecdc4; }
+    .kpi-card.purple .kpi-value { color: #7c6ef5; }
+    .kpi-card.green  .kpi-value { color: #51cf66; }
+    .kpi-card.red    .kpi-value { color: #ff6b6b; }
+    .kpi-sub { font-size: 11px; color: #6b6b8a; margin-top: 4px; }
+
+    .section { margin-bottom: 28px; }
+    .section-title {
+      font-size: 12px; text-transform: uppercase; letter-spacing: 3px;
+      color: #c8a96e; margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
+    }
+    .section-title::after { content:''; flex:1; height:1px; background:#2a2a3a; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 28px; }
+
+    .table-wrap { background: #13131a; border: 1px solid #2a2a3a; border-radius: 12px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: #1c1c27; padding: 10px 14px; text-align: left;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #6b6b8a;
+    }
+    tbody tr { border-top: 1px solid #2a2a3a; transition: background 0.15s; }
+    tbody tr:hover { background: #1c1c27; }
+    tbody td { padding: 10px 14px; }
+
+    .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-green  { background: rgba(81,207,102,.15);  color: #51cf66; }
+    .badge-yellow { background: rgba(252,196,25,.15);  color: #fcc419; }
+    .badge-red    { background: rgba(255,107,107,.15); color: #ff6b6b; }
+    .badge-purple { background: rgba(124,110,245,.15); color: #7c6ef5; }
+    .badge-teal   { background: rgba(78,205,196,.15);  color: #4ecdc4; }
+    .badge-gold   { background: rgba(200,169,110,.15); color: #c8a96e; }
+
+    .stock-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .stock-bar { flex:1; height:5px; background:#2a2a3a; border-radius:3px; overflow:hidden; }
+    .stock-bar-fill { height:100%; border-radius:3px; }
+
+    .stars { color: #fcc419; font-size: 12px; }
+    .tipo-entrada { color: #51cf66; font-weight: 600; }
+    .tipo-salida  { color: #ff6b6b; font-weight: 600; }
+    .loading { text-align: center; padding: 30px; color: #6b6b8a; font-size: 13px; }
+
+    .mini-list-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; border-top: 1px solid #2a2a3a; font-size: 13px;
+    }
+    .mini-list-item:first-child { border-top: none; }
+    .mini-list-val { font-weight: 600; color: #c8a96e; }
+
+    .etapa-Frecuente { background: rgba(81,207,102,.15);  color: #51cf66;  display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+    .etapa-Activo    { background: rgba(78,205,196,.15);  color: #4ecdc4;  display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+    .etapa-Prospecto { background: rgba(124,110,245,.15); color: #7c6ef5;  display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+    .etapa-Inactivo  { background: rgba(255,107,107,.15); color: #ff6b6b;  display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+
+    @media (max-width: 1100px) {
+      .kpi-grid { grid-template-columns: repeat(3,1fr); }
+      .two-col  { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <h2>📊 Perfumes NE2</h2>
+  <nav>
+    <a href="../catalog.html">🢀 Volver</a>
+    <a href="statspanel.html">🏠 Dashboard</a>
+    <a href="statspedidos.html">🚚 Pedidos</a>
+    <a href="statsmetricas.html">📈 Métricas</a>
+    <a href="statsrecursos.html">⚙️ Operaciones</a>
+    <a href="reportes_erp.html" class="active">📋 Reporte ERP</a>
+    <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+  </nav>
+  <div class="sidebar-footer" style="position: absolute; bottom: 20px; left: 20px; color: #aaa; font-size: 0.8rem;">
+    <p>Panel de Estadística</p>
+    <p>Acceso de solo lectura</p>
+  </div>
+</aside>
+
+<main class="main-content">
+
+  <div class="erp-header">
+    <div>
+      <h1>📋 Reporte ERP</h1>
+      <p>Procesos internos y recursos empresariales — Perfumes NE2</p>
+    </div>
+    <div class="fecha-badge" id="fechaActual">—</div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card gold">
+      <div class="kpi-label">Productos</div>
+      <div class="kpi-value" id="kpi-productos">—</div>
+      <div class="kpi-sub">en inventario</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-label">Stock Total</div>
+      <div class="kpi-value" id="kpi-stock">—</div>
+      <div class="kpi-sub">unidades</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Pedidos</div>
+      <div class="kpi-value" id="kpi-pedidos">—</div>
+      <div class="kpi-sub">registrados</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Clientes</div>
+      <div class="kpi-value" id="kpi-clientes">—</div>
+      <div class="kpi-sub">registrados</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Stock Bajo</div>
+      <div class="kpi-value" id="kpi-stockbajo">—</div>
+      <div class="kpi-sub">productos críticos</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📦 Inventario de Recursos</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th><th>Marca</th><th>Género</th>
+            <th>Precio</th><th>Stock</th><th>Mínimo</th>
+            <th>Nivel</th><th>Tipo Restock</th><th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-inventario"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="section-title">🔄 Movimientos de Inventario</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th><th>Fecha</th></tr>
+          </thead>
+          <tbody id="tabla-movimientos"><tr><td colspan="5" class="loading">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">🚚 Proveedores</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Nombre</th><th>Ciudad</th><th>Calificación</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="tabla-proveedores"><tr><td colspan="4" class="loading">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="section-title">🛍️ Pedidos por Estado</div>
+      <div class="table-wrap">
+        <div id="lista-pedidos-estado" class="loading">Cargando...</div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">👥 Clientes por Etapa CRM</div>
+      <div class="table-wrap">
+        <div id="lista-clientes-crm" class="loading">Cargando...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📄 Registro de Pedidos</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Orden</th><th>Cliente</th><th>Producto</th><th>Cantidad</th><th>Total</th><th>Método Pago</th><th>Estado</th><th>Fecha</th></tr>
+        </thead>
+        <tbody id="tabla-pedidos"><tr><td colspan="8" class="loading">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">👤 Usuarios del Sistema</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Teléfono</th><th>Último Login</th><th>Estado</th></tr>
+        </thead>
+        <tbody id="tabla-usuarios"><tr><td colspan="6" class="loading">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // ==================== PROTECCIÓN DE SESIÓN ====================
+  document.addEventListener('DOMContentLoaded', function() {
+    const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
+    const userType = localStorage.getItem('userType');
+
+    if (!usuario || userType !== 'estadistica') {
+      window.location.href = '../adminlogin.html';
+      return;
+    }
+  });
+
+  const API = 'http://localhost:3000/api';
+
+  document.getElementById('fechaActual').textContent =
+    new Date().toLocaleDateString('es-MX', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  function estadoBadge(e) {
+    const m = { pendiente:'badge-yellow', confirmado:'badge-teal', procesando:'badge-purple', enviado:'badge-gold', entregado:'badge-green', cancelado:'badge-red' };
+    return `<span class="badge ${m[e]||'badge-purple'}">${e}</span>`;
+  }
+
+  function rolBadge(r) {
+    const m = { admin:'badge-gold', vendedor:'badge-teal', estadistica:'badge-purple', usuario:'badge-green' };
+    return `<span class="badge ${m[r]||'badge-purple'}">${r}</span>`;
+  }
+
+  function stars(n) {
+    if (!n) return '<span style="color:#6b6b8a">N/A</span>';
+    return '<span class="stars">' + '★'.repeat(n) + '☆'.repeat(5-n) + '</span>';
+  }
+
+  function fmt(f) {
+    if (!f) return '—';
+    return new Date(f).toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  async function cargarInventario() {
+    try {
+      const data = await fetch(`${API}/admin/productos`).then(r=>r.json());
+      document.getElementById('kpi-productos').textContent = data.length;
+      document.getElementById('kpi-stock').textContent = data.reduce((s,p)=>s+(p.stock||0),0);
+      document.getElementById('kpi-stockbajo').textContent = data.filter(p=>p.stock<=(p.stock_minimo||10)).length;
+      document.getElementById('tabla-inventario').innerHTML = data.map(p => {
+        const pct = Math.min(100, Math.round((p.stock / Math.max(p.stock_minimo||10,1)) * 50));
+        const color = pct<=20?'#ff6b6b':pct<=50?'#fcc419':'#51cf66';
+        const nivel = pct<=20?'<span class="badge badge-red">Crítico</span>':pct<=50?'<span class="badge badge-yellow">Bajo</span>':'<span class="badge badge-green">Normal</span>';
+        return `<tr>
+          <td><strong>${p.nombre}</strong></td>
+          <td>${p.marca||'—'}</td>
+          <td>${p.genero||'—'}</td>
+          <td>$${Number(p.precio).toFixed(2)}</td>
+          <td><strong>${p.stock}</strong></td>
+          <td>${p.stock_minimo||10}</td>
+          <td><div class="stock-bar-wrap"><div class="stock-bar"><div class="stock-bar-fill" style="width:${Math.min(100,pct*2)}%;background:${color}"></div></div><span style="font-size:11px;color:${color}">${p.stock}</span></div></td>
+          <td><span class="badge ${p.restock==='push'?'badge-teal':'badge-purple'}">${p.restock==='push'?'Automático':'Bajo Pedido'}</span></td>
+          <td>${p.activo?'<span class="badge badge-green">Activo</span>':'<span class="badge badge-red">Inactivo</span>'}</td>
+        </tr>`;
+      }).join('');
+    } catch(e) {
+      document.getElementById('tabla-inventario').innerHTML = `<tr><td colspan="9" style="color:#ff6b6b;padding:16px">Error al cargar</td></tr>`;
+    }
+  }
+
+  async function cargarMovimientos() {
+    try {
+      const data = await fetch(`${API}/movimientos`).then(r=>r.json());
+      if (!data.length) { document.getElementById('tabla-movimientos').innerHTML='<tr><td colspan="5" class="loading">Sin registros</td></tr>'; return; }
+      document.getElementById('tabla-movimientos').innerHTML = data.slice(0,15).map(m=>`<tr>
+        <td>${m.producto_nombre||('Producto #'+m.producto_id)}</td>
+        <td class="${m.tipo==='entrada'?'tipo-entrada':'tipo-salida'}">${m.tipo==='entrada'?'▲ Entrada':'▼ Salida'}</td>
+        <td><strong>${m.cantidad}</strong></td>
+        <td>${m.motivo}</td>
+        <td style="color:#6b6b8a">${fmt(m.fecha)}</td>
+      </tr>`).join('');
+    } catch(e) {
+      document.getElementById('tabla-movimientos').innerHTML=`<tr><td colspan="5" style="color:#ff6b6b;padding:16px">Error al cargar</td></tr>`;
+    }
+  }
+
+  async function cargarProveedores() {
+    try {
+      const data = await fetch(`${API}/proveedores`).then(r=>r.json());
+      document.getElementById('tabla-proveedores').innerHTML = data.map(p=>`<tr>
+        <td><strong>${p.nombre}</strong><br><span style="font-size:11px;color:#6b6b8a">${p.contacto||''}</span></td>
+        <td>${p.ciudad||'—'}</td>
+        <td>${stars(p.calificacion)}</td>
+        <td>${p.activo?'<span class="badge badge-green">Activo</span>':'<span class="badge badge-red">Inactivo</span>'}</td>
+      </tr>`).join('');
+    } catch(e) {
+      document.getElementById('tabla-proveedores').innerHTML=`<tr><td colspan="4" style="color:#ff6b6b;padding:16px">Error al cargar</td></tr>`;
+    }
+  }
+
+  async function cargarPedidos() {
+    try {
+      const data = await fetch(`${API}/admin/pedidos`).then(r=>r.json());
+      document.getElementById('kpi-pedidos').textContent = data.length;
+      const estados = {};
+      data.forEach(p=>{ estados[p.estado]=(estados[p.estado]||0)+1; });
+      document.getElementById('lista-pedidos-estado').innerHTML = Object.entries(estados).map(([e,c])=>`
+        <div class="mini-list-item"><span>${estadoBadge(e)}</span><span class="mini-list-val">${c}</span></div>`).join('');
+      document.getElementById('tabla-pedidos').innerHTML = data.map(p=>`<tr>
+        <td><strong>${p.numero_orden}</strong></td>
+        <td>${p.cliente_id||'—'}</td>
+        <td>${p.producto_id||'—'}</td>
+        <td>${p.cantidad||1}</td>
+        <td style="color:#c8a96e"><strong>$${Number(p.total).toFixed(2)}</strong></td>
+        <td>${p.metodo_pago||'—'}</td>
+        <td>${estadoBadge(p.estado)}</td>
+        <td style="color:#6b6b8a">${fmt(p.fecha_pedido)}</td>
+      </tr>`).join('');
+    } catch(e) {
+      document.getElementById('tabla-pedidos').innerHTML=`<tr><td colspan="8" style="color:#ff6b6b;padding:16px">Error al cargar</td></tr>`;
+      document.getElementById('lista-pedidos-estado').innerHTML=`<div style="padding:16px;color:#ff6b6b;font-size:13px">Error al cargar</div>`;
+    }
+  }
+
+  async function cargarClientes() {
+    try {
+      const data = await fetch(`${API}/clientes`).then(r=>r.json());
+      document.getElementById('kpi-clientes').textContent = data.length;
+      const etapas = {};
+      data.forEach(c=>{ etapas[c.etapa_crm]=(etapas[c.etapa_crm]||0)+1; });
+      document.getElementById('lista-clientes-crm').innerHTML = Object.entries(etapas).map(([e,c])=>`
+        <div class="mini-list-item"><span class="etapa-${e}">${e}</span><span class="mini-list-val">${c}</span></div>`).join('');
+    } catch(e) {
+      document.getElementById('lista-clientes-crm').innerHTML=`<div style="padding:16px;color:#ff6b6b;font-size:13px">Error al cargar</div>`;
+    }
+  }
+
+  async function cargarUsuarios() {
+    try {
+      const data = await fetch(`${API}/usuarios`).then(r=>r.json());
+      document.getElementById('tabla-usuarios').innerHTML = data.map(u=>`<tr>
+        <td><strong>${u.nombre}</strong></td>
+        <td style="color:#6b6b8a">${u.email}</td>
+        <td>${rolBadge(u.rol)}</td>
+        <td>${u.telefono||'—'}</td>
+        <td style="color:#6b6b8a">${u.ultimo_login?fmt(u.ultimo_login):'Nunca'}</td>
+        <td>${u.activo?'<span class="badge badge-green">Activo</span>':'<span class="badge badge-red">Inactivo</span>'}</td>
+      </tr>`).join('');
+    } catch(e) {
+      document.getElementById('tabla-usuarios').innerHTML=`<tr><td colspan="6" style="color:#ff6b6b;padding:16px">Error al cargar</td></tr>`;
+    }
+  }
+
+  function cerrarSesion() {
+    if (confirm('¿Cerrar sesión?')) {
+      localStorage.removeItem('usuarioActual');
+      localStorage.removeItem('userType');
+      localStorage.removeItem('token');
+      window.location.href = '../adminlogin.html';
+    }
+  }
+
+  cargarInventario();
+  cargarMovimientos();
+  cargarProveedores();
+  cargarPedidos();
+  cargarClientes();
+  cargarUsuarios();
+</script>
+
+</body>
+</html>
