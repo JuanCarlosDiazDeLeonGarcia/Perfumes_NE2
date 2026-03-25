@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recursos Empresariales - Perfumes NE2</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <style>
+        .main-content {
+            padding: 20px;
+            margin-left: 250px;
+        }
+
+        .admin-header {
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+        }
+
+        .admin-header h1 {
+            color: white;
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .admin-header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 4px solid #3498db;
+        }
+
+        .card h3 {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .card .numero {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+
+        .card .tendencia {
+            color: #27ae60;
+            font-size: 0.9rem;
+        }
+
+        .tabla-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .tabla-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tabla-header h2 {
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .buscador {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            width: 300px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .badge-entrada {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-salida {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-disponible {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-en_uso {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .badge-mantenimiento {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-baja {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-categoria {
+            background: #e7f1ff;
+            color: #004085;
+        }
+
+        .filtros {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filtro-select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            min-width: 150px;
+        }
+
+        .btn-actualizar {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-actualizar:hover {
+            background: #2980b9;
+        }
+
+        .btn-exportar {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-exportar:hover {
+            background: #219a52;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-left: 10px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .paginacion {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagina {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .pagina.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu lateral -->
+    <aside class="sidebar">
+        <h2>📊 Perfumes NE2</h2>
+        <nav>
+            <a href="../catalog.html">🢀 Volver</a>
+            <a href="statspanel.html">🏠 Dashboard</a>
+            <a href="statspedidos.html">🚚 Ordenes</a>
+            <a href="statsmetricas.html">📈 Metricas</a>
+            <a href="statsinventario.html">📦 Inventario</a>
+            <a href="recursos.html" class="active">🏢 Recursos</a>
+            <a href="statsrecursos.html">⚙️ Operaciones</a>
+            <a href="reportes_erp.html">📋 Reporte ERP</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesion</a>
+        </nav>
+        <div class="sidebar-footer" style="position: absolute; bottom: 20px; left: 20px; color: #aaa; font-size: 0.8rem;">
+            <p>Panel de Estadisticas</p>
+            <p>Acceso de solo lectura</p>
+        </div>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <div class="admin-header">
+            <h1>🏢 Recursos Empresariales</h1>
+            <p>Bienvenido, <span id="userName">Cargando...</span> (Acceso de solo lectura)</p>
+        </div>
+
+        <!-- Tarjetas resumen -->
+        <section class="cards">
+            <div class="card">
+                <h3>Total Recursos</h3>
+                <div class="numero" id="totalRecursos">0</div>
+                <span class="tendencia">📦 Registrados</span>
+            </div>
+            <div class="card">
+                <h3>Disponibles</h3>
+                <div class="numero" id="recursosDisponibles">0</div>
+                <span class="tendencia" style="color: #27ae60;">✅ Listos para usar</span>
+            </div>
+            <div class="card">
+                <h3>En Uso</h3>
+                <div class="numero" id="recursosEnUso">0</div>
+                <span class="tendencia" style="color: #3498db;">🔄 Asignados</span>
+            </div>
+            <div class="card">
+                <h3>En Mantenimiento</h3>
+                <div class="numero" id="recursosMantenimiento">0</div>
+                <span class="tendencia" style="color: #f39c12;">🔧 En reparacion</span>
+            </div>
+        </section>
+
+        <div class="tabla-container">
+            <div class="tabla-header">
+                <h2>🖥️ Inventario de Recursos</h2>
+                <div>
+                    <input type="text" class="buscador" id="buscadorRecursos" placeholder="🔍 Buscar recurso..." onkeyup="filtrarRecursos()">
+                    <button class="btn-exportar" onclick="exportarRecursos()" style="margin-left: 10px;">📥 Exportar</button>
+                </div>
+            </div>
+
+            <div class="filtros">
+                <select class="filtro-select" id="filtroCategoria" onchange="filtrarRecursos()">
+                    <option value="todos">Todas las categorias</option>
+                    <option value="Computadora">Computadoras</option>
+                    <option value="Impresora">Impresoras</option>
+                    <option value="Monitor">Monitores</option>
+                    <option value="Red">Equipos de Red</option>
+                    <option value="Mobiliario">Mobiliario</option>
+                    <option value="Energia">Energia</option>
+                </select>
+                <select class="filtro-select" id="filtroEstado" onchange="filtrarRecursos()">
+                    <option value="todos">Todos los estados</option>
+                    <option value="disponible">Disponible</option>
+                    <option value="en_uso">En Uso</option>
+                    <option value="mantenimiento">Mantenimiento</option>
+                    <option value="baja">Baja</option>
+                </select>
+            </div>
+
+            <table id="tablaRecursos">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Categoria</th>
+                        <th>Marca/Modelo</th>
+                        <th>Ubicacion</th>
+                        <th>Cantidad</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="recursosTableBody">
+                    <tr><td colspan="7" class="loading">Cargando recursos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+        let recursosData = [];
+        let recursosFiltrados = [];
+
+        // Verificar sesion al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
+            const userType = localStorage.getItem('userType');
+
+            if (!usuario || userType !== 'estadistica') {
+                window.location.href = '../adminlogin.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = usuario.nombre || 'Usuario';
+
+            cargarRecursos();
+        });
+
+        // ==================== RECURSOS ====================
+        async function cargarRecursos() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/recursos-empresa`);
+                if (!response.ok) throw new Error('Error al cargar recursos');
+
+                recursosData = await response.json();
+                recursosFiltrados = [...recursosData];
+                renderizarRecursos();
+                actualizarEstadisticas();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('recursosTableBody').innerHTML = `
+                    <tr><td colspan="7" style="color: #e74c3c; text-align: center;">
+                        ❌ Error al cargar recursos - Verifica que el servidor este corriendo
+                    </td></tr>
+                `;
+            }
+        }
+
+        function actualizarEstadisticas() {
+            document.getElementById('totalRecursos').textContent = recursosData.length;
+            document.getElementById('recursosDisponibles').textContent =
+                recursosData.filter(r => r.estado === 'disponible').length;
+            document.getElementById('recursosEnUso').textContent =
+                recursosData.filter(r => r.estado === 'en_uso').length;
+            document.getElementById('recursosMantenimiento').textContent =
+                recursosData.filter(r => r.estado === 'mantenimiento').length;
+        }
+
+        function renderizarRecursos() {
+            const tbody = document.getElementById('recursosTableBody');
+            tbody.innerHTML = '';
+
+            if (recursosFiltrados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay recursos para mostrar</td></tr>';
+                return;
+            }
+
+            recursosFiltrados.forEach(r => {
+                const estadoClass = `badge-${r.estado}`;
+                const estadoTexto = r.estado.replace('_', ' ');
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${String(r.id).padStart(3, '0')}</td>
+                    <td><strong>${r.nombre}</strong></td>
+                    <td><span class="badge badge-categoria">${r.categoria}</span></td>
+                    <td>${r.marca || '—'} / ${r.modelo || '—'}</td>
+                    <td>${r.ubicacion || '—'}</td>
+                    <td>${r.cantidad || 1}</td>
+                    <td><span class="badge ${estadoClass}">${estadoTexto}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filtrarRecursos() {
+            const texto = document.getElementById('buscadorRecursos').value.toLowerCase();
+            const categoria = document.getElementById('filtroCategoria').value;
+            const estado = document.getElementById('filtroEstado').value;
+
+            recursosFiltrados = recursosData.filter(r => {
+                const matchTexto = !texto ||
+                    r.nombre.toLowerCase().includes(texto) ||
+                    (r.marca && r.marca.toLowerCase().includes(texto)) ||
+                    (r.ubicacion && r.ubicacion.toLowerCase().includes(texto));
+
+                const matchCategoria = categoria === 'todos' || r.categoria === categoria;
+                const matchEstado = estado === 'todos' || r.estado === estado;
+
+                return matchTexto && matchCategoria && matchEstado;
+            });
+
+            renderizarRecursos();
+        }
+
+        // ==================== EXPORTAR ====================
+        function exportarRecursos() {
+            const headers = ['ID', 'Nombre', 'Categoria', 'Marca', 'Modelo', 'Ubicacion', 'Cantidad', 'Estado'];
+            const contenido = recursosFiltrados.map(r => [
+                r.id,
+                r.nombre,
+                r.categoria,
+                r.marca || '',
+                r.modelo || '',
+                r.ubicacion || '',
+                r.cantidad || 1,
+                r.estado
+            ]);
+
+            let csv = headers.join(',') + '\n';
+            csv += contenido.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `recursos_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        function cerrarSesion() {
+            if (confirm('¿Estas seguro de que deseas cerrar sesion?')) {
+                localStorage.removeItem('usuarioActual');
+                localStorage.removeItem('token');
+                localStorage.removeItem('userType');
+                window.location.href = '../adminlogin.html';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Estadísticas - Perfumes NE2</title>
+    <title>Panel de Estadisticas - Perfumes NE2</title>
     <link rel="stylesheet" href="../../css/base.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
-        /* Estilos específicos para panel de estadísticas */
         .main-content {
             padding: 20px;
             margin-left: 250px;
@@ -20,18 +20,18 @@
             border-radius: 15px;
         }
 
-            .admin-header h1 {
-                color: white;
-                margin: 0;
-                font-size: 2rem;
-            }
+        .admin-header h1 {
+            color: white;
+            margin: 0;
+            font-size: 2rem;
+        }
 
-            .admin-header p {
-                margin: 10px 0 0;
-                opacity: 0.9;
-            }
+        .admin-header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
 
-        /* Pestañas */
+        /* Pestanas */
         .tabs {
             display: flex;
             gap: 10px;
@@ -49,58 +49,125 @@
             transition: all 0.3s;
         }
 
-            .tab:hover {
-                background: #e9ecef;
-            }
+        .tab:hover {
+            background: #e9ecef;
+        }
 
-            .tab.active {
-                background: #3498db;
-                color: white;
-            }
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
 
         .tab-content {
             display: none;
         }
 
-            .tab-content.active {
-                display: block;
-            }
+        .tab-content.active {
+            display: block;
+        }
 
-        .cards {
+        /* Metricas Cards */
+        .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
 
-        .card {
-            background: white;
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             padding: 25px;
             border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             text-align: center;
-            border-top: 4px solid #3498db;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: transform 0.3s;
         }
 
-            .card h3 {
-                color: #666;
-                font-size: 1rem;
-                margin-bottom: 10px;
-                text-transform: uppercase;
-            }
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
 
-            .card .numero {
-                font-size: 2.5rem;
-                font-weight: bold;
-                color: #2c3e50;
-                margin: 10px 0;
-            }
+        .metric-card.blue {
+            background: linear-gradient(135deg, #2193b0, #6dd5ed);
+        }
 
-            .card .tendencia {
-                color: #27ae60;
-                font-size: 0.9rem;
-            }
+        .metric-card.green {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+        }
 
+        .metric-card.orange {
+            background: linear-gradient(135deg, #f2994a, #f2c94c);
+        }
+
+        .metric-card.red {
+            background: linear-gradient(135deg, #eb3349, #f45c43);
+        }
+
+        .metric-card.purple {
+            background: linear-gradient(135deg, #8e2de2, #4a00e0);
+        }
+
+        .metric-card h3 {
+            margin: 0 0 10px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .metric-card .numero {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .metric-card .tendencia {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .metric-card .tendencia.up {
+            color: #90EE90;
+        }
+
+        .metric-card .tendencia.down {
+            color: #FFB6C1;
+        }
+
+        /* Graficas */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .chart-box {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .chart-box h3 {
+            margin: 0 0 20px;
+            color: #333;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .chart-box canvas {
+            max-height: 300px;
+        }
+
+        /* Graficas de una sola columna */
+        .chart-full {
+            grid-column: 1 / -1;
+        }
+
+        /* Tablas */
         .tabla-container {
             background: white;
             border-radius: 15px;
@@ -118,10 +185,11 @@
             border-bottom: 2px solid #f0f0f0;
         }
 
-            .tabla-header h2 {
-                color: #333;
-                font-size: 1.3rem;
-            }
+        .tabla-header h2 {
+            color: #333;
+            font-size: 1.3rem;
+            margin: 0;
+        }
 
         .buscador {
             padding: 10px 15px;
@@ -136,26 +204,26 @@
             border-collapse: collapse;
         }
 
-            table th {
-                background: #f8f9fa;
-                padding: 12px;
-                text-align: left;
-                font-weight: 600;
-                color: #555;
-                border-bottom: 2px solid #dee2e6;
-            }
+        table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #dee2e6;
+        }
 
-            table td {
-                padding: 12px;
-                border-bottom: 1px solid #e9ecef;
-            }
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
 
-            table tr:hover {
-                background: #f8f9fa;
-            }
+        table tr:hover {
+            background: #f8f9fa;
+        }
 
         .badge {
-            padding: 4px 8px;
+            padding: 4px 10px;
             border-radius: 12px;
             font-size: 0.8rem;
             font-weight: bold;
@@ -171,17 +239,17 @@
             color: #e74c3c;
         }
 
-        .badge-prospecto {
+        .badge-pendiente {
             background: #fff3e0;
             color: #f39c12;
         }
 
-        .badge-activo-crm {
+        .badge-enviado {
             background: #e3f2fd;
             color: #2196f3;
         }
 
-        .badge-frecuente {
+        .badge-entregado {
             background: #e8f5e8;
             color: #27ae60;
         }
@@ -219,9 +287,9 @@
             font-weight: bold;
         }
 
-            .btn-actualizar:hover {
-                background: #2980b9;
-            }
+        .btn-actualizar:hover {
+            background: #2980b9;
+        }
 
         .btn-exportar {
             background: #27ae60;
@@ -233,18 +301,8 @@
             font-weight: bold;
         }
 
-            .btn-exportar:hover {
-                background: #219a52;
-            }
-
-        .mensaje-info {
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            text-align: center;
-            border-left: 4px solid #2196f3;
+        .btn-exportar:hover {
+            background: #219a52;
         }
 
         .paginacion {
@@ -261,11 +319,11 @@
             cursor: pointer;
         }
 
-            .pagina.active {
-                background: #3498db;
-                color: white;
-                border-color: #3498db;
-            }
+        .pagina.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
 
         .loading {
             text-align: center;
@@ -273,57 +331,94 @@
             color: #999;
         }
 
-            .loading::after {
-                content: '';
-                display: inline-block;
-                width: 20px;
-                height: 20px;
-                margin-left: 10px;
-                border: 2px solid #f3f3f3;
-                border-top: 2px solid #3498db;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-            }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-left: 10px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-            100% {
-                transform: rotate(360deg);
-            }
+        /* Resumen rapido */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .quick-stat {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .quick-stat .label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .quick-stat .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Indicadores de tendencia */
+        .trend-up {
+            color: #27ae60;
+        }
+
+        .trend-down {
+            color: #e74c3c;
+        }
+
+        .trend-neutral {
+            color: #f39c12;
         }
     </style>
 </head>
 <body>
-    <!-- Menú lateral -->
+    <!-- Menu lateral -->
     <aside class="sidebar">
         <h2>📊 Perfumes NE2</h2>
         <nav>
             <a href="../catalog.html">🢀 Volver</a>
-            <a href="statspanel.html" class="active">🏠 Dashboard</a>
-            <a href="statspedidos.html">🚚 Pedidos</a>
+            <a href="statspanel.html">🏠 Dashboard</a>
+            <a href="statspedidos.html">🚚 Ordenes</a>
             <a href="statsmetricas.html">📈 Metricas</a>
-            <a href="statsrecursos.html">⚙️ Operaciones</a>
-            <a href="reportes_erp.html" class="active">📋 Reporte ERP</a>
-            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+            <a href="statsinventario.html">📦 Inventario</a>
+            <a href="recursos.html">🏢 Recursos</a>
+            <a href="statsrecursos.html" class="active">⚙️ Operaciones</a>
+            <a href="reportes_erp.html">📋 Reporte ERP</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesion</a>
         </nav>
         <div class="sidebar-footer" style="position: absolute; bottom: 20px; left: 20px; color: #aaa; font-size: 0.8rem;">
-            <p>Panel de Estadísticas</p>
+            <p>Panel de Estadisticas</p>
             <p>Acceso de solo lectura</p>
         </div>
     </aside>
 
     <!-- Contenido principal -->
     <main class="main-content">
-        <!-- Header con información del usuario -->
+        <!-- Header -->
         <div class="admin-header">
-            <h1>Panel de Estadísticas</h1>
-            <p id="welcomeMessage">Bienvenido, <span id="userName">Cargando...</span> (Acceso de solo lectura)</p>
+            <h1>📊 Dashboard de Logistica</h1>
+            <p id="welcomeMessage">Bienvenido, <span id="userName">Cargando...</span> | <span id="fechaActual"></span></p>
         </div>
 
-        <!-- Pestañas -->
+        <!-- Pestanas -->
         <div class="tabs">
             <div class="tab active" onclick="cambiarTab('dashboard')">📊 Dashboard</div>
             <div class="tab" onclick="cambiarTab('productos')">🧴 Productos</div>
@@ -334,46 +429,77 @@
         <div id="tab-dashboard" class="tab-content active">
             <!-- Filtros -->
             <div class="filtros">
-                <select class="filtro-select" id="periodo">
+                <select class="filtro-select" id="periodo" onchange="cargarEstadisticas()">
                     <option value="hoy">Hoy</option>
                     <option value="semana" selected>Esta semana</option>
                     <option value="mes">Este mes</option>
                     <option value="trimestre">Este trimestre</option>
-                    <option value="año">Este año</option>
+                    <option value="ano">Este ano</option>
                 </select>
                 <button class="btn-actualizar" onclick="cargarEstadisticas()">🔄 Actualizar</button>
             </div>
 
-            <!-- Tarjetas de métricas principales -->
-            <section class="cards">
-                <div class="card">
+            <!-- Metricas principales -->
+            <section class="metrics-grid">
+                <div class="metric-card blue">
                     <h3>Total Productos</h3>
                     <div class="numero" id="totalProductos">0</div>
-                    <span class="tendencia" id="tendenciaProductos">📦 En inventario</span>
+                    <span class="tendencia">📦 En catalogo</span>
                 </div>
-                <div class="card">
+                <div class="metric-card green">
                     <h3>Total Clientes</h3>
                     <div class="numero" id="totalClientes">0</div>
-                    <span class="tendencia" id="tendenciaClientes">👥 Registrados</span>
+                    <span class="tendencia">👥 Registrados</span>
                 </div>
-                <div class="card">
+                <div class="metric-card orange">
+                    <h3>Pedidos Totales</h3>
+                    <div class="numero" id="totalPedidos">0</div>
+                    <span class="tendencia" id="tendenciaPedidos">📋 Ordenes</span>
+                </div>
+                <div class="metric-card purple">
                     <h3>Stock Total</h3>
                     <div class="numero" id="stockTotal">0</div>
-                    <span class="tendencia" id="tendenciaStock">📊 Unidades</span>
+                    <span class="tendencia">📊 Unidades</span>
                 </div>
-                <div class="card">
+                <div class="metric-card red">
+                    <h3>Pedidos Pendientes</h3>
+                    <div class="numero" id="pedidosPendientes">0</div>
+                    <span class="tendencia">⏳ Por procesar</span>
+                </div>
+                <div class="metric-card">
                     <h3>Valor Inventario</h3>
                     <div class="numero" id="valorInventario">$0</div>
-                    <span class="tendencia" id="tendenciaValor">💰 Precio de lista</span>
+                    <span class="tendencia">💰 Precio lista</span>
                 </div>
             </section>
 
-            <!-- Grid de dos columnas -->
+            <!-- Graficas -->
+            <div class="charts-row">
+                <!-- Grafica de productos por genero -->
+                <div class="chart-box">
+                    <h3>🧴 Productos por Genero</h3>
+                    <canvas id="chartProductosGenero"></canvas>
+                </div>
+
+                <!-- Grafica de ventas por mes -->
+                <div class="chart-box">
+                    <h3>📈 Ventas Ultimos 6 Meses</h3>
+                    <canvas id="chartVentasMes"></canvas>
+                </div>
+
+                <!-- Grafica de stock por marca -->
+                <div class="chart-box">
+                    <h3>📦 Top 5 Marcas por Stock</h3>
+                    <canvas id="chartStockMarca"></canvas>
+                </div>
+            </div>
+
+            <!-- Tablas de resumen -->
             <div class="grid-2">
-                <!-- Productos más vendidos -->
+                <!-- Productos mas vendidos -->
                 <div class="tabla-container">
                     <div class="tabla-header">
-                        <h2>🏆 Productos más vendidos</h2>
+                        <h2>🏆 Productos Mas Vendidos</h2>
                     </div>
                     <table id="tablaProductosTop">
                         <thead>
@@ -392,7 +518,7 @@
                 <!-- Clientes frecuentes -->
                 <div class="tabla-container">
                     <div class="tabla-header">
-                        <h2>⭐ Clientes frecuentes</h2>
+                        <h2>⭐ Clientes Frecuentes</h2>
                     </div>
                     <table id="tablaClientesTop">
                         <thead>
@@ -408,13 +534,14 @@
                     </table>
                 </div>
             </div>
+
         </div>
 
         <!-- Contenido: Productos -->
         <div id="tab-productos" class="tab-content">
             <div class="tabla-container">
                 <div class="tabla-header">
-                    <h2>🧴 Catálogo de Productos</h2>
+                    <h2>🧴 Catalogo de Productos</h2>
                     <div>
                         <input type="text" class="buscador" id="buscadorProductos" placeholder="🔍 Buscar producto..." onkeyup="filtrarProductos()">
                         <button class="btn-exportar" onclick="exportarTabla('productos')" style="margin-left: 10px;">📥 Exportar</button>
@@ -429,7 +556,7 @@
                             <th>Marca</th>
                             <th>Precio</th>
                             <th>Stock</th>
-                            <th>Género</th>
+                            <th>Genero</th>
                             <th>Estado</th>
                         </tr>
                     </thead>
@@ -438,14 +565,11 @@
                     </tbody>
                 </table>
 
-                <!-- Paginación -->
-                <div class="paginacion" id="paginacionProductos">
-                    <!-- Se llena con JavaScript -->
-                </div>
+                <div class="paginacion" id="paginacionProductos"></div>
             </div>
         </div>
 
-        <!-- Contenido: Clientes - EDITADO con los campos solicitados -->
+        <!-- Contenido: Clientes -->
         <div id="tab-clientes" class="tab-content">
             <div class="tabla-container">
                 <div class="tabla-header">
@@ -462,8 +586,8 @@
                             <th>ID</th>
                             <th>Nombre</th>
                             <th>Email</th>
-                            <th>Teléfono</th>
-                            <th>Dirección</th>
+                            <th>Telefono</th>
+                            <th>Direccion</th>
                             <th>Ciudad</th>
                             <th>Fecha Registro</th>
                             <th>Estado</th>
@@ -474,10 +598,7 @@
                     </tbody>
                 </table>
 
-                <!-- Paginación -->
-                <div class="paginacion" id="paginacionClientes">
-                    <!-- Se llena con JavaScript -->
-                </div>
+                <div class="paginacion" id="paginacionClientes"></div>
             </div>
         </div>
     </main>
@@ -486,16 +607,22 @@
         const API_BASE_URL = 'http://localhost:3000';
         let productosData = [];
         let clientesData = [];
+        let pedidosData = [];
         let productosFiltrados = [];
         let clientesFiltrados = [];
 
-        // Variables para paginación
+        // Variables para paginacion
         let productosPagina = 1;
         let clientesPagina = 1;
         const itemsPorPagina = 10;
 
-        // Verificar sesión al cargar
-        document.addEventListener('DOMContentLoaded', function () {
+        // Variables para graficas
+        let chartProductosGenero = null;
+        let chartVentasMes = null;
+        let chartStockMarca = null;
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
             const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
             const userType = localStorage.getItem('userType');
 
@@ -504,50 +631,28 @@
                 return;
             }
 
-            // Mostrar nombre del usuario
             document.getElementById('userName').textContent = usuario.nombre || 'Usuario';
+            document.getElementById('fechaActual').textContent = new Date().toLocaleDateString('es-MX', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
 
-            // Cargar datos iniciales
             cargarEstadisticas();
             cargarProductos();
             cargarClientes();
+            cargarPedidos();
         });
 
-        // Función para cambiar tabs desde el menú lateral
-        function cambiarTabDesdeMenu(tabName) {
-            // Actualizar clases de las pestañas superiores
-            document.querySelectorAll('.tab').forEach(tab => {
-                if (tab.textContent.includes(tabName === 'dashboard' ? 'Dashboard' :
-                    tabName === 'productos' ? 'Productos' : 'Clientes')) {
-                    tab.classList.add('active');
-                } else {
-                    tab.classList.remove('active');
-                }
-            });
-
-            // Mostrar contenido correspondiente
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-
-            // Actualizar datos según la pestaña
-            if (tabName === 'productos' && productosData.length === 0) {
-                cargarProductos();
-            } else if (tabName === 'clientes' && clientesData.length === 0) {
-                cargarClientes();
-            }
-        }
-
-        // Cambiar entre pestañas
+        // Cambiar tabs
         function cambiarTab(tabName) {
-            // Actualizar clases de las pestañas
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             event.target.classList.add('active');
 
-            // Mostrar contenido correspondiente
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
 
-            // Actualizar datos según la pestaña
             if (tabName === 'productos' && productosData.length === 0) {
                 cargarProductos();
             } else if (tabName === 'clientes' && clientesData.length === 0) {
@@ -555,43 +660,48 @@
             }
         }
 
-        // Cargar estadísticas generales
+        // Cargar estadisticas
         async function cargarEstadisticas() {
             try {
-                // Cargar productos para estadísticas
+                // Cargar productos
                 const prodResponse = await fetch(`${API_BASE_URL}/api/admin/productos`);
                 if (prodResponse.ok) {
                     const productos = await prodResponse.json();
+                    productosData = productos;
 
-                    // Calcular estadísticas de productos
                     document.getElementById('totalProductos').textContent = productos.length;
 
                     const stockTotal = productos.reduce((sum, p) => sum + (p.stock || 0), 0);
-                    document.getElementById('stockTotal').textContent = stockTotal;
+                    document.getElementById('stockTotal').textContent = stockTotal.toLocaleString();
 
                     const valorTotal = productos.reduce((sum, p) => sum + ((p.precio || 0) * (p.stock || 0)), 0);
-                    document.getElementById('valorInventario').textContent = `$${valorTotal.toFixed(2)}`;
+                    document.getElementById('valorInventario').textContent = `$${valorTotal.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
 
-                    // Productos más vendidos (simulado)
+                    // Top productos
                     const topProductos = productos
-                        .sort((a, b) => (b.ventas || 0) - (a.ventas || 0))
+                        .sort((a, b) => (b.stock || 0) - (a.stock || 0))
                         .slice(0, 5)
                         .map(p => ({
                             nombre: p.nombre,
                             marca: p.marca || 'N/A',
-                            ventas: Math.floor(Math.random() * 50) + 10 // Simulado
+                            ventas: Math.floor(Math.random() * 50) + 10
                         }));
-
                     actualizarTablaProductosTop(topProductos);
+
+                    // Grafica de productos por genero
+                    renderizarGraficaProductosGenero(productos);
+
+                    // Grafica de stock por marca
+                    renderizarGraficaStockMarca(productos);
                 }
 
-                // Cargar clientes para estadísticas
+                // Cargar clientes
                 const clientesResponse = await fetch(`${API_BASE_URL}/api/clientes/activos`);
                 if (clientesResponse.ok) {
                     const clientes = await clientesResponse.json();
+                    clientesData = clientes;
                     document.getElementById('totalClientes').textContent = clientes.length;
 
-                    // Clientes frecuentes (simulado)
                     const topClientes = clientes
                         .slice(0, 5)
                         .map(c => ({
@@ -599,47 +709,278 @@
                             compras: Math.floor(Math.random() * 20) + 1,
                             total: (Math.random() * 5000 + 1000).toFixed(2)
                         }));
-
                     actualizarTablaClientesTop(topClientes);
                 }
+
+                // Cargar pedidos
+                const pedidosResponse = await fetch(`${API_BASE_URL}/api/pedidos/todos`);
+                if (pedidosResponse.ok) {
+                    const pedidos = await pedidosResponse.json();
+                    pedidosData = pedidos;
+
+                    document.getElementById('totalPedidos').textContent = pedidos.length;
+
+                    const pendientes = pedidos.filter(p =>
+                        p.estado === 'pendiente' || p.estado === 'confirmado' || p.estado === 'procesando'
+                    ).length;
+                    document.getElementById('pedidosPendientes').textContent = pendientes;
+
+                    // Grafica de ventas por mes
+                    renderizarGraficaVentasMes(pedidos);
+                }
+
             } catch (error) {
-                console.error('Error cargando estadísticas:', error);
+                console.error('Error cargando estadisticas:', error);
             }
         }
 
-        // Actualizar tabla de productos más vendidos
+        // ==================== GRAFICAS ====================
+
+        // Grafica de productos por genero
+        function renderizarGraficaProductosGenero(productos) {
+            const generos = {};
+            productos.forEach(p => {
+                const genero = p.genero || 'Sin especificar';
+                generos[genero] = (generos[genero] || 0) + 1;
+            });
+
+            const labels = Object.keys(generos);
+            const data = Object.values(generos);
+            const colores = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
+
+            const ctx = document.getElementById('chartProductosGenero').getContext('2d');
+
+            if (chartProductosGenero) chartProductosGenero.destroy();
+
+            chartProductosGenero = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colores.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Grafica de ventas por mes
+        function renderizarGraficaVentasMes(pedidos) {
+            const meses = [];
+            const ventas = [];
+            const cantidades = [];
+
+            for (let i = 5; i >= 0; i--) {
+                const fecha = new Date();
+                fecha.setMonth(fecha.getMonth() - i);
+                const mes = fecha.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' });
+                meses.push(mes);
+
+                const pedidosMes = pedidos.filter(p => {
+                    const fechaPedido = new Date(p.fecha_pedido);
+                    return fechaPedido.getMonth() === fecha.getMonth() &&
+                           fechaPedido.getFullYear() === fecha.getFullYear();
+                });
+
+                const totalMes = pedidosMes.reduce((sum, p) => sum + parseFloat(p.total || 0), 0);
+                ventas.push(totalMes);
+                cantidades.push(pedidosMes.length);
+            }
+
+            const ctx = document.getElementById('chartVentasMes').getContext('2d');
+
+            if (chartVentasMes) chartVentasMes.destroy();
+
+            chartVentasMes = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: meses,
+                    datasets: [
+                        {
+                            label: 'Ventas ($)',
+                            data: ventas,
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                            borderColor: '#667eea',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Pedidos',
+                            data: cantidades,
+                            type: 'line',
+                            borderColor: '#f39c12',
+                            backgroundColor: 'rgba(243, 156, 18, 0.2)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Ventas ($)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Pedidos'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Grafica de stock por marca
+        function renderizarGraficaStockMarca(productos) {
+            const marcas = {};
+            productos.forEach(p => {
+                const marca = p.marca || 'Sin marca';
+                marcas[marca] = (marcas[marca] || 0) + (p.stock || 0);
+            });
+
+            // Top 5 marcas
+            const sorted = Object.entries(marcas)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            const labels = sorted.map(([marca]) => marca);
+            const data = sorted.map(([, stock]) => stock);
+
+            const ctx = document.getElementById('chartStockMarca').getContext('2d');
+
+            if (chartStockMarca) chartStockMarca.destroy();
+
+            chartStockMarca = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Stock',
+                        data: data,
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(240, 147, 251, 0.8)',
+                            'rgba(245, 87, 108, 0.8)',
+                            'rgba(79, 172, 254, 0.8)'
+                        ],
+                        borderColor: [
+                            '#667eea',
+                            '#764ba2',
+                            '#f093fb',
+                            '#f5576c',
+                            '#4facfe'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Unidades en Stock'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==================== TABLAS ====================
+
         function actualizarTablaProductosTop(productos) {
             const tbody = document.querySelector('#tablaProductosTop tbody');
             tbody.innerHTML = '';
 
-            productos.forEach(p => {
+            if (productos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Sin datos</td></tr>';
+                return;
+            }
+
+            productos.forEach((p, idx) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                        <td><strong>${p.nombre}</strong></td>
-                        <td>${p.marca}</td>
-                        <td>${p.ventas} ventas</td>
-                    `;
+                    <td><strong>${idx + 1}. ${p.nombre}</strong></td>
+                    <td>${p.marca}</td>
+                    <td><span class="badge badge-activo">${p.ventas} ventas</span></td>
+                `;
                 tbody.appendChild(tr);
             });
         }
 
-        // Actualizar tabla de clientes frecuentes
         function actualizarTablaClientesTop(clientes) {
             const tbody = document.querySelector('#tablaClientesTop tbody');
             tbody.innerHTML = '';
 
-            clientes.forEach(c => {
+            if (clientes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Sin datos</td></tr>';
+                return;
+            }
+
+            clientes.forEach((c, idx) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                        <td><strong>${c.nombre}</strong></td>
-                        <td>${c.compras} compras</td>
-                        <td>$${c.total}</td>
-                    `;
+                    <td><strong>${idx + 1}. ${c.nombre}</strong></td>
+                    <td>${c.compras} compras</td>
+                    <td><strong>$${c.total}</strong></td>
+                `;
                 tbody.appendChild(tr);
             });
         }
 
-        // Cargar productos
+        // ==================== PRODUCTOS ====================
+
         async function cargarProductos() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/admin/productos`);
@@ -652,14 +993,13 @@
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('productosTableBody').innerHTML = `
-                        <tr><td colspan="7" style="color: #e74c3c; text-align: center;">
-                            ❌ Error al cargar productos
-                        </td></tr>
-                    `;
+                    <tr><td colspan="7" style="color: #e74c3c; text-align: center;">
+                        Error al cargar productos
+                    </td></tr>
+                `;
             }
         }
 
-        // Renderizar tabla de productos con paginación
         function renderizarTablaProductos() {
             const tbody = document.getElementById('productosTableBody');
             tbody.innerHTML = '';
@@ -669,7 +1009,7 @@
             const productosPaginaActual = productosFiltrados.slice(inicio, fin);
 
             if (productosPaginaActual.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay productos para mostrar</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay productos</td></tr>';
                 return;
             }
 
@@ -679,24 +1019,24 @@
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                        <td>#${String(p.id).padStart(3, '0')}</td>
-                        <td><strong>${p.nombre}</strong></td>
-                        <td>${p.marca || '—'}</td>
-                        <td>$${parseFloat(p.precio || 0).toFixed(2)}</td>
-                        <td>${p.stock || 0}</td>
-                        <td>${p.genero || '—'}</td>
-                        <td><span class="badge ${estadoClass}">${estadoTexto}</span></td>
-                    `;
+                    <td>#${String(p.id).padStart(3, '0')}</td>
+                    <td><strong>${p.nombre}</strong></td>
+                    <td>${p.marca || '—'}</td>
+                    <td>$${parseFloat(p.precio || 0).toFixed(2)}</td>
+                    <td>${p.stock || 0}</td>
+                    <td>${p.genero || '—'}</td>
+                    <td><span class="badge ${estadoClass}">${estadoTexto}</span></td>
+                `;
                 tbody.appendChild(tr);
             });
 
             renderizarPaginacion('productos', Math.ceil(productosFiltrados.length / itemsPorPagina));
         }
 
-        // Cargar clientes - Usando SOLO los campos existentes en tu tabla
+        // ==================== CLIENTES ====================
+
         async function cargarClientes() {
             try {
-                // Usar el endpoint de clientes activos que ya existe
                 const response = await fetch(`${API_BASE_URL}/api/clientes/activos`);
                 if (!response.ok) throw new Error('Error al cargar clientes');
 
@@ -707,14 +1047,13 @@
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('clientesTableBody').innerHTML = `
-                        <tr><td colspan="8" style="color: #e74c3c; text-align: center;">
-                            ❌ Error al cargar clientes
-                        </td></tr>
-                    `;
+                    <tr><td colspan="8" style="color: #e74c3c; text-align: center;">
+                        Error al cargar clientes
+                    </td></tr>
+                `;
             }
         }
 
-        // Renderizar tabla de clientes - EDITADO con los campos solicitados
         function renderizarTablaClientes() {
             const tbody = document.getElementById('clientesTableBody');
             tbody.innerHTML = '';
@@ -724,23 +1063,19 @@
             const clientesPaginaActual = clientesFiltrados.slice(inicio, fin);
 
             if (clientesPaginaActual.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No hay clientes para mostrar</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No hay clientes</td></tr>';
                 return;
             }
 
             clientesPaginaActual.forEach(c => {
-                // Badge para estado_cliente
                 const estadoClass = c.estado_cliente === 'activo' ? 'badge-activo' : 'badge-inactivo';
                 const estadoTexto = c.estado_cliente || 'activo';
 
-                // Formatear fecha de registro - SOLO la fecha sin hora
                 let fechaRegistro = '—';
                 if (c.fecha_registro) {
-                    const fecha = new Date(c.fecha_registro);
-                    fechaRegistro = fecha.toLocaleDateString('es-MX');
+                    fechaRegistro = new Date(c.fecha_registro).toLocaleDateString('es-MX');
                 }
 
-                // Acortar dirección si es muy larga (opcional)
                 let direccion = c.direccion || '—';
                 if (direccion.length > 30) {
                     direccion = direccion.substring(0, 30) + '...';
@@ -748,22 +1083,36 @@
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                        <td>#${String(c.id).padStart(3, '0')}</td>
-                        <td><strong>${c.nombre || '—'}</strong></td>
-                        <td>${c.correo || '—'}</td>
-                        <td>${c.telefono || '—'}</td>
-                        <td>${direccion}</td>
-                        <td>${c.ciudad || '—'}</td>
-                        <td>${fechaRegistro}</td>
-                        <td><span class="badge ${estadoClass}">${estadoTexto}</span></td>
-                    `;
+                    <td>#${String(c.id).padStart(3, '0')}</td>
+                    <td><strong>${c.nombre || '—'}</strong></td>
+                    <td>${c.correo || '—'}</td>
+                    <td>${c.telefono || '—'}</td>
+                    <td>${direccion}</td>
+                    <td>${c.ciudad || '—'}</td>
+                    <td>${fechaRegistro}</td>
+                    <td><span class="badge ${estadoClass}">${estadoTexto}</span></td>
+                `;
                 tbody.appendChild(tr);
             });
 
             renderizarPaginacion('clientes', Math.ceil(clientesFiltrados.length / itemsPorPagina));
         }
 
-        // Renderizar paginación
+        // ==================== PEDIDOS ====================
+
+        async function cargarPedidos() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedidos/todos`);
+                if (response.ok) {
+                    pedidosData = await response.json();
+                }
+            } catch (error) {
+                console.error('Error cargando pedidos:', error);
+            }
+        }
+
+        // ==================== UTILIDADES ====================
+
         function renderizarPaginacion(tipo, totalPaginas) {
             const container = document.getElementById(`paginacion${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
             if (!container) return;
@@ -787,7 +1136,6 @@
             }
         }
 
-        // Filtrar productos
         function filtrarProductos() {
             const texto = document.getElementById('buscadorProductos').value.toLowerCase();
 
@@ -801,7 +1149,6 @@
             renderizarTablaProductos();
         }
 
-        // Filtrar clientes - EDITADO para buscar en los campos disponibles
         function filtrarClientes() {
             const texto = document.getElementById('buscadorClientes').value.toLowerCase();
 
@@ -817,7 +1164,6 @@
             renderizarTablaClientes();
         }
 
-        // Exportar tabla a CSV
         function exportarTabla(tipo) {
             if (tipo === 'productos') {
                 exportarTablaProductos();
@@ -827,7 +1173,7 @@
         }
 
         function exportarTablaProductos() {
-            const headers = ['ID', 'Nombre', 'Marca', 'Precio', 'Stock', 'Género', 'Estado'];
+            const headers = ['ID', 'Nombre', 'Marca', 'Precio', 'Stock', 'Genero', 'Estado'];
             const contenido = productosFiltrados.map(p => [
                 p.id,
                 p.nombre,
@@ -849,7 +1195,7 @@
         }
 
         function exportarTablaClientes() {
-            const headers = ['ID', 'Nombre', 'Email', 'Teléfono', 'Dirección', 'Ciudad', 'Fecha Registro', 'Estado'];
+            const headers = ['ID', 'Nombre', 'Email', 'Telefono', 'Direccion', 'Ciudad', 'Fecha Registro', 'Estado'];
             const contenido = clientesFiltrados.map(c => [
                 c.id,
                 c.nombre || '',
@@ -872,7 +1218,7 @@
         }
 
         function cerrarSesion() {
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+            if (confirm('Estas seguro de que deseas cerrar sesion?')) {
                 localStorage.removeItem('usuarioActual');
                 localStorage.removeItem('token');
                 localStorage.removeItem('userType');

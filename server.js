@@ -15,8 +15,8 @@ app.use(express.json());
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'perfumes_ne2', //cambiar si el nombre de la BD es diferente
-    password: '1234', //Cambiar por su contraseña segun su BD
+    database: 'perfumes', //cambiar si el nombre de la BD es diferente
+    password: '2244', //Cambiar por su contraseña segun su BD
     port: 5432,
 });
 
@@ -182,6 +182,129 @@ app.get('/api/pedidos/estadisticas', async (req, res) => {
     } catch (error) {
         console.error('Error obteniendo estadísticas:', error);
         res.status(500).json({ error: 'Error al cargar estadísticas' });
+    }
+});
+
+// Crear nuevo pedido
+app.post('/api/pedidos', async (req, res) => {
+    const {
+        numero_orden,
+        cliente_id,
+        vendedor_id,
+        producto_id,
+        cantidad,
+        subtotal,
+        impuestos,
+        descuento,
+        total,
+        estado,
+        metodo_pago,
+        direccion_envio,
+        notas
+    } = req.body;
+
+    if (!numero_orden) {
+        return res.status(400).json({ message: 'El número de orden es requerido' });
+    }
+    if (!total && total !== 0) {
+        return res.status(400).json({ message: 'El total es requerido' });
+    }
+
+    try {
+        const existeOrden = await pool.query(
+            'SELECT id FROM pedidos WHERE numero_orden = $1',
+            [numero_orden]
+        );
+        if (existeOrden.rows.length > 0) {
+            return res.status(400).json({ message: 'El número de orden ya existe' });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO pedidos (
+                numero_orden, cliente_id, vendedor_id, producto_id, cantidad,
+                subtotal, impuestos, descuento, total, estado, metodo_pago,
+                direccion_envio, notas, fecha_pedido
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP)
+            RETURNING *`,
+            [
+                numero_orden,
+                cliente_id || null,
+                vendedor_id || null,
+                producto_id || null,
+                cantidad || 1,
+                subtotal || 0,
+                impuestos || 0,
+                descuento || 0,
+                total,
+                estado || 'pendiente',
+                metodo_pago || null,
+                direccion_envio || null,
+                notas || null
+            ]
+        );
+
+        res.status(201).json({
+            message: 'Pedido creado exitosamente',
+            pedido: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error creando pedido:', error);
+        res.status(500).json({ message: 'Error al crear pedido', error: error.message });
+    }
+});
+
+// Actualizar estado de pedido
+app.put('/api/pedidos/:id/estado', async (req, res) => {
+    const { id } = req.params;
+    const { estado } = req.body;
+
+    console.log('=== Actualizando estado de pedido ===');
+    console.log('ID:', id, 'Nuevo estado:', estado);
+
+    const estadosValidos = ['pendiente', 'confirmado', 'procesando', 'enviado', 'entregado', 'cancelado'];
+    if (!estadosValidos.includes(estado)) {
+        return res.status(400).json({ message: 'Estado no válido' });
+    }
+
+    try {
+        // Primero obtenemos el pedido actual para verificar si ya tiene fecha_envio
+        const pedidoActual = await pool.query('SELECT fecha_envio FROM pedidos WHERE id = $1', [id]);
+
+        if (pedidoActual.rows.length === 0) {
+            return res.status(404).json({ message: 'Pedido no encontrado' });
+        }
+
+        const pedido = pedidoActual.rows[0];
+        console.log('Pedido actual:', pedido);
+
+        let query = 'UPDATE pedidos SET estado = $1';
+
+        if (estado === 'confirmado') {
+            query += `, fecha_confirmacion = CURRENT_TIMESTAMP`;
+        } else if (estado === 'enviado') {
+            query += `, fecha_envio = CURRENT_TIMESTAMP`;
+        } else if (estado === 'entregado') {
+            // Siempre establecer fecha_entrega
+            query += `, fecha_entrega = CURRENT_TIMESTAMP`;
+            // Si no tiene fecha_envio, también establecerla
+            if (!pedido.fecha_envio) {
+                query += `, fecha_envio = CURRENT_TIMESTAMP`;
+            }
+        }
+
+        query += ` WHERE id = $2 RETURNING *`;
+        console.log('Query a ejecutar:', query);
+
+        const result = await pool.query(query, [estado, id]);
+        console.log('Resultado:', result.rows[0]);
+
+        res.json({
+            message: 'Estado actualizado exitosamente',
+            pedido: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error actualizando estado:', error);
+        res.status(500).json({ message: 'Error al actualizar estado', error: error.message });
     }
 });
 
@@ -1677,12 +1800,17 @@ app.get('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
 
     try {
         const query = `
-            SELECT 
+            SELECT
                 p.id,
                 p.numero_orden,
                 p.fecha_pedido,
+                p.fecha_envio,
+                p.fecha_entrega,
                 p.total,
+                p.subtotal,
+                p.impuestos,
                 p.estado,
+                p.metodo_pago,
                 p.vendedor_id,
                 p.producto_id,
                 p.cantidad,
@@ -1705,15 +1833,20 @@ app.get('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
             id: r.id,
             numero_orden: r.numero_orden,
             fecha_pedido: r.fecha_pedido,
+            fecha_envio: r.fecha_envio,
+            fecha_entrega: r.fecha_entrega,
             total: r.total,
+            subtotal: r.subtotal,
+            impuestos: r.impuestos,
             estado: r.estado,
+            metodo_pago: r.metodo_pago,
             vendedor_id: r.vendedor_id,
             producto_id: r.producto_id,
             cantidad: r.cantidad,
             cliente_nombre: r.cliente_nombre,
             cliente_id: r.cliente_id,
             cliente_email: r.cliente_email,
-            ubicacion_actual: r.direccion_envio || null,
+            direccion_envio: r.direccion_envio || null,
             productos: r.producto_nombre || 'Sin producto asignado'
         }));
 
@@ -1784,7 +1917,7 @@ app.get('/api/clientes/activos', async (req, res) => {
 // Crear pedido para un vendedor
 app.post('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
     const { vendedorId } = req.params;
-    const { cliente_id, producto_id, cantidad = 1, metodo_pago, direccion_envio, notas, estado = 'pendiente' } = req.body;
+    const { cliente_id, producto_id, cantidad = 1, metodo_pago, direccion_envio, notas, estado = 'pendiente', numero_orden: numero_orden_enviado } = req.body;
 
     if (!cliente_id || !producto_id) {
         return res.status(400).json({ message: 'cliente_id y producto_id son requeridos' });
@@ -1800,7 +1933,8 @@ app.post('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
         const descuento = 0;
         const total = subtotal + impuestos - descuento;
 
-        const numero_orden = 'P' + Date.now();
+        // Usar el numero_orden enviado por el usuario, o generar uno automático si no se proporciona
+        const numero_orden = numero_orden_enviado || ('P' + Date.now());
 
         const insert = await pool.query(
             `INSERT INTO pedidos (numero_orden, cliente_id, vendedor_id, producto_id, cantidad, subtotal, impuestos, descuento, total, estado, metodo_pago, direccion_envio, notas)

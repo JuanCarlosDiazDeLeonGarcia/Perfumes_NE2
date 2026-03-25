@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Ordenes - Perfumes NE2</title>
+    <title>Ordenes - Admin Panel</title>
     <link rel="stylesheet" href="../../css/base.css">
     <style>
-        /* Estilos específicos para panel de pedidos */
+        /* Estilos específicos para panel de ordenes */
         .main-content {
             padding: 20px;
             margin-left: 250px;
@@ -14,7 +14,7 @@
 
         .admin-header {
             margin-bottom: 30px;
-            background: linear-gradient(135deg, #2c3e50, #e67e22);
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
             color: white;
             padding: 25px 30px;
             border-radius: 15px;
@@ -45,7 +45,7 @@
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             text-align: center;
-            border-top: 4px solid #e67e22;
+            border-top: 4px solid #8e44ad;
         }
 
             .card h3 {
@@ -117,7 +117,7 @@
         }
 
         .btn-accion {
-            background: #e67e22;
+            background: #8e44ad;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -130,7 +130,7 @@
         }
 
             .btn-accion:hover {
-                background: #d35400;
+                background: #9b59b6;
             }
 
         .btn-exportar {
@@ -261,14 +261,14 @@
             }
 
             .pagina.active {
-                background: #e67e22;
+                background: #8e44ad;
                 color: white;
-                border-color: #e67e22;
+                border-color: #8e44ad;
             }
 
         /* Info cliente/vendedor */
         .info-link {
-            color: #e67e22;
+            color: #8e44ad;
             text-decoration: none;
             font-weight: 500;
         }
@@ -291,7 +291,7 @@
                 height: 20px;
                 margin-left: 10px;
                 border: 2px solid #f3f3f3;
-                border-top: 2px solid #e67e22;
+                border-top: 2px solid #8e44ad;
                 border-radius: 50%;
                 animation: spin 1s linear infinite;
             }
@@ -337,17 +337,6 @@
                 opacity: 1;
             }
 
-        /* Mensaje informativo */
-        .mensaje-info {
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            text-align: center;
-            border-left: 4px solid #2196f3;
-        }
-
         /* Resumen de filtros */
         .resumen-filtros {
             background: #f8f9fa;
@@ -361,7 +350,7 @@
         }
 
         .filtro-activo {
-            background: #e67e22;
+            background: #8e44ad;
             color: white;
             padding: 4px 10px;
             border-radius: 20px;
@@ -446,7 +435,7 @@
                 color: #2c3e50;
                 margin-bottom: 20px;
                 padding-bottom: 10px;
-                border-bottom: 2px solid #e67e22;
+                border-bottom: 2px solid #8e44ad;
             }
 
         .form-group {
@@ -475,8 +464,8 @@
             .form-group select:focus,
             .form-group textarea:focus {
                 outline: none;
-                border-color: #e67e22;
-                box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
+                border-color: #8e44ad;
+                box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.1);
             }
 
         .modal-actions {
@@ -489,7 +478,7 @@
         }
 
         .btn-guardar {
-            background: #e67e22;
+            background: #8e44ad;
             color: white;
             border: none;
             padding: 10px 25px;
@@ -499,7 +488,7 @@
         }
 
             .btn-guardar:hover {
-                background: #d35400;
+                background: #9b59b6;
             }
 
         .btn-cancelar {
@@ -520,17 +509,17 @@
 <body>
     <!-- Menú lateral -->
     <aside class="sidebar">
-        <h2>📦 Perfumes NE2</h2>
+        <h2>🌸 PerfumeShop</h2>
         <nav>
-            <a href="../catalog.html">🢀 Volver</a>
-            <a href="statspanel.html">🏠 Dashboard</a>
-            <a href="statspedidos.html">🚚 Ordenes</a>
-            <a href="statsmetricas.html">📈 Metricas</a>
-            <a href="statsinventario.html">📦 Inventario</a>
-            <a href="recursos.html">🏢 Recursos</a>
-            <a href="statsrecursos.html" class="active">⚙️ Operaciones</a>
-            <a href="reportes_erp.html">📋 Reporte ERP</a>
-            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesion</a>
+            <a href="paneladmin.html">📊 Dashboard</a>
+            <a href="perfumesadmin.html">🧴 Perfumes</a>
+            <a href="ventasadmin.html">🛍️ Ventas</a>
+            <a href="clientesadmin.html">👥 Clientes</a>
+            <a href="ordenesadmin.html" class="active">🚚 Ordenes</a>
+            <a href="metricasadmin.html">📊 Métricas</a>
+            <a href="proveedores.html">🚚 Proveedores</a>
+            <a href="movimientos_inventario.html">📊 Movimientos</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
         </nav>
         <div class="sidebar-footer" style="position: absolute; bottom: 20px; left: 20px; color: #aaa; font-size: 0.8rem;">
             <p>Panel de Ordenes</p>
@@ -646,19 +635,6 @@
             </div>
         </div>
 
-        <!-- Modal para ver detalles del pedido (opcional) -->
-        <div class="modal-overlay" id="modalDetalle" style="display: none;">
-            <div class="modal" style="width: 600px;">
-                <h2>📦 Detalle de la Orden</h2>
-                <div id="detallePedido">
-                    <!-- Contenido dinámico -->
-                </div>
-                <div class="modal-actions">
-                    <button class="btn-cancelar" onclick="cerrarModal()">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Modal para crear nueva orden -->
         <div class="modal-overlay" id="modalNuevaOrden" style="display: none;">
             <div class="modal" style="width: 550px;">
@@ -769,9 +745,6 @@
         const API_BASE_URL = 'http://localhost:3000';
         let pedidosData = [];
         let pedidosFiltrados = [];
-        let clientesMap = new Map(); // Para cache de nombres de clientes
-        let vendedoresMap = new Map(); // Para cache de nombres de vendedores
-        let productosMap = new Map(); // Para cache de nombres de productos
 
         // Variables para paginación
         let paginaActual = 1;
@@ -782,56 +755,27 @@
             const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
             const userType = localStorage.getItem('userType');
 
-            if (!usuario || userType !== 'estadistica') {
+            if (!usuario || userType !== 'admin') {
                 window.location.href = '../adminlogin.html';
                 return;
             }
 
             // Mostrar nombre del usuario
-            document.getElementById('userName').textContent = usuario.nombre || 'Usuario';
+            document.getElementById('userName').textContent = usuario.nombre || 'Admin';
 
             // Cargar datos
             cargarPedidos();
         });
 
-        // ==================== ENDPOINTS NECESARIOS EN SERVER.JS ====================
-        // NOTA: Estos endpoints deben ser agregados a tu server.js
-
-        // Para obtener todos los pedidos:
-        // app.get('/api/pedidos/todos', async (req, res) => {
-        //     try {
-        //         const result = await pool.query(`
-        //             SELECT * FROM pedidos ORDER BY fecha_pedido DESC
-        //         `);
-        //         res.json(result.rows);
-        //     } catch (error) {
-        //         res.status(500).json({ error: error.message });
-        //     }
-        // });
-
-        // Para obtener nombres de clientes (opcional, para mejorar la visualización):
-        // app.get('/api/clientes/nombres', async (req, res) => {
-        //     try {
-        //         const result = await pool.query(`
-        //             SELECT id, nombre FROM clientes
-        //         `);
-        //         res.json(result.rows);
-        //     } catch (error) {
-        //         res.status(500).json({ error: error.message });
-        //     }
-        // });
-
         // Cargar pedidos
         async function cargarPedidos() {
             try {
-                // Intentar cargar desde un endpoint específico para pedidos
-                // Si no existe, puedes usar el endpoint de vendedor pero necesitarás uno general
                 const response = await fetch(`${API_BASE_URL}/api/pedidos/todos`);
 
                 if (!response.ok) {
-                    // Si no existe el endpoint, usar datos de ejemplo para demostración
-                    console.warn('Endpoint no disponible, usando datos de ejemplo');
-                    usarDatosEjemplo();
+                    console.warn('Endpoint no disponible');
+                    document.getElementById('pedidosTableBody').innerHTML =
+                        '<tr><td colspan="15" style="text-align: center; padding: 40px;">No se pudieron cargar las ordenes</td></tr>';
                     return;
                 }
 
@@ -840,107 +784,9 @@
 
             } catch (error) {
                 console.error('Error:', error);
-                // Usar datos de ejemplo para demostración
-                usarDatosEjemplo();
+                document.getElementById('pedidosTableBody').innerHTML =
+                    '<tr><td colspan="15" style="text-align: center; padding: 40px;">Error de conexión</td></tr>';
             }
-        }
-
-        // Función para usar datos de ejemplo (mientras no exista el endpoint)
-        function usarDatosEjemplo() {
-            pedidosData = [
-                {
-                    id: 1,
-                    numero_orden: 'ORD-001',
-                    cliente_id: 101,
-                    vendedor_id: 201,
-                    producto_id: 301,
-                    cantidad: 2,
-                    subtotal: 1600.00,
-                    impuestos: 256.00,
-                    total: 1856.00,
-                    estado: 'entregado',
-                    metodo_pago: 'tarjeta',
-                    direccion_envio: 'Av. Principal 123',
-                    notas: 'Entregar en horario laboral',
-                    fecha_pedido: '2024-01-15T10:30:00',
-                    fecha_envio: '2024-01-16T09:00:00',
-                    fecha_entrega: '2024-01-18T14:30:00'
-                },
-                {
-                    id: 2,
-                    numero_orden: 'ORD-002',
-                    cliente_id: 102,
-                    vendedor_id: 202,
-                    producto_id: 302,
-                    cantidad: 1,
-                    subtotal: 850.00,
-                    impuestos: 136.00,
-                    total: 986.00,
-                    estado: 'enviado',
-                    metodo_pago: 'efectivo',
-                    direccion_envio: 'Calle Reforma 456',
-                    notas: 'Llamar antes de entregar',
-                    fecha_pedido: '2024-01-20T15:45:00',
-                    fecha_envio: '2024-01-21T11:00:00',
-                    fecha_entrega: null
-                },
-                {
-                    id: 3,
-                    numero_orden: 'ORD-003',
-                    cliente_id: 103,
-                    vendedor_id: 201,
-                    producto_id: 303,
-                    cantidad: 3,
-                    subtotal: 2100.00,
-                    impuestos: 336.00,
-                    total: 2436.00,
-                    estado: 'pendiente',
-                    metodo_pago: 'transferencia',
-                    direccion_envio: 'Blvd. Independencia 789',
-                    notas: '',
-                    fecha_pedido: '2024-01-25T09:15:00',
-                    fecha_envio: null,
-                    fecha_entrega: null
-                },
-                {
-                    id: 4,
-                    numero_orden: 'ORD-004',
-                    cliente_id: 104,
-                    vendedor_id: 203,
-                    producto_id: 304,
-                    cantidad: 1,
-                    subtotal: 1200.00,
-                    impuestos: 192.00,
-                    total: 1392.00,
-                    estado: 'cancelado',
-                    metodo_pago: 'tarjeta',
-                    direccion_envio: 'Av. Universidad 234',
-                    notas: 'Cliente canceló por cambio de opinión',
-                    fecha_pedido: '2024-01-18T13:20:00',
-                    fecha_envio: null,
-                    fecha_entrega: null
-                },
-                {
-                    id: 5,
-                    numero_orden: 'ORD-005',
-                    cliente_id: 105,
-                    vendedor_id: 202,
-                    producto_id: 305,
-                    cantidad: 2,
-                    subtotal: 1900.00,
-                    impuestos: 304.00,
-                    total: 2204.00,
-                    estado: 'procesando',
-                    metodo_pago: 'efectivo',
-                    direccion_envio: 'Calle Juárez 567',
-                    notas: 'Urgente',
-                    fecha_pedido: '2024-01-22T11:30:00',
-                    fecha_envio: null,
-                    fecha_entrega: null
-                }
-            ];
-
-            procesarPedidos();
         }
 
         // Procesar pedidos (calcular métricas y renderizar)
@@ -1152,7 +998,7 @@
                 'ID', 'N° Orden', 'Cliente ID', 'Vendedor ID', 'Producto ID',
                 'Cantidad', 'Subtotal', 'Impuestos', 'Total', 'Estado',
                 'Método Pago', 'Dirección Envío', 'Notas', 'Fecha Pedido',
-                'Fecha Confirmación', 'Fecha Envío', 'Fecha Entrega'
+                'Fecha Envío', 'Fecha Entrega'
             ];
 
             const contenido = pedidosFiltrados.map(p => [
@@ -1170,7 +1016,6 @@
                 p.direccion_envio || '',
                 p.notas || '',
                 p.fecha_pedido ? new Date(p.fecha_pedido).toLocaleString('es-MX') : '',
-                p.fecha_confirmacion ? new Date(p.fecha_confirmacion).toLocaleString('es-MX') : '',
                 p.fecha_envio ? new Date(p.fecha_envio).toLocaleString('es-MX') : '',
                 p.fecha_entrega ? new Date(p.fecha_entrega).toLocaleString('es-MX') : ''
             ]);
@@ -1181,7 +1026,7 @@
             const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `pedidos_${new Date().toISOString().split('T')[0]}.csv`;
+            link.download = `ordenes_${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
         }
 

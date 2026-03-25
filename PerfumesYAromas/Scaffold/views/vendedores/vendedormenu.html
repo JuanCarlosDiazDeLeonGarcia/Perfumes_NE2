@@ -477,7 +477,7 @@
             <a href="../catalog.html">🢀 Volver</a>
             <a href="vendedormenu.html" class="active">📊 Dashboard</a>
             <a href="vendedorproductos.html">📦 Productos</a>
-            <a href="#">📩 Contacto</a>
+            <a href="vendedorordenes.html">🚚 Ordenes</a>
             <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
         </nav>
     </aside>
@@ -523,7 +523,6 @@
         <!-- Pestañas -->
         <div class="tabs">
             <div class="tab active" onclick="cambiarTab('clientes')">👥 Mis Clientes</div>
-            <div class="tab" onclick="cambiarTab('pedidos')">📦 Pedidos</div>
         </div>
 
         <!-- Contenido: Clientes -->
@@ -551,35 +550,6 @@
                     </thead>
                     <tbody id="clientesTableBody">
                         <tr><td colspan="7" style="text-align:center;">Cargando clientes...</td></tr>
-                    </tbody>
-                </table>
-            </section>
-        </div>
-
-        <!-- Contenido: Pedidos -->
-        <div id="tab-pedidos" class="tab-content">
-            <section class="tabla-admin">
-                <div class="titulo-tabla">
-                    <h2>📦 Pedidos</h2>
-                    <button class="btn-agregar" onclick="abrirModalPedido()">➕ Nuevo Pedido</button>
-                </div>
-
-                <input type="text" class="buscador" id="buscadorPedidos" placeholder="🔍 Buscar pedido por ID o cliente..." onkeyup="filtrarPedidos()">
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID Pedido</th>
-                            <th>Cliente</th>
-                            <th>Productos</th>
-                            <th>Total</th>
-                            <th>Fecha</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pedidosTableBody">
-                        <tr><td colspan="7" style="text-align:center;">Cargando pedidos...</td></tr>
                     </tbody>
                 </table>
             </section>

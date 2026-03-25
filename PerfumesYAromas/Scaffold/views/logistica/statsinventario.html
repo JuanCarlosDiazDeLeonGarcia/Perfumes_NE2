@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario - Perfumes NE2</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <style>
+        .main-content {
+            padding: 20px;
+            margin-left: 250px;
+        }
+
+        .admin-header {
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+        }
+
+        .admin-header h1 {
+            color: white;
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .admin-header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 4px solid #3498db;
+        }
+
+        .card h3 {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .card .numero {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+
+        .card .tendencia {
+            color: #27ae60;
+            font-size: 0.9rem;
+        }
+
+        .tabla-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .tabla-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tabla-header h2 {
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .buscador {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            width: 300px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .badge-entrada {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-salida {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-categoria {
+            background: #e7f1ff;
+            color: #004085;
+        }
+
+        .filtros {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filtro-select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            min-width: 150px;
+        }
+
+        .btn-actualizar {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-actualizar:hover {
+            background: #2980b9;
+        }
+
+        .btn-exportar {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-exportar:hover {
+            background: #219a52;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-left: 10px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .paginacion {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagina {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .pagina.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu lateral -->
+    <aside class="sidebar">
+        <h2>📊 Perfumes NE2</h2>
+        <nav>
+            <a href="../catalog.html">🢀 Volver</a>
+            <a href="statspanel.html">🏠 Dashboard</a>
+            <a href="statspedidos.html">🚚 Ordenes</a>
+            <a href="statsmetricas.html">📈 Metricas</a>
+            <a href="statsinventario.html">📦 Inventario</a>
+            <a href="recursos.html">🏢 Recursos</a>
+            <a href="statsrecursos.html" class="active">⚙️ Operaciones</a>
+            <a href="reportes_erp.html">📋 Reporte ERP</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesion</a>
+        </nav>
+        <div class="sidebar-footer" style="position: absolute; bottom: 20px; left: 20px; color: #aaa; font-size: 0.8rem;">
+            <p>Panel de Estadisticas</p>
+            <p>Acceso de solo lectura</p>
+        </div>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <div class="admin-header">
+            <h1>📦 Movimientos de Inventario</h1>
+            <p>Bienvenido, <span id="userName">Cargando...</span> (Acceso de solo lectura)</p>
+        </div>
+
+        <!-- Tarjetas resumen -->
+        <section class="cards">
+            <div class="card">
+                <h3>Total Movimientos</h3>
+                <div class="numero" id="totalMovimientos">0</div>
+                <span class="tendencia">📋 Registrados</span>
+            </div>
+            <div class="card">
+                <h3>Entradas</h3>
+                <div class="numero" id="totalEntradas">0</div>
+                <span class="tendencia" style="color: #27ae60;">📥 Ingresos</span>
+            </div>
+            <div class="card">
+                <h3>Salidas</h3>
+                <div class="numero" id="totalSalidas">0</div>
+                <span class="tendencia" style="color: #e74c3c;">📤 Egresos</span>
+            </div>
+            <div class="card">
+                <h3>Hoy</h3>
+                <div class="numero" id="movimientosHoy">0</div>
+                <span class="tendencia" style="color: #3498db;">📅 Movimientos</span>
+            </div>
+        </section>
+
+        <div class="tabla-container">
+            <div class="tabla-header">
+                <h2>📋 Registro de Movimientos</h2>
+                <div>
+                    <input type="text" class="buscador" id="buscadorMovimientos" placeholder="🔍 Buscar movimiento..." onkeyup="filtrarMovimientos()">
+                    <button class="btn-exportar" onclick="exportarMovimientos()" style="margin-left: 10px;">📥 Exportar</button>
+                </div>
+            </div>
+
+            <div class="filtros">
+                <select class="filtro-select" id="filtroTipoMov" onchange="filtrarMovimientos()">
+                    <option value="todos">Todos los tipos</option>
+                    <option value="entrada">Entradas</option>
+                    <option value="salida">Salidas</option>
+                </select>
+                <select class="filtro-select" id="filtroMotivoMov" onchange="filtrarMovimientos()">
+                    <option value="todos">Todos los motivos</option>
+                    <option value="compra_inicial">Compra Inicial</option>
+                    <option value="asignacion">Asignacion</option>
+                    <option value="mantenimiento">Mantenimiento</option>
+                    <option value="devolucion">Devolucion</option>
+                </select>
+                <button class="btn-actualizar" onclick="cargarMovimientos()">🔄 Actualizar</button>
+            </div>
+
+            <table id="tablaMovimientos">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Recurso</th>
+                        <th>Categoria</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Motivo</th>
+                        <th>Responsable</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody id="movimientosTableBody">
+                    <tr><td colspan="8" class="loading">Cargando movimientos...</td></tr>
+                </tbody>
+            </table>
+
+            <div class="paginacion" id="paginacionMovimientos"></div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+        let movimientosData = [];
+        let movimientosFiltrados = [];
+
+        // Verificar sesion al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
+            const userType = localStorage.getItem('userType');
+
+            if (!usuario || userType !== 'estadistica') {
+                window.location.href = '../adminlogin.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = usuario.nombre || 'Usuario';
+
+            cargarMovimientos();
+        });
+
+        // ==================== MOVIMIENTOS ====================
+        async function cargarMovimientos() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/movimientos-recursos`);
+                if (!response.ok) throw new Error('Error al cargar movimientos');
+
+                movimientosData = await response.json();
+                movimientosFiltrados = [...movimientosData];
+                renderizarMovimientos();
+                actualizarEstadisticas();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('movimientosTableBody').innerHTML = `
+                    <tr><td colspan="8" style="color: #e74c3c; text-align: center;">
+                        Error al cargar movimientos - Verifica que el servidor este corriendo
+                    </td></tr>
+                `;
+            }
+        }
+
+        function actualizarEstadisticas() {
+            document.getElementById('totalMovimientos').textContent = movimientosData.length;
+            document.getElementById('totalEntradas').textContent =
+                movimientosData.filter(m => m.tipo === 'entrada').length;
+            document.getElementById('totalSalidas').textContent =
+                movimientosData.filter(m => m.tipo === 'salida').length;
+
+            // Movimientos de hoy
+            const hoy = new Date().toDateString();
+            document.getElementById('movimientosHoy').textContent =
+                movimientosData.filter(m => new Date(m.fecha).toDateString() === hoy).length;
+        }
+
+        function renderizarMovimientos() {
+            const tbody = document.getElementById('movimientosTableBody');
+            tbody.innerHTML = '';
+
+            if (movimientosFiltrados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No hay movimientos para mostrar</td></tr>';
+                return;
+            }
+
+            movimientosFiltrados.forEach(m => {
+                const tipoBadge = m.tipo === 'entrada' ? 'badge-entrada' : 'badge-salida';
+                const fecha = new Date(m.fecha).toLocaleString('es-MX');
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${String(m.id).padStart(3, '0')}</td>
+                    <td><strong>${m.recurso_nombre || '#' + m.recurso_id}</strong></td>
+                    <td><span class="badge badge-categoria">${m.categoria || 'N/A'}</span></td>
+                    <td><span class="badge ${tipoBadge}">${m.tipo}</span></td>
+                    <td>${m.cantidad}</td>
+                    <td>${m.motivo}</td>
+                    <td>${m.responsable || '—'}</td>
+                    <td>${fecha}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filtrarMovimientos() {
+            const texto = document.getElementById('buscadorMovimientos').value.toLowerCase();
+            const tipo = document.getElementById('filtroTipoMov').value;
+            const motivo = document.getElementById('filtroMotivoMov').value;
+
+            movimientosFiltrados = movimientosData.filter(m => {
+                const matchTexto = !texto ||
+                    (m.recurso_nombre && m.recurso_nombre.toLowerCase().includes(texto)) ||
+                    (m.responsable && m.responsable.toLowerCase().includes(texto)) ||
+                    (m.motivo && m.motivo.toLowerCase().includes(texto));
+
+                const matchTipo = tipo === 'todos' || m.tipo === tipo;
+                const matchMotivo = motivo === 'todos' || m.motivo === motivo;
+
+                return matchTexto && matchTipo && matchMotivo;
+            });
+
+            renderizarMovimientos();
+        }
+
+        // ==================== EXPORTAR ====================
+        function exportarMovimientos() {
+            const headers = ['ID', 'Recurso', 'Categoria', 'Tipo', 'Cantidad', 'Motivo', 'Responsable', 'Fecha'];
+            const contenido = movimientosFiltrados.map(m => [
+                m.id,
+                m.recurso_nombre || '',
+                m.categoria || '',
+                m.tipo,
+                m.cantidad,
+                m.motivo,
+                m.responsable || '',
+                new Date(m.fecha).toLocaleString('es-MX')
+            ]);
+
+            let csv = headers.join(',') + '\n';
+            csv += contenido.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `movimientos_inventario_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        function cerrarSesion() {
+            if (confirm('Estas seguro de que deseas cerrar sesion?')) {
+                localStorage.removeItem('usuarioActual');
+                localStorage.removeItem('token');
+                localStorage.removeItem('userType');
+                window.location.href = '../adminlogin.html';
+            }
+        }
+    </script>
+</body>
+</html>
