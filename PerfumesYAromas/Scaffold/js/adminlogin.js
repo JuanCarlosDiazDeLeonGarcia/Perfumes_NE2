@@ -119,7 +119,7 @@ function redirigirSegunRol(rol) {
         case 'vendedor':
             window.location.href = 'vendedores/vendedormenu.html';
             break;
-        case 'estadistica':
+        case 'logistica':
             window.location.href = 'logistica/statspanel.html'; // Ruta actualizada
             break;
         case 'usuario':

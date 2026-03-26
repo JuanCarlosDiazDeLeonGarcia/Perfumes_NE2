@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Métricas - PerfumeShop (Estadística)</title>
+    <title>Métricas - PerfumeShop (Logistica)</title>
     <link rel="stylesheet" href="../../css/base.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
@@ -231,7 +231,7 @@
             <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesion</a>
         </nav>
         <div class="sidebar-footer" style="position: absolute; bottom: 20px; left: 20px; color: #aaa; font-size: 0.8rem;">
-            <p>Panel de Estadística</p>
+            <p>Panel de Logistica</p>
             <p>Acceso de solo lectura</p>
         </div>
     </aside>
@@ -239,7 +239,7 @@
     <!-- Contenido principal -->
     <main class="main-content">
         <header class="admin-header" style="background: linear-gradient(135deg, #2c3e50, #e67e22);">
-            <h1>📊 Métricas y Estadísticas</h1>
+            <h1>📊 Métricas y Logistica</h1>
             <p id="welcomeMessage">Bienvenido, <span id="userName">Cargando...</span> (Acceso de solo lectura)</p>
         </header>
 
@@ -426,7 +426,7 @@
             const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
             const userType = localStorage.getItem('userType');
 
-            if (!usuario || userType !== 'estadistica') {
+            if (!usuario || userType !== 'logistica') {
                 window.location.href = '../adminlogin.html';
                 return;
             }

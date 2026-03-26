@@ -782,7 +782,7 @@
             const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
             const userType = localStorage.getItem('userType');
 
-            if (!usuario || userType !== 'estadistica') {
+            if (!usuario || userType !== 'logistica') {
                 window.location.href = '../adminlogin.html';
                 return;
             }

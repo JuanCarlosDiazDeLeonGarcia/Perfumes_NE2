@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Estadisticas - Perfumes NE2</title>
+    <title>Panel de Logistica</title>
     <link rel="stylesheet" href="../../css/base.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
@@ -405,7 +405,7 @@
             <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesion</a>
         </nav>
         <div class="sidebar-footer" style="position: absolute; bottom: 20px; left: 20px; color: #aaa; font-size: 0.8rem;">
-            <p>Panel de Estadisticas</p>
+            <p>Panel de Logistica</p>
             <p>Acceso de solo lectura</p>
         </div>
     </aside>
@@ -626,7 +626,7 @@
             const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
             const userType = localStorage.getItem('userType');
 
-            if (!usuario || userType !== 'estadistica') {
+            if (!usuario || userType !== 'logistica') {
                 window.location.href = '../adminlogin.html';
                 return;
             }

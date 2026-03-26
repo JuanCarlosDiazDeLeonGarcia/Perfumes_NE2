@@ -109,7 +109,7 @@
             <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesion</a>
   </nav>
   <div class="sidebar-footer" style="position: absolute; bottom: 20px; left: 20px; color: #aaa; font-size: 0.8rem;">
-    <p>Panel de Estadística</p>
+      <p>Panel de Logistica</p>
     <p>Acceso de solo lectura</p>
   </div>
 </aside>
@@ -240,7 +240,7 @@
     const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
     const userType = localStorage.getItem('userType');
 
-    if (!usuario || userType !== 'estadistica') {
+      if (!usuario || userType !== 'logistica') {
       window.location.href = '../adminlogin.html';
       return;
     }
@@ -257,7 +257,7 @@
   }
 
   function rolBadge(r) {
-    const m = { admin:'badge-gold', vendedor:'badge-teal', estadistica:'badge-purple', usuario:'badge-green' };
+      const m = { admin: 'badge-gold', vendedor: 'badge-teal', logistica:'badge-purple', usuario:'badge-green' };
     return `<span class="badge ${m[r]||'badge-purple'}">${r}</span>`;
   }
 

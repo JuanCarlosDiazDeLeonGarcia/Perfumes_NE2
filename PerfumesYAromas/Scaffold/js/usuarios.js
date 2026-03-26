@@ -83,8 +83,8 @@ function mostrarUsuarios(listaUsuarios) {
             case 'vendedor':
                 badgeRol = '<span class="badge-rol badge-vendedor">VENDEDOR</span>';
                 break;
-            case 'estadistica':
-                badgeRol = '<span class="badge-rol badge-usuario">ESTADISTICAS</span>';
+            case 'logistica':
+                badgeRol = '<span class="badge-rol badge-usuario">LOGISTICA</span>';
                 break;
         }
         
