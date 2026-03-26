@@ -220,18 +220,6 @@
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">👤 Usuarios del Sistema</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Teléfono</th><th>Último Login</th><th>Estado</th></tr>
-        </thead>
-        <tbody id="tabla-usuarios"><tr><td colspan="6" class="loading">Cargando...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
 </main>
 
 <script>
@@ -365,22 +353,6 @@
     }
   }
 
-  async function cargarUsuarios() {
-    try {
-      const data = await fetch(`${API}/usuarios`).then(r=>r.json());
-      document.getElementById('tabla-usuarios').innerHTML = data.map(u=>`<tr>
-        <td><strong>${u.nombre}</strong></td>
-        <td style="color:#6b6b8a">${u.email}</td>
-        <td>${rolBadge(u.rol)}</td>
-        <td>${u.telefono||'—'}</td>
-        <td style="color:#6b6b8a">${u.ultimo_login?fmt(u.ultimo_login):'Nunca'}</td>
-        <td>${u.activo?'<span class="badge badge-green">Activo</span>':'<span class="badge badge-red">Inactivo</span>'}</td>
-      </tr>`).join('');
-    } catch(e) {
-      document.getElementById('tabla-usuarios').innerHTML=`<tr><td colspan="6" style="color:#ff6b6b;padding:16px">Error al cargar</td></tr>`;
-    }
-  }
-
   function cerrarSesion() {
     if (confirm('¿Cerrar sesión?')) {
       localStorage.removeItem('usuarioActual');
@@ -395,7 +367,6 @@
   cargarProveedores();
   cargarPedidos();
   cargarClientes();
-  cargarUsuarios();
 </script>
 
 </body>
