@@ -1051,7 +1051,7 @@ COPY public.usuarios (id, nombre, email, password_hash, rol, telefono, activo, u
 6	vendedor	vende@gmail.com	$2b$10$vende22	vendedor	593-523-5323	t	2026-03-12 13:15:28.912009	2026-03-03 17:38:33.963407	2026-03-03 17:38:33.963407
 5	Diego Franco	diego@gmail.com	$2b$10$messi1010	admin	496-123-4567	t	2026-03-04 21:43:57.795119	2026-02-10 07:54:48.647442	2026-02-10 07:54:48.647442
 7	Juan Carlos	carlos@gmail.com	$2b$10$juan44	admin	503-984-9082	t	2026-03-18 07:37:39.504805	2026-03-04 21:20:50.95558	2026-03-04 21:20:50.95558
-4	Fernando Rangel	fernando@perfumesne2.com	$2b$10$fern10	estadistica	449-000-0004	t	2026-03-18 07:44:40.345286	2026-02-04 21:12:51.404965	2026-03-12 07:19:22.284127
+4	Fernando Rangel	fernando@perfumesne2.com	$2b$10$fern10	logistica	449-000-0004	t	2026-03-18 07:44:40.345286	2026-02-04 21:12:51.404965	2026-03-12 07:19:22.284127
 \.
 
 

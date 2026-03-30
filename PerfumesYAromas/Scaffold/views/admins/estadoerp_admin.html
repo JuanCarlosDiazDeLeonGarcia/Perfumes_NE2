@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado ERP - Admin Panel</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <style>
+        .main-content {
+            padding: 20px;
+            margin-left: 250px;
+        }
+
+        .admin-header {
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #1a237e, #3949ab);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+        }
+
+        .admin-header h1 {
+            color: white;
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .admin-header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+
+        /* ERP Status Card */
+        .erp-status-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+
+        .erp-status-card h2 {
+            color: #1a237e;
+            margin: 0 0 8px 0;
+            font-size: 1.5rem;
+        }
+
+        .erp-status-card .subtitle {
+            color: #666;
+            margin: 0 0 25px 0;
+            font-size: 0.95rem;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin: 30px 0;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .progress-label {
+            font-size: 0.85rem;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .progress-label.active {
+            color: #3949ab;
+            font-weight: 700;
+        }
+
+        .progress-bar-bg {
+            background: #e8eaf6;
+            border-radius: 10px;
+            height: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #3949ab, #5c6bc0);
+            height: 100%;
+            border-radius: 10px;
+            width: 66%;
+            transition: width 0.5s ease;
+        }
+
+        .progress-markers {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            position: relative;
+        }
+
+        .progress-marker {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #e8eaf6;
+            border: 3px solid #c5cae9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-marker.completed {
+            background: #3949ab;
+            border-color: #3949ab;
+        }
+
+        .progress-marker.current {
+            background: white;
+            border-color: #3949ab;
+            box-shadow: 0 0 0 4px rgba(57, 73, 171, 0.2);
+        }
+
+        /* Status Info */
+        .status-info {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-item strong {
+            color: #3949ab;
+        }
+
+        .status-item span {
+            color: #666;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .metric-card h3 {
+            color: #333;
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+        }
+
+        .metric-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .metric-circle.crm {
+            background: conic-gradient(#4caf50 0% 85%, #e8f5e9 85% 100%);
+        }
+
+        .metric-circle.scm {
+            background: conic-gradient(#2196f3 0% 72%, #e3f2fd 72% 100%);
+        }
+
+        .metric-circle.auto {
+            background: conic-gradient(#ff9800 0% 60%, #fff3e0 60% 100%);
+        }
+
+        .metric-circle::after {
+            content: '';
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .metric-value {
+            position: relative;
+            z-index: 1;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .metric-card p {
+            color: #888;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        /* Modules Section */
+        .modules-section {
+            background: white;
+            border-radius: 16px;
+            padding: 25px 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .modules-section h3 {
+            color: #1a237e;
+            margin: 0 0 20px 0;
+            font-size: 1.2rem;
+        }
+
+        .modules-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .module-tag {
+            background: linear-gradient(135deg, #e8eaf6, #c5cae9);
+            color: #3949ab;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .module-tag::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #4caf50;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .status-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Admin Panel</h2>
+        <nav>
+            <a href="paneladmin.html" class="active">📊 Dashboard</a>
+            <a href="perfumesadmin.html">🧴 Perfumes</a>
+            <a href="ventasadmin.html">🛍️ Ventas</a>
+            <a href="clientesadmin.html">👥 Clientes</a>
+            <a href="ordenesadmin.html">🚚 Ordenes</a>
+            <a href="metricasadmin.html">📊 Métricas</a>
+            <a href="proveedores.html">🚚 Proveedores</a>
+            <a href="movimientos_inventario.html">📊 Movimientos</a>
+            <a href="estadoerp_admin.html">🖥️ Estado ERP</a>
+            <a href="#" onclick="cerrarSesion()">Cerrar Sesion</a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="admin-header">
+            <h1>Estado del ERP</h1>
+            <p>Nivel de madurez digital y adopcion del sistema</p>
+        </header>
+
+        <!-- ERP Status Card -->
+        <div class="erp-status-card">
+            <h2>Nivel de Implementacion ERP</h2>
+            <p class="subtitle">Progreso actual de integracion y automatizacion del sistema</p>
+
+            <div class="progress-container">
+                <div class="progress-labels">
+                    <span class="progress-label">Basico</span>
+                    <span class="progress-label active">Integrado</span>
+                    <span class="progress-label">Automatizado</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill"></div>
+                </div>
+                <div class="progress-markers">
+                    <div class="progress-marker completed"></div>
+                    <div class="progress-marker current"></div>
+                    <div class="progress-marker"></div>
+                </div>
+            </div>
+
+            <div class="status-info">
+                <div class="status-item">
+                    <span>Nivel actual:</span>
+                    <strong>Integrado</strong>
+                </div>
+                <div class="status-item">
+                    <span>Ultima actualizacion:</span>
+                    <strong id="fechaActualizacion">2026-03-29</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>Integracion CRM</h3>
+                <div class="metric-circle crm">
+                    <span class="metric-value">85%</span>
+                </div>
+                <p>Gestion de clientes y ventas</p>
+            </div>
+
+            <div class="metric-card">
+                <h3>Integracion SCM</h3>
+                <div class="metric-circle scm">
+                    <span class="metric-value">72%</span>
+                </div>
+                <p>Cadena de suministro</p>
+            </div>
+
+            <div class="metric-card">
+                <h3>Procesos Automatizados</h3>
+                <div class="metric-circle auto">
+                    <span class="metric-value">60%</span>
+                </div>
+                <p>Automatizacion de flujos</p>
+            </div>
+        </div>
+
+        <!-- Modules Section -->
+        <div class="modules-section">
+            <h3>Modulos Activos</h3>
+            <div class="modules-grid">
+                <span class="module-tag">CRM</span>
+                <span class="module-tag">SCM</span>
+                <span class="module-tag">Ordenes</span>
+                <span class="module-tag">Inventario</span>
+                <span class="module-tag">Reportes</span>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Verificar sesion
+        document.addEventListener('DOMContentLoaded', function() {
+            const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
+            if (!usuario || usuario.rol !== 'admin') {
+                window.location.href = '../adminlogin.html';
+                return;
+            }
+        });
+
+        function cerrarSesion() {
+            localStorage.removeItem('usuarioActual');
+            localStorage.removeItem('token');
+            localStorage.removeItem('userType');
+            window.location.href = '../adminlogin.html';
+        }
+    </script>
+</body>
+</html>
