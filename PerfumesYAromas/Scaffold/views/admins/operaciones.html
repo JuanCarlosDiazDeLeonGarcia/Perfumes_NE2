@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operaciones - Perfumes NE2 (Admin)</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <style>
+        .main-content {
+            padding: 20px;
+            margin-left: 250px;
+        }
+
+        .admin-header {
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #24243e, #302b63);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+        }
+
+            .admin-header h1 {
+                color: white;
+                margin: 0;
+                font-size: 2rem;
+            }
+
+            .admin-header p {
+                margin: 10px 0 0;
+                opacity: 0.9;
+            }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 4px solid #6c5ce7;
+        }
+
+            .card h3 {
+                color: #666;
+                font-size: 1rem;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+            }
+
+            .card .numero {
+                font-size: 2.5rem;
+                font-weight: bold;
+                color: #2c3e50;
+                margin: 10px 0;
+            }
+
+            .card .tendencia {
+                color: #27ae60;
+                font-size: 0.9rem;
+            }
+
+        .tabla-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .tabla-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+            .tabla-header h2 {
+                color: #333;
+                font-size: 1.3rem;
+            }
+
+        .buscador {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            width: 300px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            table th {
+                background: #f8f9fa;
+                padding: 12px;
+                text-align: left;
+                font-weight: 600;
+                color: #555;
+                border-bottom: 2px solid #dee2e6;
+            }
+
+            table td {
+                padding: 12px;
+                border-bottom: 1px solid #e9ecef;
+            }
+
+            table tr:hover {
+                background: #f8f9fa;
+            }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .badge-entrada {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-salida {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-disponible {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-en_uso {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .badge-mantenimiento {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-baja {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-categoria {
+            background: #e7f1ff;
+            color: #004085;
+        }
+
+        .filtros {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filtro-select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            min-width: 150px;
+        }
+
+        .btn-actualizar {
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+            .btn-actualizar:hover {
+                background: #5b4bc4;
+            }
+
+        .btn-exportar {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+            .btn-exportar:hover {
+                background: #219a52;
+            }
+
+        .btn-editar {
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+            .btn-editar:hover {
+                background: #e67e22;
+            }
+
+        .btn-eliminar {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+            .btn-eliminar:hover {
+                background: #c0392b;
+            }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+            .loading::after {
+                content: '';
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                margin-left: 10px;
+                border: 2px solid #f3f3f3;
+                border-top: 2px solid #6c5ce7;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .paginacion {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagina {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+            .pagina.active {
+                background: #6c5ce7;
+                color: white;
+                border-color: #6c5ce7;
+            }
+
+        /* Estilos para procesos de operaciones */
+        .proceso-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .proceso-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+            .proceso-item:last-child {
+                border-bottom: none;
+            }
+
+        .proceso-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .proceso-icon {
+            width: 40px;
+            height: 40px;
+            background: #6c5ce7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .proceso-details h4 {
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .proceso-details p {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .proceso-progress {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 200px;
+        }
+
+        .progress-bar {
+            width: 120px;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+            .progress-fill.high {
+                background: linear-gradient(90deg, #27ae60, #2ecc71);
+            }
+
+            .progress-fill.medium {
+                background: linear-gradient(90deg, #f39c12, #e67e22);
+            }
+
+            .progress-fill.low {
+                background: linear-gradient(90deg, #e74c3c, #c0392b);
+            }
+
+        .process-percentage {
+            font-weight: bold;
+            font-size: 1rem;
+            color: #2c3e50;
+            min-width: 45px;
+        }
+
+        .operaciones-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .estado-proceso {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .estado-activo {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .estado-pausado {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .estado-completado {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .acciones-proceso {
+            display: flex;
+            gap: 8px;
+            margin-left: 15px;
+        }
+
+        .btn-accion-proceso {
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+            .btn-accion-proceso:hover {
+                background: #5b4bc4;
+            }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+            .modal-overlay.active {
+                display: flex;
+            }
+
+        .modal {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 500px;
+            max-width: 95%;
+        }
+
+            .modal h2 {
+                margin-bottom: 20px;
+                color: #333;
+            }
+
+            .modal input, .modal select {
+                width: 100%;
+                padding: 10px;
+                margin: 10px 0;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+            }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu lateral - ACTUALIZADO para ADMIN -->
+    <aside class="sidebar">
+        <h2>🌸 PerfumeShop</h2>
+        <nav>
+            <a href="paneladmin.html" class="active">📊 Dashboard</a>
+            <a href="perfumesadmin.html">🧴 Perfumes</a>
+            <a href="ventasadmin.html">🛍️ Ventas</a>
+            <a href="clientesadmin.html">👥 Clientes</a>
+            <a href="ordenesadmin.html">🚚 Ordenes</a>
+            <a href="metricasadmin.html">📊 Métricas</a>
+            <a href="proveedores.html">🚚 Proveedores</a>
+            <a href="movimientos_inventario.html">📊 Movimientos</a>
+            <a href="recursos.html" class="active">📋 Recursos ERP </a>
+            <a href="operaciones.html">⚙️ Operaciones</a>
+            <a href="estadoerp_admin.html">🖥️ Estado ERP</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <div class="admin-header">
+            <h1>⚙️ Operaciones de Producción</h1>
+            <p>Bienvenido, <span id="userName">Cargando...</span> (Administrador)</p>
+        </div>
+
+        <!-- Tarjetas resumen de operaciones -->
+        <section class="cards">
+            <div class="card">
+                <h3>Procesos Activos</h3>
+                <div class="numero" id="procesosActivos">8</div>
+                <span class="tendencia" style="color: #27ae60;">🟢 En ejecución</span>
+            </div>
+            <div class="card">
+                <h3>Eficiencia Total</h3>
+                <div class="numero" id="eficienciaTotal">87%</div>
+                <span class="tendencia" style="color: #6c5ce7;">📈 Promedio diario</span>
+            </div>
+            <div class="card">
+                <h3>Tiempo Promedio</h3>
+                <div class="numero" id="tiempoPromedio">4.2h</div>
+                <span class="tendencia" style="color: #f39c12;">⏱️ Por lote</span>
+            </div>
+            <div class="card">
+                <h3>Capacidad Utilizada</h3>
+                <div class="numero" id="capacidadUtilizada">72%</div>
+                <span class="tendencia" style="color: #e74c3c;">🏭 De instalación</span>
+            </div>
+        </section>
+
+        <!-- Procesos de producción (con botones de acción para admin) -->
+        <div class="operaciones-grid">
+            <!-- Proceso de mezcla -->
+            <div class="proceso-container">
+                <div class="tabla-header">
+                    <h2>🧪 Procesos de Formulación</h2>
+                    <button class="btn-actualizar" onclick="agregarProceso('formulacion')">+ Nuevo Proceso</button>
+                </div>
+                <div class="proceso-item">
+                    <div class="proceso-info">
+                        <div class="proceso-icon" style="background: #e74c3c;">🧪</div>
+                        <div class="proceso-details">
+                            <h4>Mezcla de Fragancias</h4>
+                            <p>Combinación de aceites esenciales</p>
+                            <span class="estado-proceso estado-activo">Activo</span>
+                        </div>
+                    </div>
+                    <div class="proceso-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill high" style="width: 85%"></div>
+                        </div>
+                        <span class="process-percentage">85%</span>
+                    </div>
+                    <div class="acciones-proceso">
+                        <button class="btn-editar" onclick="editarProceso(this)">✏️</button>
+                        <button class="btn-eliminar" onclick="eliminarProceso(this)">🗑️</button>
+                    </div>
+                </div>
+                <div class="proceso-item">
+                    <div class="proceso-info">
+                        <div class="proceso-icon" style="background: #f39c12;">⚗️</div>
+                        <div class="proceso-details">
+                            <h4>Maceración</h4>
+                            <p>Proceso de maduración</p>
+                            <span class="estado-proceso estado-activo">Activo</span>
+                        </div>
+                    </div>
+                    <div class="proceso-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill medium" style="width: 65%"></div>
+                        </div>
+                        <span class="process-percentage">65%</span>
+                    </div>
+                    <div class="acciones-proceso">
+                        <button class="btn-editar" onclick="editarProceso(this)">✏️</button>
+                        <button class="btn-eliminar" onclick="eliminarProceso(this)">🗑️</button>
+                    </div>
+                </div>
+                <div class="proceso-item">
+                    <div class="proceso-info">
+                        <div class="proceso-icon" style="background: #9b59b6;">🔬</div>
+                        <div class="proceso-details">
+                            <h4>Control de Calidad</h4>
+                            <p>Análisis de consistencia</p>
+                            <span class="estado-proceso estado-completado">Completado</span>
+                        </div>
+                    </div>
+                    <div class="proceso-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill high" style="width: 100%"></div>
+                        </div>
+                        <span class="process-percentage">100%</span>
+                    </div>
+                    <div class="acciones-proceso">
+                        <button class="btn-editar" onclick="editarProceso(this)">✏️</button>
+                        <button class="btn-eliminar" onclick="eliminarProceso(this)">🗑️</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proceso de producción -->
+            <div class="proceso-container">
+                <div class="tabla-header">
+                    <h2>🏭 Procesos de Producción</h2>
+                    <button class="btn-actualizar" onclick="agregarProceso('produccion')">+ Nuevo Proceso</button>
+                </div>
+                <div class="proceso-item">
+                    <div class="proceso-info">
+                        <div class="proceso-icon" style="background: #3498db;">🍶</div>
+                        <div class="proceso-details">
+                            <h4>Embotellado</h4>
+                            <p>Llenado automático</p>
+                            <span class="estado-proceso estado-activo">Activo</span>
+                        </div>
+                    </div>
+                    <div class="proceso-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill high" style="width: 92%"></div>
+                        </div>
+                        <span class="process-percentage">92%</span>
+                    </div>
+                    <div class="acciones-proceso">
+                        <button class="btn-editar" onclick="editarProceso(this)">✏️</button>
+                        <button class="btn-eliminar" onclick="eliminarProceso(this)">🗑️</button>
+                    </div>
+                </div>
+                <div class="proceso-item">
+                    <div class="proceso-info">
+                        <div class="proceso-icon" style="background: #27ae60;">🏷️</div>
+                        <div class="proceso-details">
+                            <h4>Etiquetado</h4>
+                            <p>Aplicación automática</p>
+                            <span class="estado-proceso estado-activo">Activo</span>
+                        </div>
+                    </div>
+                    <div class="proceso-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill high" style="width: 78%"></div>
+                        </div>
+                        <span class="process-percentage">78%</span>
+                    </div>
+                    <div class="acciones-proceso">
+                        <button class="btn-editar" onclick="editarProceso(this)">✏️</button>
+                        <button class="btn-eliminar" onclick="eliminarProceso(this)">🗑️</button>
+                    </div>
+                </div>
+                <div class="proceso-item">
+                    <div class="proceso-info">
+                        <div class="proceso-icon" style="background: #e67e22;">📦</div>
+                        <div class="proceso-details">
+                            <h4>Empaquetado</h4>
+                            <p>Preparación para envío</p>
+                            <span class="estado-proceso estado-pausado">Pausado</span>
+                        </div>
+                    </div>
+                    <div class="proceso-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill medium" style="width: 45%"></div>
+                        </div>
+                        <span class="process-percentage">45%</span>
+                    </div>
+                    <div class="acciones-proceso">
+                        <button class="btn-editar" onclick="editarProceso(this)">✏️</button>
+                        <button class="btn-eliminar" onclick="eliminarProceso(this)">🗑️</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proceso de almacenamiento -->
+            <div class="proceso-container">
+                <div class="tabla-header">
+                    <h2>📦 Gestión de Inventario</h2>
+                    <button class="btn-actualizar" onclick="agregarProceso('inventario')">+ Nuevo Proceso</button>
+                </div>
+                <div class="proceso-item">
+                    <div class="proceso-info">
+                        <div class="proceso-icon" style="background: #34495e;">📥</div>
+                        <div class="proceso-details">
+                            <h4>Recepción</h4>
+                            <p>Entrada de materias primas</p>
+                            <span class="estado-proceso estado-activo">Activo</span>
+                        </div>
+                    </div>
+                    <div class="proceso-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill high" style="width: 88%"></div>
+                        </div>
+                        <span class="process-percentage">88%</span>
+                    </div>
+                    <div class="acciones-proceso">
+                        <button class="btn-editar" onclick="editarProceso(this)">✏️</button>
+                        <button class="btn-eliminar" onclick="eliminarProceso(this)">🗑️</button>
+                    </div>
+                </div>
+                <div class="proceso-item">
+                    <div class="proceso-info">
+                        <div class="proceso-icon" style="background: #16a085;">🏪</div>
+                        <div class="proceso-details">
+                            <h4>Almacenamiento</h4>
+                            <p>Organización en bodega</p>
+                            <span class="estado-proceso estado-completado">Completado</span>
+                        </div>
+                    </div>
+                    <div class="proceso-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill high" style="width: 95%"></div>
+                        </div>
+                        <span class="process-percentage">95%</span>
+                    </div>
+                    <div class="acciones-proceso">
+                        <button class="btn-editar" onclick="editarProceso(this)">✏️</button>
+                        <button class="btn-eliminar" onclick="eliminarProceso(this)">🗑️</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proceso de distribución -->
+            <div class="proceso-container">
+                <div class="tabla-header">
+                    <h2>🚚 Distribución</h2>
+                    <button class="btn-actualizar" onclick="agregarProceso('distribucion')">+ Nuevo Proceso</button>
+                </div>
+                <div class="proceso-item">
+                    <div class="proceso-info">
+                        <div class="proceso-icon" style="background: #8e44ad;">📋</div>
+                        <div class="proceso-details">
+                            <h4>Preparación Pedidos</h4>
+                            <p>Selección y verificación</p>
+                            <span class="estado-proceso estado-activo">Activo</span>
+                        </div>
+                    </div>
+                    <div class="proceso-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill medium" style="width: 67%"></div>
+                        </div>
+                        <span class="process-percentage">67%</span>
+                    </div>
+                    <div class="acciones-proceso">
+                        <button class="btn-editar" onclick="editarProceso(this)">✏️</button>
+                        <button class="btn-eliminar" onclick="eliminarProceso(this)">🗑️</button>
+                    </div>
+                </div>
+                <div class="proceso-item">
+                    <div class="proceso-info">
+                        <div class="proceso-icon" style="background: #2980b9;">🚛</div>
+                        <div class="proceso-details">
+                            <h4>Envío</h4>
+                            <p>Transporte a destino</p>
+                            <span class="estado-proceso estado-activo">Activo</span>
+                        </div>
+                    </div>
+                    <div class="proceso-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill low" style="width: 32%"></div>
+                        </div>
+                        <span class="process-percentage">32%</span>
+                    </div>
+                    <div class="acciones-proceso">
+                        <button class="btn-editar" onclick="editarProceso(this)">✏️</button>
+                        <button class="btn-eliminar" onclick="eliminarProceso(this)">🗑️</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para agregar/editar proceso -->
+    <div class="modal-overlay" id="modalProceso">
+        <div class="modal">
+            <h2 id="modalTitle">Agregar Proceso</h2>
+            <form id="formProceso">
+                <div>
+                    <label>Nombre del Proceso:</label>
+                    <input type="text" id="procesoNombre" required>
+                </div>
+                <div>
+                    <label>Descripción:</label>
+                    <input type="text" id="procesoDescripcion" required>
+                </div>
+                <div>
+                    <label>Icono (emoji):</label>
+                    <input type="text" id="procesoIcono" placeholder="Ej: 🧪" required>
+                </div>
+                <div>
+                    <label>Estado:</label>
+                    <select id="procesoEstado">
+                        <option value="activo">Activo</option>
+                        <option value="pausado">Pausado</option>
+                        <option value="completado">Completado</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Porcentaje de Avance:</label>
+                    <input type="range" id="procesoPorcentaje" min="0" max="100" value="0" onchange="actualizarPorcentaje()">
+                    <span id="porcentajeValor">0%</span>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-eliminar" onclick="cerrarModal()">Cancelar</button>
+                    <button type="submit" class="btn-actualizar">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+        let procesoEditando = null;
+        let categoriaEditando = null;
+
+        // Verificar sesión al cargar
+        document.addEventListener('DOMContentLoaded', function () {
+            const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
+            const userType = localStorage.getItem('userType');
+
+            if (!usuario || userType !== 'admin') {
+                window.location.href = '../adminlogin.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = usuario.nombre || 'Administrador';
+        });
+
+        // Funciones para operaciones
+        function agregarProceso(categoria) {
+            categoriaEditando = categoria;
+            procesoEditando = null;
+            document.getElementById('modalTitle').textContent = 'Agregar Nuevo Proceso';
+            document.getElementById('formProceso').reset();
+            document.getElementById('modalProceso').classList.add('active');
+        }
+
+        function editarProceso(boton) {
+            const procesoItem = boton.closest('.proceso-item');
+            const nombre = procesoItem.querySelector('.proceso-details h4').textContent;
+            const descripcion = procesoItem.querySelector('.proceso-details p').textContent;
+            const icono = procesoItem.querySelector('.proceso-icon').textContent;
+            const estado = procesoItem.querySelector('.estado-proceso').textContent.toLowerCase();
+            const porcentaje = parseInt(procesoItem.querySelector('.progress-fill').style.width);
+
+            document.getElementById('procesoNombre').value = nombre;
+            document.getElementById('procesoDescripcion').value = descripcion;
+            document.getElementById('procesoIcono').value = icono;
+            document.getElementById('procesoEstado').value = estado === 'activo' ? 'activo' : estado === 'pausado' ? 'pausado' : 'completado';
+            document.getElementById('procesoPorcentaje').value = porcentaje;
+            document.getElementById('porcentajeValor').textContent = porcentaje + '%';
+
+            document.getElementById('modalTitle').textContent = 'Editar Proceso';
+            procesoEditando = procesoItem;
+            categoriaEditando = null;
+            document.getElementById('modalProceso').classList.add('active');
+        }
+
+        function eliminarProceso(boton) {
+            if (confirm('¿Estás seguro de que deseas eliminar este proceso?')) {
+                boton.closest('.proceso-item').remove();
+                actualizarEstadisticas();
+            }
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalProceso').classList.remove('active');
+            procesoEditando = null;
+            categoriaEditando = null;
+        }
+
+        function actualizarPorcentaje() {
+            const porcentaje = document.getElementById('procesoPorcentaje').value;
+            document.getElementById('porcentajeValor').textContent = porcentaje + '%';
+        }
+
+        // Guardar proceso (nuevo o editado)
+        document.getElementById('formProceso').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const nombre = document.getElementById('procesoNombre').value;
+            const descripcion = document.getElementById('procesoDescripcion').value;
+            const icono = document.getElementById('procesoIcono').value;
+            const estado = document.getElementById('procesoEstado').value;
+            const porcentaje = parseInt(document.getElementById('procesoPorcentaje').value);
+
+            // Determinar color según el porcentaje
+            let progressClass = 'low';
+            if (porcentaje >= 70) progressClass = 'high';
+            else if (porcentaje >= 40) progressClass = 'medium';
+
+            let estadoClass = '';
+            let estadoTexto = '';
+            switch (estado) {
+                case 'activo':
+                    estadoClass = 'estado-activo';
+                    estadoTexto = 'Activo';
+                    break;
+                case 'pausado':
+                    estadoClass = 'estado-pausado';
+                    estadoTexto = 'Pausado';
+                    break;
+                case 'completado':
+                    estadoClass = 'estado-completado';
+                    estadoTexto = 'Completado';
+                    break;
+            }
+
+            if (procesoEditando) {
+                // Editar proceso existente
+                procesoEditando.querySelector('.proceso-icon').textContent = icono;
+                procesoEditando.querySelector('.proceso-details h4').textContent = nombre;
+                procesoEditando.querySelector('.proceso-details p').textContent = descripcion;
+                procesoEditando.querySelector('.estado-proceso').textContent = estadoTexto;
+                procesoEditando.querySelector('.estado-proceso').className = `estado-proceso ${estadoClass}`;
+                procesoEditando.querySelector('.progress-fill').style.width = porcentaje + '%';
+                procesoEditando.querySelector('.progress-fill').className = `progress-fill ${progressClass}`;
+                procesoEditando.querySelector('.process-percentage').textContent = porcentaje + '%';
+            } else {
+                // Crear nuevo proceso - encontrar el contenedor correcto
+                let contenedor;
+                if (categoriaEditando === 'formulacion') {
+                    contenedor = document.querySelector('.operaciones-grid .proceso-container:first-child');
+                } else if (categoriaEditando === 'produccion') {
+                    contenedor = document.querySelector('.operaciones-grid .proceso-container:nth-child(2)');
+                } else if (categoriaEditando === 'inventario') {
+                    contenedor = document.querySelector('.operaciones-grid .proceso-container:nth-child(3)');
+                } else if (categoriaEditando === 'distribucion') {
+                    contenedor = document.querySelector('.operaciones-grid .proceso-container:nth-child(4)');
+                }
+
+                if (contenedor) {
+                    const nuevoProceso = document.createElement('div');
+                    nuevoProceso.className = 'proceso-item';
+                    nuevoProceso.innerHTML = `
+                            <div class="proceso-info">
+                                <div class="proceso-icon" style="background: #6c5ce7;">${icono}</div>
+                                <div class="proceso-details">
+                                    <h4>${nombre}</h4>
+                                    <p>${descripcion}</p>
+                                    <span class="estado-proceso ${estadoClass}">${estadoTexto}</span>
+                                </div>
+                            </div>
+                            <div class="proceso-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill ${progressClass}" style="width: ${porcentaje}%"></div>
+                                </div>
+                                <span class="process-percentage">${porcentaje}%</span>
+                            </div>
+                            <div class="acciones-proceso">
+                                <button class="btn-editar" onclick="editarProceso(this)">✏️</button>
+                                <button class="btn-eliminar" onclick="eliminarProceso(this)">🗑️</button>
+                            </div>
+                        `;
+                    contenedor.appendChild(nuevoProceso);
+                }
+            }
+
+            cerrarModal();
+            actualizarEstadisticas();
+        });
+
+        // Actualizar estadísticas generales
+        function actualizarEstadisticas() {
+            const procesosActivos = document.querySelectorAll('.proceso-item .estado-activo').length;
+            const totalProcesos = document.querySelectorAll('.proceso-item').length;
+            const eficienciaTotal = totalProcesos > 0 ? Math.round((procesosActivos / totalProcesos) * 100) : 0;
+
+            document.getElementById('procesosActivos').textContent = procesosActivos;
+            document.getElementById('eficienciaTotal').textContent = eficienciaTotal + '%';
+
+            // Calcular promedio de porcentajes
+            const porcentajes = Array.from(document.querySelectorAll('.progress-fill')).map(p => parseInt(p.style.width));
+            const promedio = porcentajes.length > 0 ? Math.round(porcentajes.reduce((a, b) => a + b, 0) / porcentajes.length) : 0;
+            const tiempoPromedio = Math.round(promedio / 20 * 1.5);
+            document.getElementById('tiempoPromedio').textContent = tiempoPromedio + 'h';
+        }
+
+        // Función para simular actualización de datos de operaciones
+        function actualizarDatosOperaciones() {
+            const procesos = document.querySelectorAll('.progress-fill');
+            procesos.forEach((proceso, index) => {
+                const currentWidth = parseInt(proceso.style.width);
+                const variation = Math.floor(Math.random() * 10) - 5;
+                let newWidth = Math.max(0, Math.min(100, currentWidth + variation));
+
+                proceso.style.width = newWidth + '%';
+                const percentage = proceso.parentElement.nextElementSibling;
+                percentage.textContent = newWidth + '%';
+
+                proceso.className = 'progress-fill ' + (
+                    newWidth >= 70 ? 'high' :
+                        newWidth >= 40 ? 'medium' : 'low'
+                );
+            });
+
+            actualizarEstadisticas();
+        }
+
+        setInterval(actualizarDatosOperaciones, 30000);
+
+        function cerrarSesion() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                localStorage.removeItem('usuarioActual');
+                localStorage.removeItem('token');
+                localStorage.removeItem('userType');
+                window.location.href = '../adminlogin.html';
+            }
+        }
+    </script>
+</body>
+</html>

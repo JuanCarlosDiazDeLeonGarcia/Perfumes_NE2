@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Tickets - Soporte | PerfumeShop</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <style>
+        /* Estilos adicionales */
+        .main-content {
+            padding: 20px;
+        }
+
+        .admin-header {
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #7e57c2, #5c6bc0);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+        }
+
+            .admin-header h1, .admin-header p {
+                color: white;
+            }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+            .card:hover {
+                transform: translateY(-5px);
+            }
+
+            .card h3 {
+                margin-bottom: 10px;
+                color: #555;
+                font-size: 16px;
+            }
+
+            .card p {
+                font-size: 28px;
+                font-weight: bold;
+                color: #7e57c2;
+            }
+
+        .tabla-admin {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .titulo-tabla {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-agregar {
+            background: linear-gradient(90deg, #7e57c2, #5c6bc0);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+            .btn-agregar:hover {
+                opacity: 0.9;
+                transform: translateY(-2px);
+            }
+
+        .btn-accion {
+            background: #7e57c2;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 3px;
+        }
+
+            .btn-accion.verde {
+                background: #4caf50;
+            }
+
+            .btn-accion.rojo {
+                background: #f44336;
+            }
+
+        .btn-sesion {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+            table th, table td {
+                padding: 12px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+
+            table th {
+                background-color: #f8f9fa;
+                font-weight: bold;
+                color: #333;
+            }
+
+            table tr:hover {
+                background-color: #f9f9f9;
+            }
+
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+            display: none;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .main-content {
+            margin-left: 250px;
+        }
+
+        /* Estados de tickets */
+        .estado-abierto {
+            color: #ff9800;
+            font-weight: bold;
+        }
+
+        .estado-en_proceso {
+            color: #2196f3;
+            font-weight: bold;
+        }
+
+        .estado-resuelto {
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .estado-cerrado {
+            color: #999;
+        }
+
+        .prioridad-alta {
+            color: #f44336;
+            font-weight: bold;
+        }
+
+        .prioridad-media {
+            color: #ff9800;
+        }
+
+        .prioridad-baja {
+            color: #4caf50;
+        }
+
+        /* Modal para crear ticket */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+            .modal-overlay.active {
+                display: flex;
+            }
+
+        .modal {
+            background: white;
+            border-radius: 15px;
+            width: 550px;
+            max-width: 95%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .modal-header h2 {
+                margin: 0;
+                color: #333;
+            }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-body {
+            padding: 25px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+            .modal-body label {
+                display: block;
+                margin: 15px 0 5px;
+                font-weight: bold;
+                color: #555;
+            }
+
+            .modal-body input, .modal-body select, .modal-body textarea {
+                width: 100%;
+                padding: 12px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                font-size: 14px;
+                box-sizing: border-box;
+            }
+
+            .modal-body textarea {
+                resize: vertical;
+                min-height: 100px;
+            }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn-guardar {
+            background: linear-gradient(135deg, #7e57c2, #5c6bc0);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-cancelar {
+            background: #f5f5f5;
+            color: #666;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Modal de conversación */
+        .conversacion {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .mensaje {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .mensaje-cliente {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .mensaje-vendedor {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+        }
+
+        .mensaje-header {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .mensaje-texto {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .info-ticket {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+            .info-ticket p {
+                margin: 5px 0;
+            }
+
+        .respuesta-form {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 3000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+            .toast.show {
+                opacity: 1;
+            }
+
+            .toast.success {
+                background: #4caf50;
+            }
+
+            .toast.error {
+                background: #f44336;
+            }
+
+        .buscador {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .filtros {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .filtro-estado {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menú lateral del usuario -->
+    <aside class="sidebar">
+        <h2>🌸 PerfumeShop</h2>
+        <nav>
+            <a href="../catalog.html">🢀 Volver</a>
+            <a href="usuariomenu.html">🏠 Inicio</a>
+            <a href="miscompras.html">🛍️ Mis Compras</a>
+            <a href="metodopago.html">💳 Métodos de Pago</a>
+            <a href="seguimiento.html">📦 Seguimiento</a>
+            <a href="mistickets.html" class="active">📩 Contacto</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <header class="admin-header">
+            <h1>🎫 Centro de Soporte</h1>
+            <p>Gestiona tus consultas y solicitudes de soporte</p>
+        </header>
+
+        <!-- Mensajes -->
+        <div id="successMessage" class="message success"></div>
+        <div id="errorMessage" class="message error"></div>
+
+        <!-- Tarjetas de estadísticas -->
+        <section class="cards">
+            <div class="card" onclick="filtrarPorEstado('abierto')">
+                <h3>📋 Abiertos</h3>
+                <p id="ticketsAbiertos">0</p>
+                <small>En espera de respuesta</small>
+            </div>
+            <div class="card" onclick="filtrarPorEstado('en_proceso')">
+                <h3>⚙️ En Proceso</h3>
+                <p id="ticketsProceso">0</p>
+                <small>Siendo atendidos</small>
+            </div>
+            <div class="card" onclick="filtrarPorEstado('resuelto')">
+                <h3>✅ Resueltos</h3>
+                <p id="ticketsResueltos">0</p>
+                <small>Solucionados</small>
+            </div>
+            <div class="card" onclick="filtrarPorEstado('cerrado')">
+                <h3>🔒 Cerrados</h3>
+                <p id="ticketsCerrados">0</p>
+                <small>Finalizados</small>
+            </div>
+        </section>
+
+        <!-- Listado de tickets -->
+        <section class="tabla-admin">
+            <div class="titulo-tabla">
+                <h2>🎫 Mis Tickets</h2>
+                <button class="btn-agregar" onclick="abrirModalCrearTicket()">➕ Nuevo Ticket</button>
+            </div>
+
+            <div class="filtros">
+                <input type="text" class="buscador" id="buscadorTickets" placeholder="🔍 Buscar por asunto o mensaje..." onkeyup="filtrarTickets()">
+                <select class="filtro-estado" id="filtroEstado" onchange="cargarTickets()">
+                    <option value="">📌 Todos los estados</option>
+                    <option value="abierto">📋 Abiertos</option>
+                    <option value="en_proceso">⚙️ En Proceso</option>
+                    <option value="resuelto">✅ Resueltos</option>
+                    <option value="cerrado">🔒 Cerrados</option>
+                </select>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Asunto</th>
+                        <th>Prioridad</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                        <th>Respuestas</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="ticketsTableBody">
+                    <tr><td colspan="7" style="text-align:center;">Cargando tickets...</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <!-- MODAL PARA CREAR NUEVO TICKET -->
+    <div class="modal-overlay" id="modalCrearTicketOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>➕ Crear Nuevo Ticket</h2>
+                <button class="close-modal" onclick="cerrarModalCrearTicket()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formCrearTicket">
+                    <label>Asunto *</label>
+                    <input type="text" id="ticketAsunto" required placeholder="Ej: Problema con mi pedido, Consulta sobre producto...">
+
+                    <label>Prioridad</label>
+                    <select id="ticketPrioridad">
+                        <option value="baja">🟢 Baja - Consulta general</option>
+                        <option value="media" selected>🟡 Media - Requiere atención</option>
+                        <option value="alta">🔴 Alta - Urgente</option>
+                    </select>
+
+                    <label>Pedido relacionado (opcional)</label>
+                    <select id="ticketPedido">
+                        <option value="">-- Ninguno (consulta general) --</option>
+                    </select>
+
+                    <label>Mensaje *</label>
+                    <textarea id="ticketMensaje" required placeholder="Describe detalladamente tu consulta o problema..."></textarea>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancelar" onclick="cerrarModalCrearTicket()">Cancelar</button>
+                        <button type="submit" class="btn-guardar">📤 Enviar Ticket</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA VER CONVERSACIÓN DEL TICKET -->
+    <div class="modal-overlay" id="modalConversacionOverlay">
+        <div class="modal" style="width: 700px;">
+            <div class="modal-header">
+                <h2 id="modalConversacionTitulo">💬 Conversación</h2>
+                <button class="close-modal" onclick="cerrarModalConversacion()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="infoTicketConversacion" class="info-ticket"></div>
+                <div id="conversacionContainer" class="conversacion"></div>
+                <div class="respuesta-form">
+                    <h3>✏️ Responder</h3>
+                    <textarea id="respuestaMensaje" placeholder="Escribe tu respuesta aquí..."></textarea>
+                    <div class="modal-actions">
+                        <button class="btn-cancelar" onclick="cerrarModalConversacion()">Cerrar</button>
+                        <button class="btn-guardar" onclick="enviarRespuestaCliente()">📤 Enviar Respuesta</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST PARA NOTIFICACIONES -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+        let clienteActual = null;
+        let ticketActual = null;
+        let pedidosCliente = [];
+
+        // Mostrar toast
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            setTimeout(() => toast.className = 'toast', 3000);
+        }
+
+        // Mostrar mensajes en la interfaz
+        function showMessage(type, text) {
+            const successDiv = document.getElementById('successMessage');
+            const errorDiv = document.getElementById('errorMessage');
+
+            if (type === 'success') {
+                successDiv.textContent = text;
+                successDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+            } else {
+                errorDiv.textContent = text;
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+            }
+
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Verificar sesión
+        function verificarSesion() {
+            const cliente = localStorage.getItem('cliente');
+            const userType = localStorage.getItem('userType');
+
+            if (!cliente || userType !== 'cliente') {
+                window.location.href = '../clientelogin.html';
+                return false;
+            }
+
+            clienteActual = JSON.parse(cliente);
+            return true;
+        }
+
+        // Cargar pedidos del cliente para el select
+        async function cargarPedidosCliente() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedidos-cliente/${clienteActual.id}`);
+                if (response.ok) {
+                    pedidosCliente = await response.json();
+                    const select = document.getElementById('ticketPedido');
+                    if (select) {
+                        select.innerHTML = '<option value="">-- Ninguno (consulta general) --</option>';
+                        pedidosCliente.forEach(pedido => {
+                            select.innerHTML += `<option value="${pedido.id}">#${pedido.id} - ${new Date(pedido.fecha_pedido).toLocaleDateString()} - $${pedido.total}</option>`;
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando pedidos:', error);
+            }
+        }
+
+        // Cargar estadísticas de tickets
+        async function cargarEstadisticas() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/cliente/${clienteActual.id}/tickets/stats`);
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('ticketsAbiertos').textContent = stats.abiertos || 0;
+                    document.getElementById('ticketsProceso').textContent = stats.en_proceso || 0;
+                    document.getElementById('ticketsResueltos').textContent = stats.resueltos || 0;
+                    document.getElementById('ticketsCerrados').textContent = stats.cerrados || 0;
+                }
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+            }
+        }
+
+        // Cargar tickets del cliente
+        async function cargarTickets() {
+            const estado = document.getElementById('filtroEstado').value;
+            let url = `${API_BASE_URL}/api/cliente/${clienteActual.id}/tickets`;
+            if (estado) url += `?estado=${estado}`;
+
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    const tickets = await response.json();
+                    actualizarTablaTickets(tickets);
+                } else {
+                    mostrarSinTickets();
+                }
+            } catch (error) {
+                console.error('Error cargando tickets:', error);
+                mostrarSinTickets();
+            }
+        }
+
+        // Actualizar tabla de tickets
+        function actualizarTablaTickets(tickets) {
+            const tbody = document.getElementById('ticketsTableBody');
+            tbody.innerHTML = '';
+
+            if (!tickets || tickets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">📭 No tienes tickets creados</td></tr>';
+                return;
+            }
+
+            tickets.forEach(ticket => {
+                const estadoClass = `estado-${ticket.estado}`;
+                const prioridadClass = `prioridad-${ticket.prioridad}`;
+                const prioridadIcon = {
+                    'alta': '🔴',
+                    'media': '🟡',
+                    'baja': '🟢'
+                }[ticket.prioridad] || '⚪';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                        <td><strong>#${ticket.num_ticket}</strong></td>
+                        <td><strong>${escapeHtml(ticket.asunto)}</strong><br><small>${escapeHtml(ticket.mensaje.substring(0, 50))}${ticket.mensaje.length > 50 ? '...' : ''}</small></td>
+                        <td class="${prioridadClass}">${prioridadIcon} ${ticket.prioridad}</td>
+                        <td class="${estadoClass}">${getEstadoIcon(ticket.estado)} ${getEstadoTexto(ticket.estado)}</td>
+                        <td><small>${new Date(ticket.fecha_creacion).toLocaleDateString()}</small></td>
+                        <td>💬 ${ticket.total_respuestas || 0}</td>
+                        <td>
+                            <button class="btn-accion" onclick="verConversacion(${ticket.num_ticket})">👁️ Ver</button>
+                            ${ticket.estado !== 'cerrado' && ticket.estado !== 'resuelto' ?
+                        `<button class="btn-accion verde" onclick="verConversacion(${ticket.num_ticket})">✏️ Responder</button>` : ''}
+                        </td>
+                    `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Mostrar mensaje sin tickets
+        function mostrarSinTickets() {
+            const tbody = document.getElementById('ticketsTableBody');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">📭 No tienes tickets creados</td></tr>';
+        }
+
+        // Filtrar tickets por texto
+        function filtrarTickets() {
+            const texto = document.getElementById('buscadorTickets').value.toLowerCase();
+            const filas = document.querySelectorAll('#ticketsTableBody tr');
+
+            filas.forEach(fila => {
+                if (fila.cells && fila.cells.length > 0) {
+                    const textoFila = fila.textContent.toLowerCase();
+                    fila.style.display = textoFila.includes(texto) ? '' : 'none';
+                }
+            });
+        }
+
+        // Filtrar por estado desde tarjetas
+        function filtrarPorEstado(estado) {
+            document.getElementById('filtroEstado').value = estado;
+            cargarTickets();
+        }
+
+        // Abrir modal para crear ticket
+        async function abrirModalCrearTicket() {
+            await cargarPedidosCliente();
+            document.getElementById('formCrearTicket').reset();
+            document.getElementById('ticketPrioridad').value = 'media';
+            document.getElementById('modalCrearTicketOverlay').classList.add('active');
+        }
+
+        // Cerrar modal crear ticket
+        function cerrarModalCrearTicket() {
+            document.getElementById('modalCrearTicketOverlay').classList.remove('active');
+        }
+
+        // Crear nuevo ticket
+        document.getElementById('formCrearTicket').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const asunto = document.getElementById('ticketAsunto').value.trim();
+            const mensaje = document.getElementById('ticketMensaje').value.trim();
+            const prioridad = document.getElementById('ticketPrioridad').value;
+            const pedidoId = document.getElementById('ticketPedido').value;
+
+            if (!asunto || !mensaje) {
+                showMessage('error', 'Por favor completa el asunto y el mensaje');
+                return;
+            }
+
+            // Obtener el vendedor asociado al pedido (si hay pedido seleccionado)
+            let vendedorId = 6; // ID por defecto del vendedor principal
+
+            if (pedidoId) {
+                const pedido = pedidosCliente.find(p => p.id == pedidoId);
+                if (pedido && pedido.vendedor_id) {
+                    vendedorId = pedido.vendedor_id;
+                }
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/tickets`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cliente_id: clienteActual.id,
+                        vendedor_id: vendedorId,
+                        asunto: asunto,
+                        mensaje: mensaje,
+                        pedido_id: pedidoId || null,
+                        prioridad: prioridad,
+                        categoria: 'general'
+                    })
+                });
+
+                if (response.ok) {
+                    showToast('✅ Ticket creado exitosamente');
+                    cerrarModalCrearTicket();
+                    cargarTickets();
+                    cargarEstadisticas();
+                } else {
+                    const error = await response.json();
+                    showToast(error.error || 'Error al crear ticket', 'error');
+                }
+            } catch (error) {
+                console.error('Error creando ticket:', error);
+                showToast('Error de conexión', 'error');
+            }
+        });
+
+        // Ver conversación de un ticket
+        async function verConversacion(ticketId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/tickets/${ticketId}`);
+                if (!response.ok) throw new Error('Error al cargar ticket');
+
+                const ticket = await response.json();
+                ticketActual = ticket;
+
+                // Mostrar información del ticket
+                const infoDiv = document.getElementById('infoTicketConversacion');
+                infoDiv.innerHTML = `
+                        <p><strong>🎫 Ticket #${ticket.num_ticket}</strong> | ${getEstadoIcon(ticket.estado)} ${getEstadoTexto(ticket.estado)}</p>
+                        <p><strong>📋 Asunto:</strong> ${escapeHtml(ticket.asunto)}</p>
+                        <p><strong>🎯 Prioridad:</strong> <span class="prioridad-${ticket.prioridad}">${ticket.prioridad}</span></p>
+                        ${ticket.pedido_numero ? `<p><strong>📦 Pedido relacionado:</strong> #${ticket.pedido_numero}</p>` : ''}
+                        <p><strong>📅 Creado:</strong> ${new Date(ticket.fecha_creacion).toLocaleString()}</p>
+                    `;
+
+                // Mostrar conversación
+                const conversacionDiv = document.getElementById('conversacionContainer');
+                conversacionDiv.innerHTML = '';
+
+                if (ticket.respuestas && ticket.respuestas.length > 0) {
+                    ticket.respuestas.forEach(resp => {
+                        const mensajeDiv = document.createElement('div');
+                        mensajeDiv.className = `mensaje mensaje-${resp.remitente_type}`;
+                        mensajeDiv.innerHTML = `
+                                <div class="mensaje-header">
+                                    <strong>${resp.remitente_nombre || (resp.remitente_type === 'vendedor' ? 'Vendedor' : 'Tú')}</strong>
+                                    <small>${new Date(resp.fecha).toLocaleString()}</small>
+                                </div>
+                                <div class="mensaje-texto">${escapeHtml(resp.mensaje)}</div>
+                            `;
+                        conversacionDiv.appendChild(mensajeDiv);
+                    });
+                } else {
+                    conversacionDiv.innerHTML = '<p style="text-align:center; color:#999;">No hay mensajes en esta conversación</p>';
+                }
+
+                document.getElementById('modalConversacionTitulo').textContent = `💬 Ticket #${ticket.num_ticket} - ${ticket.asunto.substring(0, 40)}`;
+                document.getElementById('modalConversacionOverlay').classList.add('active');
+                document.getElementById('respuestaMensaje').value = '';
+
+            } catch (error) {
+                console.error('Error cargando conversación:', error);
+                showToast('Error al cargar la conversación', 'error');
+            }
+        }
+
+        // Enviar respuesta como cliente
+        async function enviarRespuestaCliente() {
+            const mensaje = document.getElementById('respuestaMensaje').value.trim();
+
+            if (!mensaje) {
+                showToast('Por favor escribe un mensaje', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/tickets/${ticketActual.num_ticket}/respuesta-cliente`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cliente_id: clienteActual.id,
+                        mensaje: mensaje
+                    })
+                });
+
+                if (response.ok) {
+                    showToast('✅ Respuesta enviada correctamente');
+                    cerrarModalConversacion();
+                    cargarTickets();
+                    cargarEstadisticas();
+                } else {
+                    const error = await response.json();
+                    showToast(error.error || 'Error al enviar respuesta', 'error');
+                }
+            } catch (error) {
+                console.error('Error enviando respuesta:', error);
+                showToast('Error de conexión', 'error');
+            }
+        }
+
+        // Cerrar modal conversación
+        function cerrarModalConversacion() {
+            document.getElementById('modalConversacionOverlay').classList.remove('active');
+            ticketActual = null;
+        }
+
+        // Funciones auxiliares
+        function getEstadoIcon(estado) {
+            const icons = {
+                'abierto': '📋',
+                'en_proceso': '⚙️',
+                'resuelto': '✅',
+                'cerrado': '🔒'
+            };
+            return icons[estado] || '📄';
+        }
+
+        function getEstadoTexto(estado) {
+            const textos = {
+                'abierto': 'Abierto',
+                'en_proceso': 'En Proceso',
+                'resuelto': 'Resuelto',
+                'cerrado': 'Cerrado'
+            };
+            return textos[estado] || estado;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Cerrar sesión
+        function cerrarSesion() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                localStorage.removeItem('cliente');
+                localStorage.removeItem('token');
+                localStorage.removeItem('userType');
+                window.location.href = '../catalog.html';
+            }
+        }
+
+        // Cerrar modales al hacer clic fuera
+        document.getElementById('modalCrearTicketOverlay').addEventListener('click', function (e) {
+            if (e.target === this) cerrarModalCrearTicket();
+        });
+
+        document.getElementById('modalConversacionOverlay').addEventListener('click', function (e) {
+            if (e.target === this) cerrarModalConversacion();
+        });
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function () {
+            if (verificarSesion()) {
+                cargarEstadisticas();
+                cargarTickets();
+            }
+        });
+    </script>
+</body>
+</html>

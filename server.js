@@ -3099,6 +3099,355 @@ app.get('/api/admin/pedidos', async (req, res) => {
     }
 });
 
+// ==================== ENDPOINTS PARA SISTEMA DE TICKETS ====================
+
+// Obtener tickets de un vendedor específico
+app.get('/api/vendedor/:vendedorId/tickets', async (req, res) => {
+    const { vendedorId } = req.params;
+    const { estado, prioridad } = req.query;
+
+    try {
+        let query = `
+            SELECT t.*, 
+                   c.nombre as cliente_nombre,
+                   c.correo as cliente_email,
+                   c.telefono as cliente_telefono,
+                   p.numero_orden as pedido_numero,
+                   (SELECT COUNT(*) FROM respuestas_tickets WHERE ticket_id = t.num_ticket) as total_respuestas
+            FROM tickets t
+            LEFT JOIN clientes c ON t.cliente = c.id
+            LEFT JOIN pedidos p ON t.pedido = p.id
+            WHERE t.vendedor = $1
+        `;
+
+        let params = [vendedorId];
+        let paramIndex = 2;
+
+        if (estado) {
+            query += ` AND t.estado = $${paramIndex}`;
+            params.push(estado);
+            paramIndex++;
+        }
+
+        if (prioridad) {
+            query += ` AND t.prioridad = $${paramIndex}`;
+            params.push(prioridad);
+            paramIndex++;
+        }
+
+        query += ` ORDER BY 
+            CASE t.estado
+                WHEN 'abierto' THEN 1
+                WHEN 'en_proceso' THEN 2
+                WHEN 'resuelto' THEN 3
+                WHEN 'cerrado' THEN 4
+                ELSE 5
+            END,
+            t.fecha_creacion DESC`;
+
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error obteniendo tickets:', error);
+        res.status(500).json({ error: 'Error al cargar tickets' });
+    }
+});
+
+// Obtener detalles de un ticket específico (con conversación completa)
+app.get('/api/tickets/:ticketId', async (req, res) => {
+    const { ticketId } = req.params;
+
+    try {
+        // Obtener información del ticket
+        const ticketResult = await pool.query(`
+            SELECT t.*, 
+                   c.nombre as cliente_nombre,
+                   c.correo as cliente_email,
+                   c.telefono as cliente_telefono,
+                   p.numero_orden as pedido_numero,
+                   u.nombre as vendedor_nombre
+            FROM tickets t
+            LEFT JOIN clientes c ON t.cliente = c.id
+            LEFT JOIN pedidos p ON t.pedido = p.id
+            LEFT JOIN usuarios u ON t.vendedor = u.id
+            WHERE t.num_ticket = $1
+        `, [ticketId]);
+
+        if (ticketResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Ticket no encontrado' });
+        }
+
+        // Obtener todas las respuestas (conversación)
+        const respuestasResult = await pool.query(`
+            SELECT r.*,
+                   CASE 
+                       WHEN r.remitente_type = 'vendedor' THEN u.nombre
+                       WHEN r.remitente_type = 'cliente' THEN c.nombre
+                   END as remitente_nombre
+            FROM respuestas_tickets r
+            LEFT JOIN usuarios u ON r.remitente_type = 'vendedor' AND r.remitente_id = u.id
+            LEFT JOIN clientes c ON r.remitente_type = 'cliente' AND r.remitente_id = c.id
+            WHERE r.ticket_id = $1
+            ORDER BY r.fecha ASC
+        `, [ticketId]);
+
+        const ticket = ticketResult.rows[0];
+        ticket.respuestas = respuestasResult.rows;
+
+        res.json(ticket);
+
+    } catch (error) {
+        console.error('Error obteniendo detalle del ticket:', error);
+        res.status(500).json({ error: 'Error al cargar detalle del ticket' });
+    }
+});
+
+// Crear nuevo ticket (desde cliente)
+app.post('/api/tickets', async (req, res) => {
+    const { cliente_id, vendedor_id, asunto, mensaje, pedido_id, prioridad, categoria } = req.body;
+
+    if (!cliente_id || !vendedor_id || !asunto || !mensaje) {
+        return res.status(400).json({ error: 'Faltan campos requeridos' });
+    }
+
+    try {
+        const result = await pool.query(`
+            INSERT INTO tickets (vendedor, cliente, asunto, mensaje, pedido, prioridad, categoria, estado, fecha_creacion)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'abierto', CURRENT_TIMESTAMP)
+            RETURNING *
+        `, [vendedor_id, cliente_id, asunto, mensaje, pedido_id || null, prioridad || 'media', categoria || null]);
+
+        // Registrar la primera respuesta (el mensaje inicial)
+        await pool.query(`
+            INSERT INTO respuestas_tickets (ticket_id, remitente_type, remitente_id, mensaje)
+            VALUES ($1, 'cliente', $2, $3)
+        `, [result.rows[0].num_ticket, cliente_id, mensaje]);
+
+        res.status(201).json({
+            message: 'Ticket creado exitosamente',
+            ticket: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error creando ticket:', error);
+        res.status(500).json({ error: 'Error al crear ticket' });
+    }
+});
+
+// Responder a un ticket (vendedor)
+app.post('/api/tickets/:ticketId/respuesta', async (req, res) => {
+    const { ticketId } = req.params;
+    const { vendedor_id, mensaje } = req.body;
+
+    if (!vendedor_id || !mensaje) {
+        return res.status(400).json({ error: 'Faltan campos requeridos' });
+    }
+
+    try {
+        // Verificar que el ticket existe y pertenece al vendedor
+        const ticketCheck = await pool.query(`
+            SELECT estado FROM tickets WHERE num_ticket = $1 AND vendedor = $2
+        `, [ticketId, vendedor_id]);
+
+        if (ticketCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Ticket no encontrado o no te pertenece' });
+        }
+
+        // Actualizar estado a 'en_proceso' si estaba abierto
+        let newState = ticketCheck.rows[0].estado;
+        if (newState === 'abierto') {
+            newState = 'en_proceso';
+        }
+
+        // Registrar respuesta
+        await pool.query(`
+            INSERT INTO respuestas_tickets (ticket_id, remitente_type, remitente_id, mensaje)
+            VALUES ($1, 'vendedor', $2, $3)
+        `, [ticketId, vendedor_id, mensaje]);
+
+        // Actualizar ticket
+        await pool.query(`
+            UPDATE tickets 
+            SET vendedor_respuesta = $1,
+                fecha_respuesta = CURRENT_TIMESTAMP,
+                estado = $2,
+                fecha_actualizacion = CURRENT_TIMESTAMP
+            WHERE num_ticket = $3
+        `, [mensaje, newState, ticketId]);
+
+        res.json({ message: 'Respuesta enviada exitosamente' });
+
+    } catch (error) {
+        console.error('Error respondiendo ticket:', error);
+        res.status(500).json({ error: 'Error al enviar respuesta' });
+    }
+});
+
+// Actualizar estado del ticket
+app.put('/api/tickets/:ticketId/estado', async (req, res) => {
+    const { ticketId } = req.params;
+    const { estado, vendedor_id } = req.body;
+
+    const estadosValidos = ['abierto', 'en_proceso', 'resuelto', 'cerrado'];
+    if (!estadosValidos.includes(estado)) {
+        return res.status(400).json({ error: 'Estado no válido' });
+    }
+
+    try {
+        const result = await pool.query(`
+            UPDATE tickets 
+            SET estado = $1,
+                fecha_actualizacion = CURRENT_TIMESTAMP,
+                ${estado === 'cerrado' ? 'fecha_cierre = CURRENT_TIMESTAMP,' : ''}
+                ${estado === 'resuelto' ? 'fecha_actualizacion = CURRENT_TIMESTAMP' : ''}
+            WHERE num_ticket = $2 AND vendedor = $3
+            RETURNING *
+        `, [estado, ticketId, vendedor_id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Ticket no encontrado' });
+        }
+
+        res.json({ message: 'Estado actualizado', ticket: result.rows[0] });
+
+    } catch (error) {
+        console.error('Error actualizando estado:', error);
+        res.status(500).json({ error: 'Error al actualizar estado' });
+    }
+});
+
+// Obtener estadísticas de tickets para un vendedor
+app.get('/api/vendedor/:vendedorId/tickets/stats', async (req, res) => {
+    const { vendedorId } = req.params;
+
+    try {
+        const result = await pool.query(`
+            SELECT 
+                COUNT(*) as total_tickets,
+                COUNT(*) FILTER (WHERE estado = 'abierto') as abiertos,
+                COUNT(*) FILTER (WHERE estado = 'en_proceso') as en_proceso,
+                COUNT(*) FILTER (WHERE estado = 'resuelto') as resueltos,
+                COUNT(*) FILTER (WHERE estado = 'cerrado') as cerrados,
+                COUNT(*) FILTER (WHERE prioridad = 'alta') as prioridad_alta,
+                COUNT(*) FILTER (WHERE prioridad = 'media') as prioridad_media,
+                COUNT(*) FILTER (WHERE prioridad = 'baja') as prioridad_baja,
+                ROUND(AVG(EXTRACT(EPOCH FROM (fecha_respuesta - fecha_creacion))/3600)::numeric, 2) as tiempo_respuesta_promedio_horas
+            FROM tickets
+            WHERE vendedor = $1
+        `, [vendedorId]);
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error('Error obteniendo estadísticas:', error);
+        res.status(500).json({ error: 'Error al cargar estadísticas' });
+    }
+});
+
+// Obtener tickets de un cliente específico
+app.get('/api/cliente/:clienteId/tickets', async (req, res) => {
+    const { clienteId } = req.params;
+    const { estado } = req.query;
+
+    try {
+        let query = `
+            SELECT t.*, 
+                   (SELECT COUNT(*) FROM respuestas_tickets WHERE ticket_id = t.num_ticket) as total_respuestas
+            FROM tickets t
+            WHERE t.cliente = $1
+        `;
+
+        let params = [clienteId];
+
+        if (estado) {
+            query += ` AND t.estado = $2`;
+            params.push(estado);
+        }
+
+        query += ` ORDER BY t.fecha_creacion DESC`;
+
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error obteniendo tickets del cliente:', error);
+        res.status(500).json({ error: 'Error al cargar tickets' });
+    }
+});
+
+// Estadísticas de tickets para cliente
+app.get('/api/cliente/:clienteId/tickets/stats', async (req, res) => {
+    const { clienteId } = req.params;
+
+    try {
+        const result = await pool.query(`
+            SELECT 
+                COUNT(*) FILTER (WHERE estado = 'abierto') as abiertos,
+                COUNT(*) FILTER (WHERE estado = 'en_proceso') as en_proceso,
+                COUNT(*) FILTER (WHERE estado = 'resuelto') as resueltos,
+                COUNT(*) FILTER (WHERE estado = 'cerrado') as cerrados
+            FROM tickets
+            WHERE cliente = $1
+        `, [clienteId]);
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error('Error obteniendo estadísticas:', error);
+        res.status(500).json({ error: 'Error al cargar estadísticas' });
+    }
+});
+
+// Responder a ticket como cliente
+app.post('/api/tickets/:ticketId/respuesta-cliente', async (req, res) => {
+    const { ticketId } = req.params;
+    const { cliente_id, mensaje } = req.body;
+
+    if (!cliente_id || !mensaje) {
+        return res.status(400).json({ error: 'Faltan campos requeridos' });
+    }
+
+    try {
+        // Verificar que el ticket existe y pertenece al cliente
+        const ticketCheck = await pool.query(`
+            SELECT estado, vendedor FROM tickets WHERE num_ticket = $1 AND cliente = $2
+        `, [ticketId, cliente_id]);
+
+        if (ticketCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Ticket no encontrado' });
+        }
+
+        // Actualizar estado a 'en_proceso' si estaba resuelto o cerrado
+        const estadoActual = ticketCheck.rows[0].estado;
+        let nuevoEstado = estadoActual;
+        if (estadoActual === 'resuelto' || estadoActual === 'cerrado') {
+            nuevoEstado = 'en_proceso';
+        }
+
+        // Registrar respuesta
+        await pool.query(`
+            INSERT INTO respuestas_tickets (ticket_id, remitente_type, remitente_id, mensaje)
+            VALUES ($1, 'cliente', $2, $3)
+        `, [ticketId, cliente_id, mensaje]);
+
+        // Actualizar ticket
+        await pool.query(`
+            UPDATE tickets 
+            SET cliente_respuesta = $1,
+                fecha_actualizacion = CURRENT_TIMESTAMP,
+                estado = $2
+            WHERE num_ticket = $3
+        `, [mensaje, nuevoEstado, ticketId]);
+
+        res.json({ message: 'Respuesta enviada exitosamente' });
+
+    } catch (error) {
+        console.error('Error respondiendo ticket:', error);
+        res.status(500).json({ error: 'Error al enviar respuesta' });
+    }
+});
+
 
 /////   SEPARACION DEL LISTEN Y RUTAS           /////////
 
