@@ -3448,6 +3448,349 @@ app.post('/api/tickets/:ticketId/respuesta-cliente', async (req, res) => {
     }
 });
 
+// ==================== ENDPOINTS PARA CARRITO PERSISTENTE ====================
+
+// Obtener o crear carrito para cliente
+app.get('/api/carrito', async (req, res) => {
+    const clienteId = req.query.cliente_id;
+    const sessionId = req.headers['x-session-id'] || req.query.session_id;
+
+    if (!clienteId && !sessionId) {
+        return res.status(400).json({ error: 'Se requiere cliente_id o session_id' });
+    }
+
+    try {
+        let carrito;
+
+        if (clienteId) {
+            // Buscar carrito del cliente logueado
+            const result = await pool.query(
+                `SELECT c.* FROM carritos_persistentes c 
+                 WHERE c.cliente_id = $1 AND c.session_id IS NULL
+                 ORDER BY c.fecha_creacion DESC LIMIT 1`,
+                [clienteId]
+            );
+            carrito = result.rows[0];
+        } else if (sessionId) {
+            // Buscar carrito por sesión (usuario no logueado)
+            const result = await pool.query(
+                'SELECT * FROM carritos_persistentes WHERE session_id = $1',
+                [sessionId]
+            );
+            carrito = result.rows[0];
+        }
+
+        // Si no existe, crear uno nuevo
+        if (!carrito) {
+            const insertResult = await pool.query(
+                `INSERT INTO carritos_persistentes (cliente_id, session_id) 
+                 VALUES ($1, $2) RETURNING *`,
+                [clienteId || null, sessionId || null]
+            );
+            carrito = insertResult.rows[0];
+        }
+
+        // Obtener items del carrito
+        const itemsResult = await pool.query(
+            `SELECT ci.*, p.nombre, p.marca, p.imagen_url, p.stock
+             FROM carrito_items_persistentes ci
+             JOIN productos p ON ci.producto_id = p.id
+             WHERE ci.carrito_id = $1`,
+            [carrito.id]
+        );
+
+        res.json({
+            id: carrito.id,
+            cliente_id: carrito.cliente_id,
+            items: itemsResult.rows,
+            total_items: itemsResult.rows.reduce((sum, item) => sum + item.cantidad, 0),
+            subtotal: itemsResult.rows.reduce((sum, item) => sum + (item.precio_unitario * item.cantidad), 0)
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo carrito:', error);
+        res.status(500).json({ error: 'Error al obtener carrito' });
+    }
+});
+
+// Agregar item al carrito
+app.post('/api/carrito/items', async (req, res) => {
+    const { cliente_id, session_id, producto_id, cantidad } = req.body;
+
+    if (!producto_id || !cantidad || cantidad < 1) {
+        return res.status(400).json({ error: 'Producto y cantidad son requeridos' });
+    }
+
+    try {
+        // Verificar stock disponible
+        const productoResult = await pool.query(
+            'SELECT id, nombre, precio, stock FROM productos WHERE id = $1 AND activo = true',
+            [producto_id]
+        );
+
+        if (productoResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        const producto = productoResult.rows[0];
+
+        if (producto.stock < cantidad) {
+            return res.status(400).json({ error: `Stock insuficiente. Solo hay ${producto.stock} unidades disponibles` });
+        }
+
+        // Obtener o crear carrito
+        let carrito;
+        let carritoResult;
+
+        if (cliente_id) {
+            carritoResult = await pool.query(
+                `SELECT id FROM carritos_persistentes 
+                 WHERE cliente_id = $1 AND session_id IS NULL
+                 ORDER BY fecha_creacion DESC LIMIT 1`,
+                [cliente_id]
+            );
+        } else if (session_id) {
+            carritoResult = await pool.query(
+                'SELECT id FROM carritos_persistentes WHERE session_id = $1',
+                [session_id]
+            );
+        }
+
+        if (carritoResult.rows.length === 0) {
+            const insertResult = await pool.query(
+                `INSERT INTO carritos_persistentes (cliente_id, session_id) 
+                 VALUES ($1, $2) RETURNING id`,
+                [cliente_id || null, session_id || null]
+            );
+            carrito = insertResult.rows[0];
+        } else {
+            carrito = carritoResult.rows[0];
+        }
+
+        // Verificar si el producto ya está en el carrito
+        const itemExistente = await pool.query(
+            'SELECT id, cantidad FROM carrito_items_persistentes WHERE carrito_id = $1 AND producto_id = $2',
+            [carrito.id, producto_id]
+        );
+
+        if (itemExistente.rows.length > 0) {
+            // Actualizar cantidad
+            const nuevaCantidad = itemExistente.rows[0].cantidad + cantidad;
+
+            if (producto.stock < nuevaCantidad) {
+                return res.status(400).json({ error: `Stock insuficiente. Solo hay ${producto.stock} unidades disponibles` });
+            }
+
+            await pool.query(
+                'UPDATE carrito_items_persistentes SET cantidad = $1 WHERE id = $2',
+                [nuevaCantidad, itemExistente.rows[0].id]
+            );
+        } else {
+            // Insertar nuevo item
+            await pool.query(
+                `INSERT INTO carrito_items_persistentes (carrito_id, producto_id, cantidad, precio_unitario) 
+                 VALUES ($1, $2, $3, $4)`,
+                [carrito.id, producto_id, cantidad, producto.precio]
+            );
+        }
+
+        // Actualizar fecha del carrito
+        await pool.query(
+            'UPDATE carritos_persistentes SET fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $1',
+            [carrito.id]
+        );
+
+        res.json({
+            success: true,
+            message: 'Producto agregado al carrito',
+            carrito_id: carrito.id
+        });
+
+    } catch (error) {
+        console.error('Error agregando al carrito:', error);
+        res.status(500).json({ error: 'Error al agregar producto al carrito' });
+    }
+});
+
+// Actualizar cantidad de un item
+app.put('/api/carrito/items/:itemId', async (req, res) => {
+    const { itemId } = req.params;
+    const { cantidad } = req.body;
+
+    if (!cantidad || cantidad < 1) {
+        return res.status(400).json({ error: 'Cantidad válida es requerida' });
+    }
+
+    try {
+        // Obtener información del item y producto
+        const itemResult = await pool.query(
+            `SELECT ci.*, p.stock, p.nombre 
+             FROM carrito_items_persistentes ci
+             JOIN productos p ON ci.producto_id = p.id
+             WHERE ci.id = $1`,
+            [itemId]
+        );
+
+        if (itemResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Item no encontrado' });
+        }
+
+        const item = itemResult.rows[0];
+
+        if (item.stock < cantidad) {
+            return res.status(400).json({ error: `Stock insuficiente. Solo hay ${item.stock} unidades disponibles` });
+        }
+
+        await pool.query(
+            'UPDATE carrito_items_persistentes SET cantidad = $1 WHERE id = $2',
+            [cantidad, itemId]
+        );
+
+        // Actualizar fecha del carrito
+        await pool.query(
+            `UPDATE carritos_persistentes 
+             SET fecha_actualizacion = CURRENT_TIMESTAMP 
+             WHERE id = (SELECT carrito_id FROM carrito_items_persistentes WHERE id = $1)`,
+            [itemId]
+        );
+
+        res.json({ success: true, message: 'Cantidad actualizada' });
+
+    } catch (error) {
+        console.error('Error actualizando cantidad:', error);
+        res.status(500).json({ error: 'Error al actualizar cantidad' });
+    }
+});
+
+// Eliminar item del carrito
+app.delete('/api/carrito/items/:itemId', async (req, res) => {
+    const { itemId } = req.params;
+
+    try {
+        await pool.query('DELETE FROM carrito_items_persistentes WHERE id = $1', [itemId]);
+        res.json({ success: true, message: 'Item eliminado' });
+    } catch (error) {
+        console.error('Error eliminando item:', error);
+        res.status(500).json({ error: 'Error al eliminar item' });
+    }
+});
+
+// Obtener métodos de pago disponibles
+app.get('/api/metodos-pago', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM metodos_pago WHERE activo = true ORDER BY orden ASC'
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo métodos de pago:', error);
+        res.status(500).json({ error: 'Error al cargar métodos de pago' });
+    }
+});
+
+// Sincronizar carrito después de login
+app.post('/api/carrito/sincronizar', async (req, res) => {
+    const { cliente_id, session_id } = req.body;
+
+    if (!cliente_id || !session_id) {
+        return res.status(400).json({ error: 'Se requiere cliente_id y session_id' });
+    }
+
+    try {
+        // Buscar carrito de sesión (anónimo)
+        const carritoSesion = await pool.query(
+            'SELECT id FROM carritos_persistentes WHERE session_id = $1',
+            [session_id]
+        );
+
+        // Buscar carrito del cliente logueado
+        let carritoCliente = await pool.query(
+            'SELECT id FROM carritos_persistentes WHERE cliente_id = $1 AND session_id IS NULL',
+            [cliente_id]
+        );
+
+        // Si el cliente no tiene carrito, crear uno
+        if (carritoCliente.rows.length === 0) {
+            const insertResult = await pool.query(
+                'INSERT INTO carritos_persistentes (cliente_id) VALUES ($1) RETURNING id',
+                [cliente_id]
+            );
+            carritoCliente = insertResult;
+        }
+
+        // Si hay carrito de sesión, mover items al carrito del cliente
+        if (carritoSesion.rows.length > 0) {
+            // Mover items del carrito de sesión al carrito del cliente
+            await pool.query(
+                `UPDATE carrito_items_persistentes 
+                 SET carrito_id = $1 
+                 WHERE carrito_id = $2`,
+                [carritoCliente.rows[0].id, carritoSesion.rows[0].id]
+            );
+
+            // Eliminar carrito de sesión
+            await pool.query('DELETE FROM carritos_persistentes WHERE id = $1', [carritoSesion.rows[0].id]);
+        }
+
+        res.json({ success: true, message: 'Carrito sincronizado' });
+
+    } catch (error) {
+        console.error('Error sincronizando carrito:', error);
+        res.status(500).json({ error: 'Error al sincronizar carrito' });
+    }
+});
+
+// Establecer tarjeta como principal
+app.put('/api/tarjetas/:tarjetaId/principal', async (req, res) => {
+    const { tarjetaId } = req.params;
+
+    try {
+        // Primero obtener el cliente_id de la tarjeta
+        const tarjetaResult = await pool.query(
+            'SELECT cliente_id FROM tarjetas_credito WHERE id = $1',
+            [tarjetaId]
+        );
+
+        if (tarjetaResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Tarjeta no encontrada' });
+        }
+
+        const clienteId = tarjetaResult.rows[0].cliente_id;
+
+        // Quitar principal de todas las tarjetas del cliente
+        await pool.query(
+            'UPDATE tarjetas_credito SET principal = false WHERE cliente_id = $1',
+            [clienteId]
+        );
+
+        // Establecer la nueva tarjeta como principal
+        await pool.query(
+            'UPDATE tarjetas_credito SET principal = true WHERE id = $1',
+            [tarjetaId]
+        );
+
+        res.json({ message: 'Tarjeta principal actualizada' });
+
+    } catch (error) {
+        console.error('Error actualizando tarjeta principal:', error);
+        res.status(500).json({ error: 'Error al actualizar' });
+    }
+});
+
+// Eliminar tarjeta
+app.delete('/api/tarjetas/:tarjetaId', async (req, res) => {
+    const { tarjetaId } = req.params;
+
+    try {
+        await pool.query('DELETE FROM tarjetas_credito WHERE id = $1', [tarjetaId]);
+        res.json({ message: 'Tarjeta eliminada' });
+
+    } catch (error) {
+        console.error('Error eliminando tarjeta:', error);
+        res.status(500).json({ error: 'Error al eliminar' });
+    }
+});
+
 
 /////   SEPARACION DEL LISTEN Y RUTAS           /////////
 

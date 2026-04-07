@@ -5,22 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carrito de Compras - Perfumes & Aromas</title>
     <link rel="stylesheet" href="../css/base.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
-    <link rel="icon" href="https://via.placeholder.com/32?text=P&A" type="image/x-icon">
     <style>
-        :root {
-            --primary-color: #25D366;
-            --secondary-color: #9b5de5;
-            --light-bg: #f8f9fa;
-            --dark-text: #333;
-            --border-color: #e0e0e0;
-        }
-
-        body {
-            background-color: #f5f5f5;
-            color: var(--dark-text);
-        }
-
+        /* Estilos específicos para el carrito */
         .cart-container {
             max-width: 1200px;
             margin: 100px auto 50px;
@@ -37,22 +23,21 @@
         }
 
             .cart-header h1 {
-                font-family: 'Playfair Display', serif;
-                font-size: 2.5rem;
+                font-size: 2rem;
                 color: #333;
                 margin-bottom: 10px;
             }
 
             .cart-header p {
                 color: #666;
-                font-size: 1.1rem;
+                font-size: 1rem;
             }
 
         .cart-items {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
         }
 
         .cart-item {
@@ -60,7 +45,7 @@
             grid-template-columns: 100px 1fr auto;
             gap: 20px;
             padding: 20px 0;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid #e0e0e0;
             align-items: center;
         }
 
@@ -72,12 +57,12 @@
             width: 100px;
             height: 100px;
             object-fit: cover;
-            border-radius: 10px;
+            border-radius: 8px;
         }
 
         .item-details h3 {
-            margin: 0 0 10px 0;
-            font-size: 1.2rem;
+            margin: 0 0 8px 0;
+            font-size: 1.1rem;
             color: #333;
         }
 
@@ -89,7 +74,7 @@
 
         .item-price {
             font-weight: bold;
-            color: var(--secondary-color);
+            color: #7e57c2;
             font-size: 1.1rem;
         }
 
@@ -107,16 +92,16 @@
             align-items: center;
             justify-content: center;
             background: #f8f9fa;
-            border: 1px solid var(--border-color);
+            border: 1px solid #ddd;
             border-radius: 5px;
             font-weight: bold;
         }
 
         .cart-summary {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
             height: fit-content;
             position: sticky;
             top: 100px;
@@ -124,10 +109,10 @@
 
             .cart-summary h2 {
                 margin-top: 0;
-                font-family: 'Playfair Display', serif;
                 color: #333;
-                border-bottom: 2px solid var(--border-color);
+                border-bottom: 2px solid #f0f0f0;
                 padding-bottom: 15px;
+                font-size: 1.3rem;
             }
 
         .summary-item {
@@ -135,89 +120,164 @@
             justify-content: space-between;
             margin: 15px 0;
             padding: 10px 0;
-            border-bottom: 1px dashed var(--border-color);
+            border-bottom: 1px dashed #e0e0e0;
         }
 
         .summary-total {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: bold;
-            color: var(--secondary-color);
+            color: #7e57c2;
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 2px solid var(--border-color);
+            border-top: 2px solid #e0e0e0;
         }
 
-        .checkout-btn {
-            background: var(--primary-color);
-            color: white;
-            border: none;
+        .iva-control {
+            margin: 15px 0;
             padding: 15px;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.3s;
-            width: 90%;
-            margin-top: 20px;
-        }
-
-            .checkout-btn:hover {
-                background: #1da851;
-                transform: translateY(-2px);
-            }
-
-        .continue-btn {
-            background: white;
-            color: #333;
-            border: 2px solid var(--border-color);
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            transition: 0.3s;
-            text-decoration: none;
-            display: block;
-            margin-top: 15px;
-        }
-
-            .continue-btn:hover {
-                background: var(--light-bg);
-            }
-
-        .micro-payment {
-            margin: 20px 0;
-            padding: 20px;
             background: #f8f9fa;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            text-align: center;
+            border-radius: 8px;
         }
 
-            .micro-payment h3 {
-                margin-top: 0;
+            .iva-control label {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .iva-control input {
+                width: 80px;
+                padding: 5px 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                text-align: center;
+            }
+
+        .payment-methods {
+            margin: 20px 0;
+        }
+
+            .payment-methods h3 {
+                margin-bottom: 10px;
+                font-size: 1rem;
                 color: #555;
             }
 
-        .micro-btn {
-            background: #9b5de5;
+        .payment-option {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .payment-option:hover {
+                border-color: #7e57c2;
+                background: #f9f9f9;
+            }
+
+            .payment-option.selected {
+                border-color: #7e57c2;
+                background: #f3e5f5;
+            }
+
+            .payment-option input {
+                margin-right: 12px;
+                transform: scale(1.1);
+            }
+
+            .payment-option label {
+                flex: 1;
+                cursor: pointer;
+                font-weight: 500;
+            }
+
+            .payment-option small {
+                display: block;
+                color: #666;
+                font-size: 0.75rem;
+            }
+
+        .checkout-btn {
+            background: linear-gradient(90deg, purple, blue);
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 12px;
             border-radius: 8px;
             font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
-            margin: 5px;
-            transition: all 0.3s;
+            width: 100%;
+            margin-top: 20px;
+            transition: opacity 0.3s;
         }
 
-            .micro-btn:hover {
-                background: #8a4bd1;
-                transform: translateY(-2px);
+            .checkout-btn:hover {
+                opacity: 0.9;
+            }
+
+        .continue-btn {
+            display: block;
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+
+            .continue-btn:hover {
+                background: #f8f9fa;
+            }
+
+        .cart-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+            .cart-empty p {
+                font-size: 3rem;
+                margin-bottom: 15px;
+            }
+
+            .cart-empty h3 {
+                margin-bottom: 10px;
+                color: #555;
+            }
+
+        .quantity-btn {
+            background: #eee;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+            .quantity-btn:hover {
+                background: #ddd;
+            }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #ff4444;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+            .remove-btn:hover {
+                text-decoration: underline;
             }
 
         @media (max-width: 768px) {
@@ -250,27 +310,49 @@
 
     <div class="cart-container">
         <div class="cart-header">
-            <h1>Carro de Compras</h1>
+            <h1>🛒 Carrito de Compras</h1>
             <p>Revisa tus productos antes de continuar</p>
         </div>
 
-        <!-- ITEMS -->
+        <!-- ITEMS DEL CARRITO -->
         <div class="cart-items" id="cartItems">
-            <p style="text-align:center; color:#888; padding:40px;">Cargando carrito...</p>
+            <div class="cart-empty">
+                <p>🛒</p>
+                <h3>Cargando carrito...</h3>
+            </div>
         </div>
 
-        <!-- RESUMEN -->
+        <!-- RESUMEN DEL PEDIDO -->
         <div class="cart-summary">
             <h2>Resumen del Pedido</h2>
 
             <div class="summary-item">
-                <span id="resumenCantidad">Subtotal (0 productos):</span>
+                <span>Subtotal:</span>
                 <span id="resumenSubtotal">$0.00</span>
             </div>
 
+            <!-- Control de IVA -->
+            <div class="iva-control">
+                <label>
+                    <span>💰 IVA (%):</span>
+                    <input type="number" id="ivaPorcentaje" value="16" step="0.5" min="0" max="100" onchange="actualizarTotales()">
+                </label>
+            </div>
+
             <div class="summary-item">
-                <span>Envío estándar:</span>
+                <span id="ivaLabel">📊 IVA (16%):</span>
+                <span id="resumenIVA">$0.00</span>
+            </div>
+
+            <div class="summary-item">
+                <span>🚚 Envío estándar:</span>
                 <span>$5.00</span>
+            </div>
+
+            <!-- Métodos de pago -->
+            <div class="payment-methods">
+                <h3>💳 Método de Pago</h3>
+                <div id="metodosPago"></div>
             </div>
 
             <div class="summary-total">
@@ -278,8 +360,7 @@
                 <span id="resumenTotal">$5.00</span>
             </div>
 
-            <!-- BOTONES DE ACCIÓN -->
-            <button class="checkout-btn" id="btnComprar" onclick="confirmarCompra()" style="display:block;width:100%;text-align:center;border:none;cursor:pointer;font-size:1rem;font-weight:bold;padding:14px;background:#25D366;color:white;border-radius:10px;margin-top:15px;">
+            <button class="checkout-btn" id="btnComprar" onclick="confirmarCompra()">
                 ✅ Confirmar Compra
             </button>
 
@@ -289,153 +370,270 @@
         </div>
     </div>
 
-    <!-- Toast -->
-    <div id="toast" style="position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:8px;color:white;font-weight:bold;z-index:9999;opacity:0;transition:opacity 0.3s;"></div>
+    <!-- Toast para notificaciones -->
+    <div id="toast" style="position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:8px;color:white;font-weight:bold;z-index:9999;opacity:0;transition:opacity 0.3s;"></div>
 
     <script>
         const API_BASE = 'http://localhost:3000/api';
+        let sessionId = localStorage.getItem('session_id');
+        let carritoItems = [];
+        let subtotal = 0;
+        let metodoPagoSeleccionado = null;
 
-        // Cargar navbar
-        fetch('navbar.html')
-            .then(r => r.text())
-            .then(html => {
-                document.getElementById('navbar-container').innerHTML = html;
-                const dropdownBtn = document.querySelector('.dropdown-btn');
-                const dropdownContent = document.querySelector('.dropdown-content');
-                if (dropdownBtn && dropdownContent) {
-                    dropdownBtn.addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        dropdownContent.classList.toggle('show');
-                    });
-                }
-            });
+        if (!sessionId) {
+            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('session_id', sessionId);
+        }
 
-        function showToast(msg, type) {
+        function getCurrentUser() {
+            const cliente = localStorage.getItem('cliente');
+            return cliente ? JSON.parse(cliente) : null;
+        }
+
+        function showToast(msg, type = 'success') {
             const t = document.getElementById('toast');
             t.textContent = msg;
             t.style.background = type === 'error' ? '#e53935' : '#43a047';
             t.style.opacity = '1';
-            setTimeout(() => t.style.opacity = '0', 3500);
+            setTimeout(() => t.style.opacity = '0', 3000);
         }
 
-        function getCarrito() {
-            return JSON.parse(localStorage.getItem('carrito') || '[]');
+        // Cargar métodos de pago
+        async function cargarMetodosPago() {
+            try {
+                const response = await fetch(`${API_BASE}/metodos-pago`);
+                if (response.ok) {
+                    const metodos = await response.json();
+                    const container = document.getElementById('metodosPago');
+                    container.innerHTML = '';
+
+                    metodos.forEach(metodo => {
+                        const div = document.createElement('div');
+                        div.className = 'payment-option';
+                        div.onclick = () => seleccionarMetodoPago(metodo.id);
+
+                        div.innerHTML = `
+                                <input type="radio" name="metodo_pago" value="${metodo.id}" id="metodo_${metodo.id}">
+                                <label for="metodo_${metodo.id}">
+                                    <strong>${metodo.nombre}</strong>
+                                    <small>${metodo.descripcion || ''}</small>
+                                </label>
+                            `;
+                        container.appendChild(div);
+                    });
+
+                    if (metodos.length > 0) {
+                        seleccionarMetodoPago(metodos[0].id);
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando métodos de pago:', error);
+            }
         }
-        function saveCarrito(carrito) {
-            localStorage.setItem('carrito', JSON.stringify(carrito));
+
+        function seleccionarMetodoPago(metodoId) {
+            metodoPagoSeleccionado = metodoId;
+            const radios = document.querySelectorAll('input[name="metodo_pago"]');
+            radios.forEach(radio => {
+                radio.checked = radio.value == metodoId;
+                radio.closest('.payment-option').classList.toggle('selected', radio.checked);
+            });
+        }
+
+        // Cargar carrito
+        async function cargarCarrito() {
+            const user = getCurrentUser();
+            let url = `${API_BASE}/carrito?`;
+
+            if (user) {
+                url += `cliente_id=${user.id}`;
+            } else {
+                url += `session_id=${sessionId}`;
+            }
+
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    const data = await response.json();
+                    carritoItems = data.items || [];
+                    subtotal = data.subtotal || 0;
+                    renderCarrito();
+                    actualizarTotales();
+                } else {
+                    mostrarCarritoVacio();
+                }
+            } catch (error) {
+                console.error('Error cargando carrito:', error);
+                mostrarCarritoVacio();
+            }
         }
 
         function renderCarrito() {
-            const carrito = getCarrito();
             const container = document.getElementById('cartItems');
 
-            if (carrito.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align:center; padding:50px 20px; color:#888;">
-                        <p style="font-size:3rem;">🛒</p>
-                        <h3>Tu carrito está vacío</h3>
-                        <p>Agrega productos desde el <a href="catalog.html" style="color:#9b5de5;">catálogo</a></p>
-                    </div>`;
-                document.getElementById('btnComprar').style.display = 'none';
-                actualizarResumen(carrito);
+            if (carritoItems.length === 0) {
+                mostrarCarritoVacio();
                 return;
             }
 
-            document.getElementById('btnComprar').style.display = 'block';
+            container.innerHTML = '';
 
-            container.innerHTML = carrito.map((item, i) => `
-                <div class="cart-item">
-                    <img src="${item.imagen_url || 'https://via.placeholder.com/100x100?text=Perfume'}"
-                         class="item-image"
-                         onerror="this.src='https://via.placeholder.com/100x100?text=Perfume'">
-                    <div class="item-details">
-                        <h3>${item.nombre}</h3>
-                        <p>${item.marca || 'Marca propia'}</p>
-                        <p class="item-price">$${item.precio.toFixed(2)}</p>
-                        <div class="quantity-display">
-                            <span>Cantidad:</span>
-                            <button onclick="cambiarCantidad(${i}, -1)" style="background:#eee;border:1px solid #ccc;border-radius:4px;width:28px;height:28px;cursor:pointer;font-size:1rem;">−</button>
-                            <div class="quantity-box">${item.cantidad}</div>
-                            <button onclick="cambiarCantidad(${i}, 1)" style="background:#eee;border:1px solid #ccc;border-radius:4px;width:28px;height:28px;cursor:pointer;font-size:1rem;">+</button>
+            carritoItems.forEach((item) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'cart-item';
+                itemDiv.innerHTML = `
+                        <img src="${item.imagen_url || 'https://via.placeholder.com/100x100?text=Perfume'}"
+                             class="item-image"
+                             onerror="this.src='https://via.placeholder.com/100x100?text=Perfume'">
+                        <div class="item-details">
+                            <h3>${escapeHtml(item.nombre)}</h3>
+                            <p>${item.marca || 'Marca propia'}</p>
+                            <p class="item-price">$${parseFloat(item.precio_unitario).toFixed(2)}</p>
+                            <div class="quantity-display">
+                                <span>Cantidad:</span>
+                                <button class="quantity-btn" onclick="cambiarCantidad(${item.id}, -1)">−</button>
+                                <div class="quantity-box">${item.cantidad}</div>
+                                <button class="quantity-btn" onclick="cambiarCantidad(${item.id}, 1)">+</button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="item-controls">
-                        <p style="font-weight:bold;color:#333;font-size:1.1rem;">$${(item.precio * item.cantidad).toFixed(2)}</p>
-                        <button class="remove-btn" onclick="eliminarItem(${i})" style="background:none;border:none;color:#ff4444;cursor:pointer;">
-                            🗑️ Eliminar
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-
-            actualizarResumen(carrito);
+                        <div class="item-controls">
+                            <p style="font-weight:bold;color:#333;font-size:1.1rem;">$${(item.precio_unitario * item.cantidad).toFixed(2)}</p>
+                            <button class="remove-btn" onclick="eliminarItem(${item.id})">🗑️ Eliminar</button>
+                        </div>
+                    `;
+                container.appendChild(itemDiv);
+            });
         }
 
-        function actualizarResumen(carrito) {
-            const totalItems = carrito.reduce((s, item) => s + item.cantidad, 0);
-            const subtotal = carrito.reduce((s, item) => s + item.precio * item.cantidad, 0);
-            const envio = carrito.length > 0 ? 5 : 0;
-            const total = subtotal + envio;
-
-            document.getElementById('resumenCantidad').textContent = `Subtotal (${totalItems} producto${totalItems !== 1 ? 's' : ''}):`;
-            document.getElementById('resumenSubtotal').textContent = `$${subtotal.toFixed(2)}`;
-            document.getElementById('resumenTotal').textContent = `$${total.toFixed(2)}`;
+        function mostrarCarritoVacio() {
+            const container = document.getElementById('cartItems');
+            container.innerHTML = `
+                    <div class="cart-empty">
+                        <p>🛒</p>
+                        <h3>Tu carrito está vacío</h3>
+                        <p>Agrega productos desde el <a href="catalog.html" style="color:#7e57c2;">catálogo</a></p>
+                    </div>`;
+            document.getElementById('btnComprar').style.display = 'none';
         }
 
-        function cambiarCantidad(index, delta) {
-            const carrito = getCarrito();
-            if (!carrito[index]) return;
-            carrito[index].cantidad += delta;
-            if (carrito[index].cantidad < 1) carrito[index].cantidad = 1;
-            if (carrito[index].cantidad > (carrito[index].stock || 999)) {
-                carrito[index].cantidad = carrito[index].stock || 999;
-                showToast('Stock máximo alcanzado', 'error');
+        async function cambiarCantidad(itemId, delta) {
+            const item = carritoItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            const nuevaCantidad = item.cantidad + delta;
+            if (nuevaCantidad < 1) return;
+            if (item.stock && nuevaCantidad > item.stock) {
+                showToast(`Stock máximo disponible: ${item.stock}`, 'error');
+                return;
             }
-            saveCarrito(carrito);
-            renderCarrito();
+
+            try {
+                const response = await fetch(`${API_BASE}/carrito/items/${itemId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cantidad: nuevaCantidad })
+                });
+
+                if (response.ok) {
+                    await cargarCarrito();
+                } else {
+                    showToast('Error al actualizar cantidad', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error de conexión', 'error');
+            }
         }
 
-        function eliminarItem(index) {
-            const carrito = getCarrito();
-            carrito.splice(index, 1);
-            saveCarrito(carrito);
-            renderCarrito();
-            showToast('Producto eliminado del carrito');
+        async function eliminarItem(itemId) {
+            try {
+                const response = await fetch(`${API_BASE}/carrito/items/${itemId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    await cargarCarrito();
+                    showToast('Producto eliminado del carrito');
+                } else {
+                    showToast('Error al eliminar producto', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error de conexión', 'error');
+            }
+        }
+
+        function actualizarTotales() {
+            const ivaPorcentaje = parseFloat(document.getElementById('ivaPorcentaje').value) || 16;
+            const envio = carritoItems.length > 0 ? 5 : 0;
+            const iva = subtotal * (ivaPorcentaje / 100);
+            const total = subtotal + iva + envio;
+
+            document.getElementById('resumenSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('resumenIVA').textContent = `$${iva.toFixed(2)}`;
+            document.getElementById('resumenTotal').textContent = `$${total.toFixed(2)}`;
+
+            // Actualizar label del IVA
+            document.getElementById('ivaLabel').innerHTML = `📊 IVA (${ivaPorcentaje}%):`;
         }
 
         async function confirmarCompra() {
-            const carrito = getCarrito();
-            if (carrito.length === 0) return;
+            if (carritoItems.length === 0) {
+                showToast('No hay productos en el carrito', 'error');
+                return;
+            }
 
-            if (!confirm('¿Confirmar la compra de ' + carrito.reduce((s,i) => s+i.cantidad, 0) + ' producto(s)?')) return;
+            if (!metodoPagoSeleccionado) {
+                showToast('Por favor selecciona un método de pago', 'error');
+                return;
+            }
+
+            const user = getCurrentUser();
+            if (!user) {
+                showToast('Debes iniciar sesión para completar la compra', 'error');
+                setTimeout(() => window.location.href = 'clientelogin.html', 2000);
+                return;
+            }
+
+            const ivaPorcentaje = parseFloat(document.getElementById('ivaPorcentaje').value) || 16;
+            const totalItems = carritoItems.reduce((s, i) => s + i.cantidad, 0);
+
+            if (!confirm(`Confirmar compra de ${totalItems} producto(s) por ${document.getElementById('resumenTotal').textContent}`)) {
+                return;
+            }
 
             const btn = document.getElementById('btnComprar');
             btn.textContent = '⏳ Procesando...';
             btn.disabled = true;
 
             try {
-                const items = carrito.map(item => ({
+                const items = carritoItems.map(item => ({
                     producto_id: item.producto_id,
                     cantidad: item.cantidad
                 }));
 
-                const res = await fetch(`${API_BASE}/comprar`, {
+                const response = await fetch(`${API_BASE}/comprar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ items })
                 });
 
-                const data = await res.json();
+                const data = await response.json();
 
                 if (data.success) {
-                    localStorage.removeItem('carrito');
+                    // Limpiar carrito persistente
+                    for (const item of carritoItems) {
+                        await fetch(`${API_BASE}/carrito/items/${item.id}`, { method: 'DELETE' });
+                    }
+
                     showToast('✅ ¡Compra realizada con éxito!');
 
-                    renderCarrito();
-                    // Redirigir a confirmación después de un momento
                     setTimeout(() => {
                         const customerData = {
-                            total: '$' + carrito.reduce((s,i) => s + i.precio * i.cantidad, 0).toFixed(2),
+                            total: document.getElementById('resumenTotal').textContent,
+                            subtotal: subtotal,
+                            iva: subtotal * (ivaPorcentaje / 100),
+                            metodo_pago: metodoPagoSeleccionado,
                             timestamp: new Date().toISOString()
                         };
                         localStorage.setItem('customerData', JSON.stringify(customerData));
@@ -452,8 +650,41 @@
             }
         }
 
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Cargar navbar
+        fetch('navbar.html')
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById('navbar-container').innerHTML = html;
+                const dropdownBtn = document.querySelector('.dropdown-btn');
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownBtn && dropdownContent) {
+                    dropdownBtn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        dropdownContent.classList.toggle('show');
+                    });
+                }
+
+                const user = getCurrentUser();
+                if (user) {
+                    const userInfo = document.querySelector('.user-info');
+                    if (userInfo) {
+                        userInfo.innerHTML = `👋 Hola, ${user.nombre.split(' ')[0]}`;
+                    }
+                }
+            });
+
         // Inicializar
-        document.addEventListener('DOMContentLoaded', renderCarrito);
+        document.addEventListener('DOMContentLoaded', function () {
+            cargarMetodosPago();
+            cargarCarrito();
+        });
     </script>
 </body>
 </html>

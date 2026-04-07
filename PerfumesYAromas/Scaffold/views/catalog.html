@@ -29,7 +29,7 @@
                 font-size: 1.1rem;
             }
 
-        /* Filtros y búsqueda */
+        /* Filtros y búsqueda - EN UNA SOLA FILA */
         .filters-section {
             background: white;
             padding: 20px;
@@ -44,7 +44,7 @@
         }
 
         .search-box {
-            flex: 1;
+            flex: 2;
             min-width: 250px;
             display: flex;
             gap: 10px;
@@ -65,6 +65,7 @@
                 border: none;
                 border-radius: 8px;
                 cursor: pointer;
+                font-weight: bold;
             }
 
         .filter-group {
@@ -79,7 +80,8 @@
             border-radius: 8px;
             font-size: 1rem;
             background: white;
-            min-width: 150px;
+            min-width: 180px;
+            cursor: pointer;
         }
 
         /* Grid de productos */
@@ -164,6 +166,7 @@
                 color: #f44336;
             }
 
+        /* Descripción - OCULTA POR DEFECTO */
         .product-descripcion {
             color: #666;
             font-size: 0.95rem;
@@ -214,6 +217,11 @@
 
             .btn-carrito:hover {
                 opacity: 0.9;
+            }
+
+            .btn-carrito:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
             }
 
         /* Loading y mensajes */
@@ -271,6 +279,113 @@
             font-weight: bold;
         }
 
+        /* Control de cantidad */
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .quantity-input {
+            width: 70px;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+            .quantity-input:focus {
+                outline: none;
+                border-color: #7e57c2;
+            }
+
+        /* Modal de login */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+            .modal-overlay.active {
+                display: flex;
+            }
+
+        .modal {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+            .modal h2 {
+                margin-bottom: 20px;
+                color: #333;
+                text-align: center;
+            }
+
+            .modal input {
+                width: 100%;
+                padding: 12px;
+                margin: 10px 0;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                font-size: 1rem;
+                box-sizing: border-box;
+            }
+
+                .modal input:focus {
+                    outline: none;
+                    border-color: #7e57c2;
+                }
+
+            .modal button {
+                width: 100%;
+                padding: 12px;
+                margin-top: 10px;
+                background: linear-gradient(90deg, purple, blue);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: bold;
+            }
+
+                .modal button.cancelar {
+                    background: #ccc;
+                    color: #333;
+                }
+
+            .modal hr {
+                margin: 20px 0;
+                border: none;
+                border-top: 1px solid #eee;
+            }
+
+            .modal p {
+                text-align: center;
+                font-size: 0.9rem;
+            }
+
+            .modal a {
+                color: #7e57c2;
+                text-decoration: none;
+            }
+
+                .modal a:hover {
+                    text-decoration: underline;
+                }
+
         /* Responsive */
         @media (max-width: 768px) {
             .filters-section {
@@ -297,14 +412,15 @@
 
     <div class="content">
         <div class="catalog-header">
-            <p>Descubre nuestra exclusiva colección de fragancias</p>
+            <h1>✨ Nuestras Fragancias</h1>
+            <p>Descubre nuestra exclusiva colección de perfumes</p>
         </div>
 
-        <!-- Filtros y búsqueda -->
+        <!-- Filtros y búsqueda - EN UNA SOLA FILA -->
         <div class="filters-section">
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Buscar por nombre, marca o notas...">
-                <button onclick="filtrarProductos()">🔍 Buscar</button>
+                <input type="text" id="searchInput" placeholder="🔍 Buscar por nombre, marca o notas...">
+                <button onclick="filtrarProductos()">Buscar</button>
             </div>
             <div class="filter-group">
                 <select class="filter-select" id="filterGenero" onchange="filtrarProductos()">
@@ -332,22 +448,41 @@
         </div>
     </div>
 
-    <!-- Botón de WhatsApp -->
+    <!-- Modal de Login -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal">
+            <h2>🔐 Inicia Sesión</h2>
+            <p style="margin-bottom: 15px;">Para agregar productos al carrito, necesitas tener una cuenta.</p>
+            <input type="email" id="loginEmail" placeholder="Correo electrónico">
+            <input type="password" id="loginPassword" placeholder="Contraseña">
+            <button onclick="loginAndRedirect()">Iniciar Sesión</button>
+            <button class="cancelar" onclick="cerrarModalLogin()">Cancelar</button>
+            <hr>
+            <p>¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a></p>
+        </div>
+    </div>
+
+    <!-- Botón de WhatsApp flotante -->
     <a href="https://wa.me/524494389825?text=Hola%2C%20me%20interesa%20una%20fragancia"
        class="btn-whatsapp-fixed"
        target="_blank"
        rel="noopener"
-       aria-label="Chatea con nosotros en WhatsApp">
+       aria-label="Chatea con nosotros en WhatsApp"
+       style="position:fixed;bottom:20px;right:20px;background:#25D366;color:white;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;text-decoration:none;box-shadow:0 2px 10px rgba(0,0,0,0.2);z-index:1000;">
         💬
     </a>
 
     <script>
-        // URL base del servidor
         const API_BASE_URL = 'http://localhost:3000';
-
-        // Variable global para almacenar todos los productos
         let todosLosProductos = [];
         let productosFiltrados = [];
+
+        // Generar o recuperar session_id (para carrito después del login)
+        let sessionId = localStorage.getItem('session_id');
+        if (!sessionId) {
+            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('session_id', sessionId);
+        }
 
         // Cargar navbar
         fetch('navbar.html')
@@ -355,10 +490,10 @@
             .then(data => {
                 document.getElementById('navbar-container').innerHTML = data;
                 initializeDropdown();
+                actualizarNavbarUsuario();
             })
             .catch(error => console.error('Error loading navbar:', error));
 
-        // Función para inicializar el dropdown
         function initializeDropdown() {
             const dropdownBtn = document.querySelector('.dropdown-btn');
             const dropdownContent = document.querySelector('.dropdown-content');
@@ -379,14 +514,30 @@
             }
         }
 
-        // Cargar productos desde la BD
+        function actualizarNavbarUsuario() {
+            const user = getCurrentUser();
+            if (user) {
+                const userInfo = document.querySelector('.user-info');
+                if (userInfo) {
+                    userInfo.innerHTML = `👋 Hola, ${user.nombre.split(' ')[0]}`;
+                }
+            }
+        }
+
+        function getCurrentUser() {
+            const cliente = localStorage.getItem('cliente');
+            return cliente ? JSON.parse(cliente) : null;
+        }
+
+        function isUserLoggedIn() {
+            return getCurrentUser() !== null;
+        }
+
+        // Cargar productos
         async function cargarProductos() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/productos/activos`);
-
-                if (!response.ok) {
-                    throw new Error('Error al cargar productos');
-                }
+                if (!response.ok) throw new Error('Error al cargar productos');
 
                 const productos = await response.json();
                 todosLosProductos = productos;
@@ -399,7 +550,7 @@
             }
         }
 
-        // Mostrar productos en el grid
+        // Mostrar productos
         function mostrarProductos(productos) {
             const grid = document.getElementById('productGrid');
 
@@ -419,18 +570,14 @@
             grid.innerHTML = '';
 
             productos.forEach(producto => {
-                // Solo mostrar productos activos
                 if (!producto.activo) return;
 
                 const card = document.createElement('div');
                 card.classList.add('product-card');
 
-                // Badge de género (opcional)
-                const genderBadge = producto.genero ?
-                    `<div class="gender-badge">${producto.genero}</div>` : '';
-
-                // Determinar clase de stock
+                const genderBadge = producto.genero ? `<div class="gender-badge">${producto.genero}</div>` : '';
                 const stockClass = producto.stock <= (producto.stock_minimo || 5) ? 'bajo' : '';
+                const maxStock = producto.stock || 0;
 
                 card.innerHTML = `
                         ${genderBadge}
@@ -441,21 +588,25 @@
                         </div>
                         <div class="product-info">
                             <div class="product-marca">${producto.marca || 'Marca propia'}</div>
-                            <div class="product-title">${producto.nombre}</div>
+                            <div class="product-title">${escapeHtml(producto.nombre)}</div>
                             <div class="product-price">$${parseFloat(producto.precio).toFixed(2)}</div>
                             <div class="product-stock ${stockClass}">
                                 ${producto.stock > 0 ? `✓ ${producto.stock} disponibles` : '❌ Agotado'}
                             </div>
                             ${producto.tamanio_ml ? `<small>${producto.tamanio_ml} ml</small>` : ''}
+                            <div class="quantity-control">
+                                <label>Cantidad:</label>
+                                <input type="number" id="qty-${producto.id}" class="quantity-input" value="1" min="1" max="${maxStock}" ${producto.stock === 0 ? 'disabled' : ''}>
+                            </div>
                             <div class="product-descripcion" id="desc-${producto.id}">
                                 ${producto.descripcion || 'Sin descripción disponible'}
-                                ${producto.notas_olfativas ? `<br><br><strong>Notas:</strong> ${producto.notas_olfativas}` : ''}
+                                ${producto.notas_olfativas ? `<br><br><strong>Notas olfativas:</strong> ${producto.notas_olfativas}` : ''}
                             </div>
                         </div>
                         <div class="product-footer">
                             <button class="btn-vermas" onclick="toggleDescripcion(${producto.id})">Ver más</button>
-                            <button class="btn-carrito" onclick="agregarAlCarrito(${producto.id})" ${producto.stock === 0 ? 'disabled style=\"opacity:0.5\"' : ''}>
-                                ${producto.stock > 0 ? 'Agregar al carrito' : 'Agotado'}
+                            <button class="btn-carrito" onclick="verificarLoginYAgregar(${producto.id})" ${producto.stock === 0 ? 'disabled' : ''}>
+                                ${producto.stock > 0 ? '🛒 Agregar al carrito' : 'Agotado'}
                             </button>
                         </div>
                     `;
@@ -464,7 +615,35 @@
             });
         }
 
-        // Función para mostrar/ocultar descripción
+        // FUNCIÓN CORREGIDA: Verifica login y obtiene la cantidad seleccionada
+        function verificarLoginYAgregar(productoId) {
+            // Obtener la cantidad del input específico de este producto
+            const qtyInput = document.getElementById(`qty-${productoId}`);
+            let cantidad = 1;
+
+            if (qtyInput) {
+                cantidad = parseInt(qtyInput.value);
+                if (isNaN(cantidad) || cantidad < 1) {
+                    cantidad = 1;
+                }
+            }
+
+            if (isUserLoggedIn()) {
+                // Si está logueado, agregar al carrito con la cantidad seleccionada
+                agregarAlCarrito(productoId, cantidad);
+            } else {
+                // Si no está logueado, mostrar modal de login
+                // Guardar el producto y cantidad pendientes para después del login
+                pendingProductId = productoId;
+                pendingQuantity = cantidad;
+                mostrarModalLogin();
+            }
+        }
+
+        // Variables para almacenar producto pendiente después del login
+        let pendingProductId = null;
+        let pendingQuantity = null;
+
         function toggleDescripcion(productoId) {
             const desc = document.getElementById(`desc-${productoId}`);
             const btn = event.target;
@@ -478,42 +657,138 @@
             }
         }
 
-        // Función para filtrar productos
+        // Agregar al carrito (solo se llama si el usuario está logueado)
+        async function agregarAlCarrito(productoId, cantidad = 1) {
+            const user = getCurrentUser();
+
+            if (!user) {
+                mostrarModalLogin();
+                return;
+            }
+
+            const payload = {
+                cliente_id: user.id,
+                producto_id: productoId,
+                cantidad: cantidad
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/carrito/items`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const producto = todosLosProductos.find(p => p.id === productoId);
+                    showToast(`✅ ${cantidad} x ${producto.nombre} agregado(s) al carrito`);
+                } else {
+                    showToast(data.error || 'Error al agregar al carrito', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error de conexión', 'error');
+            }
+        }
+
+        // Login y luego agregar el producto pendiente
+        async function loginAndRedirect() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showToast('Por favor ingresa tu correo y contraseña', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/login-cliente`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Guardar datos del cliente
+                    localStorage.setItem('cliente', JSON.stringify(data.cliente));
+                    localStorage.setItem('userType', 'cliente');
+                    localStorage.setItem('token', data.token);
+
+                    // Sincronizar carrito si tenía items en sesión anónima
+                    await sincronizarCarrito(data.cliente.id);
+
+                    cerrarModalLogin();
+                    showToast('✅ Sesión iniciada correctamente');
+
+                    // Actualizar navbar
+                    actualizarNavbarUsuario();
+
+                    // Si había un producto pendiente, agregarlo al carrito
+                    if (pendingProductId && pendingQuantity) {
+                        await agregarAlCarrito(pendingProductId, pendingQuantity);
+                        pendingProductId = null;
+                        pendingQuantity = null;
+                    }
+
+                } else {
+                    showToast(data.message || 'Credenciales incorrectas', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error de conexión', 'error');
+            }
+        }
+
+        async function sincronizarCarrito(clienteId) {
+            try {
+                await fetch(`${API_BASE_URL}/api/carrito/sincronizar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cliente_id: clienteId,
+                        session_id: sessionId
+                    })
+                });
+            } catch (error) {
+                console.error('Error sincronizando carrito:', error);
+            }
+        }
+
+        function mostrarModalLogin() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+
+        function cerrarModalLogin() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            // No limpiar pendingProductId aquí para permitir agregar después del login
+        }
+
         function filtrarProductos() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const genero = document.getElementById('filterGenero').value;
             const orden = document.getElementById('filterOrden').value;
 
-            // Aplicar filtros
             let filtrados = todosLosProductos.filter(producto => {
-                // Filtrar por búsqueda
-                const matchesSearch =
-                    producto.nombre.toLowerCase().includes(searchTerm) ||
+                const matchesSearch = producto.nombre.toLowerCase().includes(searchTerm) ||
                     (producto.marca && producto.marca.toLowerCase().includes(searchTerm)) ||
                     (producto.descripcion && producto.descripcion.toLowerCase().includes(searchTerm)) ||
                     (producto.notas_olfativas && producto.notas_olfativas.toLowerCase().includes(searchTerm));
-
-                // Filtrar por género
                 const matchesGenero = !genero || producto.genero === genero;
-
                 return matchesSearch && matchesGenero && producto.activo;
             });
 
-            // Aplicar ordenamiento
             if (orden) {
                 switch (orden) {
-                    case 'precio_asc':
-                        filtrados.sort((a, b) => a.precio - b.precio);
-                        break;
-                    case 'precio_desc':
-                        filtrados.sort((a, b) => b.precio - a.precio);
-                        break;
-                    case 'nombre_asc':
-                        filtrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
-                        break;
-                    case 'nombre_desc':
-                        filtrados.sort((a, b) => b.nombre.localeCompare(a.nombre));
-                        break;
+                    case 'precio_asc': filtrados.sort((a, b) => a.precio - b.precio); break;
+                    case 'precio_desc': filtrados.sort((a, b) => b.precio - a.precio); break;
+                    case 'nombre_asc': filtrados.sort((a, b) => a.nombre.localeCompare(b.nombre)); break;
+                    case 'nombre_desc': filtrados.sort((a, b) => b.nombre.localeCompare(a.nombre)); break;
                 }
             }
 
@@ -521,7 +796,6 @@
             mostrarProductos(productosFiltrados);
         }
 
-        // Limpiar todos los filtros
         function limpiarFiltros() {
             document.getElementById('searchInput').value = '';
             document.getElementById('filterGenero').value = '';
@@ -529,11 +803,10 @@
             filtrarProductos();
         }
 
-        // Mostrar mensaje de error
         function mostrarError(mensaje) {
             const grid = document.getElementById('productGrid');
             grid.innerHTML = `
-                    <div class="no-products" style="color: #f44336;">
+                    <div class="no-products">
                         <h3>❌ Error</h3>
                         <p>${mensaje}</p>
                         <button onclick="cargarProductos()" style="margin-top:15px; padding:10px 20px; background:#7e57c2; color:white; border:none; border-radius:5px; cursor:pointer;">
@@ -543,52 +816,32 @@
                 `;
         }
 
-        // Agregar producto al carrito (localStorage)
-        function agregarAlCarrito(productoId) {
-            const producto = todosLosProductos.find(p => p.id === productoId);
-            if (!producto || producto.stock === 0) return;
-
-            let carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
-            const idx = carrito.findIndex(item => item.producto_id === productoId);
-
-            if (idx >= 0) {
-                if (carrito[idx].cantidad >= producto.stock) {
-                    alert('⚠️ No hay más stock disponible para este producto');
-                    return;
-                }
-                carrito[idx].cantidad++;
-            } else {
-                carrito.push({
-                    producto_id: producto.id,
-                    nombre: producto.nombre,
-                    marca: producto.marca,
-                    precio: parseFloat(producto.precio),
-                    imagen_url: producto.imagen_url,
-                    cantidad: 1,
-                    stock: producto.stock
-                });
-            }
-
-            localStorage.setItem('carrito', JSON.stringify(carrito));
-
-            // Toast rápido
+        function showToast(msg, type = 'success') {
             const toast = document.createElement('div');
-            toast.textContent = `✅ ${producto.nombre} agregado al carrito`;
-            toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#43a047;color:white;padding:12px 24px;border-radius:8px;font-weight:bold;z-index:9999;opacity:0;transition:opacity 0.3s;';
+            toast.textContent = msg;
+            toast.style.cssText = `position:fixed;bottom:20px;right:20px;background:${type === 'error' ? '#f44336' : '#4caf50'};color:white;padding:12px 24px;border-radius:8px;font-weight:bold;z-index:9999;opacity:0;transition:opacity 0.3s;box-shadow:0 2px 10px rgba(0,0,0,0.2);`;
             document.body.appendChild(toast);
             setTimeout(() => toast.style.opacity = '1', 10);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2000);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
         }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('loginModal').addEventListener('click', function (e) {
+            if (e.target === this) cerrarModalLogin();
+        });
 
         // Inicializar
         document.addEventListener('DOMContentLoaded', function () {
             cargarProductos();
-
-            // Búsqueda en tiempo real (opcional)
             document.getElementById('searchInput').addEventListener('keyup', function (e) {
-                if (e.key === 'Enter') {
-                    filtrarProductos();
-                }
+                if (e.key === 'Enter') filtrarProductos();
             });
         });
     </script>
