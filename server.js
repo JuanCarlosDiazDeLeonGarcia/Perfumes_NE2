@@ -870,25 +870,31 @@ app.put('/api/clientes/:id', async (req, res) => {
     }
 });
 
-// Ruta para obtener pedidos de un cliente
+// Ruta para obtener pedidos de un cliente (versión simplificada)
 app.get('/api/pedidos-cliente/:cliente_id', async (req, res) => {
     const { cliente_id } = req.params;
 
     try {
         const result = await pool.query(
             `SELECT p.*, 
-                    STRING_AGG(pr.nombre, ', ') as productos
+                    pr.nombre as producto_nombre,
+                    pr.marca as producto_marca,
+                    pr.imagen_url as producto_imagen
              FROM pedidos p
-             LEFT JOIN carrito dp ON p.id = dp.pedido_id
-             LEFT JOIN productos pr ON dp.producto_id = pr.id
+             LEFT JOIN productos pr ON p.producto_id = pr.id
              WHERE p.cliente_id = $1
-             GROUP BY p.id
              ORDER BY p.fecha_pedido DESC
-             LIMIT 5`,
+             LIMIT 10`,
             [cliente_id]
         );
 
-        res.json(result.rows);
+        // Formatear productos para mostrar
+        const rows = result.rows.map(row => ({
+            ...row,
+            productos: row.producto_nombre || 'Producto no disponible'
+        }));
+
+        res.json(rows);
     } catch (error) {
         console.error('Error obteniendo pedidos:', error);
         res.status(500).json({ message: 'Error obteniendo pedidos del cliente' });
@@ -902,13 +908,13 @@ app.get('/api/pedidos-detallados/:cliente_id', async (req, res) => {
     try {
         const result = await pool.query(
             `SELECT p.*, 
-                    STRING_AGG(pr.nombre, ', ') as productos,
-                    SUM(dp.cantidad) as cantidad_total
+                    pr.nombre as producto_nombre,
+                    pr.marca as producto_marca,
+                    pr.precio as producto_precio,
+                    pr.imagen_url as producto_imagen
              FROM pedidos p
-             LEFT JOIN carrito dp ON p.id = dp.pedido_id
-             LEFT JOIN productos pr ON dp.producto_id = pr.id
+             LEFT JOIN productos pr ON p.producto_id = pr.id
              WHERE p.cliente_id = $1
-             GROUP BY p.id
              ORDER BY p.fecha_pedido DESC`,
             [cliente_id]
         );
@@ -925,9 +931,23 @@ app.get('/api/pedido-detalle/:pedido_id', async (req, res) => {
     const { pedido_id } = req.params;
 
     try {
-        // Obtener información del pedido
+        // Obtener información del pedido con datos del producto
         const pedidoResult = await pool.query(
-            `SELECT * FROM pedidos WHERE id = $1`,
+            `SELECT p.*, 
+                    pr.nombre as producto_nombre,
+                    pr.marca as producto_marca,
+                    pr.precio as producto_precio,
+                    pr.descripcion as producto_descripcion,
+                    pr.imagen_url as producto_imagen,
+                    c.nombre as cliente_nombre,
+                    c.correo as cliente_email,
+                    c.telefono as cliente_telefono,
+                    u.nombre as vendedor_nombre
+             FROM pedidos p
+             LEFT JOIN productos pr ON p.producto_id = pr.id
+             LEFT JOIN clientes c ON p.cliente_id = c.id
+             LEFT JOIN usuarios u ON p.vendedor_id = u.id
+             WHERE p.id = $1`,
             [pedido_id]
         );
 
@@ -937,17 +957,8 @@ app.get('/api/pedido-detalle/:pedido_id', async (req, res) => {
 
         const pedido = pedidoResult.rows[0];
 
-        // Obtener detalles del pedido
-        const detallesResult = await pool.query(
-            `SELECT dp.*, p.nombre as nombre_producto
-             FROM carrito dp
-             JOIN productos p ON dp.producto_id = p.id
-             WHERE dp.pedido_id = $1`,
-            [pedido_id]
-        );
-
-        // Agregar detalles al objeto pedido
-        pedido.detalles = detallesResult.rows;
+        // Agregar campo productos para compatibilidad con frontend
+        pedido.productos = pedido.producto_nombre || 'Producto no disponible';
 
         res.json(pedido);
     } catch (error) {
@@ -1273,20 +1284,17 @@ app.post('/api/agregar-seguimiento-pedidos', async (req, res) => {
     }
 });
 
-// Ruta para obtener pedidos con seguimiento
+// Obtener pedidos con seguimiento (sin usar carrito)
 app.get('/api/seguimiento-pedidos/:cliente_id', async (req, res) => {
     const { cliente_id } = req.params;
 
     try {
         const result = await pool.query(
             `SELECT p.*, 
-                    STRING_AGG(pr.nombre, ', ') as productos,
-                    COUNT(dp.id) as cantidad_items
+                    pr.nombre as producto_nombre
              FROM pedidos p
-             LEFT JOIN carrito dp ON p.id = dp.pedido_id
-             LEFT JOIN productos pr ON dp.producto_id = pr.id
+             LEFT JOIN productos pr ON p.producto_id = pr.id
              WHERE p.cliente_id = $1
-             GROUP BY p.id
              ORDER BY 
                  CASE 
                      WHEN p.estado = 'enviado' THEN 1
@@ -1301,21 +1309,35 @@ app.get('/api/seguimiento-pedidos/:cliente_id', async (req, res) => {
             [cliente_id]
         );
 
-        res.json(result.rows);
+        // Formatear productos para mostrar
+        const rows = result.rows.map(row => ({
+            ...row,
+            productos: row.producto_nombre || 'Producto no disponible',
+            cantidad_items: row.cantidad || 1
+        }));
+
+        res.json(rows);
     } catch (error) {
         console.error('Error obteniendo seguimiento:', error);
         res.status(500).json({ message: 'Error obteniendo seguimiento de pedidos' });
     }
 });
 
-// Ruta para obtener detalle completo de seguimiento
+// Obtener detalle completo de seguimiento (sin carrito)
 app.get('/api/seguimiento-detalle/:pedido_id', async (req, res) => {
     const { pedido_id } = req.params;
 
     try {
         // Obtener información del pedido
         const pedidoResult = await pool.query(
-            `SELECT * FROM pedidos WHERE id = $1`,
+            `SELECT p.*, 
+                    pr.nombre as producto_nombre,
+                    pr.marca as producto_marca,
+                    pr.precio as producto_precio,
+                    pr.imagen_url as producto_imagen
+             FROM pedidos p
+             LEFT JOIN productos pr ON p.producto_id = pr.id
+             WHERE p.id = $1`,
             [pedido_id]
         );
 
@@ -1325,14 +1347,16 @@ app.get('/api/seguimiento-detalle/:pedido_id', async (req, res) => {
 
         const pedido = pedidoResult.rows[0];
 
-        // Obtener detalles del pedido
-        const detallesResult = await pool.query(
-            `SELECT dp.*, p.nombre, p.marca
-             FROM carrito dp
-             JOIN productos p ON dp.producto_id = p.id
-             WHERE dp.pedido_id = $1`,
-            [pedido_id]
-        );
+        // Crear array de productos para compatibilidad
+        pedido.productos_detalle = [{
+            producto_id: pedido.producto_id,
+            nombre: pedido.producto_nombre,
+            marca: pedido.producto_marca,
+            cantidad: pedido.cantidad || 1,
+            precio_unitario: pedido.producto_precio || (pedido.total / (pedido.cantidad || 1))
+        }];
+
+        pedido.productos = pedido.producto_nombre || 'Producto no disponible';
 
         // Obtener historial de seguimiento (si existe tabla separada)
         try {
@@ -1344,16 +1368,7 @@ app.get('/api/seguimiento-detalle/:pedido_id', async (req, res) => {
             );
             pedido.historial = historialResult.rows;
         } catch (error) {
-            // Si no existe la tabla, no hay problema
             pedido.historial = [];
-        }
-
-        // Agregar detalles al objeto pedido
-        pedido.productos_detalle = detallesResult.rows;
-
-        // Crear string de productos para mostrar
-        if (detallesResult.rows.length > 0) {
-            pedido.productos = detallesResult.rows.map(p => p.nombre).join(', ');
         }
 
         res.json(pedido);
@@ -1362,7 +1377,6 @@ app.get('/api/seguimiento-detalle/:pedido_id', async (req, res) => {
         res.status(500).json({ message: 'Error obteniendo detalle de seguimiento' });
     }
 });
-
 // Obtener seguimiento activo (solo pedidos no entregados)
 app.get('/api/vendedor/:vendedorId/seguimiento-activo', async (req, res) => {
     const { vendedorId } = req.params;
@@ -1699,24 +1713,24 @@ app.get('/api/metricas', async (req, res) => {
 });
 
 // ===================== MÉTRICAS DE PRODUCTOS =====================
-
+// Obtener estadísticas de productos (sin carrito)
 app.get('/api/metricas-productos', async (req, res) => {
     console.log('📊 Petición recibida en /api/metricas-productos');
 
     try {
-        // 1. Productos más vendidos (por cantidad de pedidos)
+        // 1. Productos más vendidos (directamente desde pedidos)
         const masVendidos = await pool.query(`
             SELECT p.id, p.nombre, p.marca, p.stock, p.precio,
                    COUNT(pe.id) AS total_pedidos,
                    COALESCE(SUM(pe.cantidad), 0) AS total_unidades
             FROM productos p
-            LEFT JOIN pedidos pe ON pe.producto_id = p.id
+            LEFT JOIN pedidos pe ON pe.producto_id = p.id AND pe.estado NOT IN ('cancelado')
             GROUP BY p.id, p.nombre, p.marca, p.stock, p.precio
             ORDER BY total_pedidos DESC, total_unidades DESC
             LIMIT 10
         `);
 
-        // 2. Productos con inventario crítico (stock <= stock_minimo)
+        // 2. Productos con inventario crítico
         const inventarioCritico = await pool.query(`
             SELECT id, nombre, marca, stock, stock_minimo,
                    CASE WHEN stock = 0 THEN 'agotado'
@@ -1727,7 +1741,7 @@ app.get('/api/metricas-productos', async (req, res) => {
             ORDER BY stock ASC
         `);
 
-        // 3. Conteo restock push vs pull
+        // 3. Conteo restock
         const restockConteo = await pool.query(`
             SELECT 
                 COUNT(*) FILTER (WHERE restock = 'push') AS push_count,
@@ -1818,7 +1832,8 @@ app.get('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
                 c.id as cliente_id,
                 c.correo as cliente_email,
                 p.direccion_envio,
-                pr.nombre as producto_nombre
+                pr.nombre as producto_nombre,
+                pr.marca as producto_marca
             FROM pedidos p
             JOIN clientes c ON p.cliente_id = c.id
             LEFT JOIN productos pr ON p.producto_id = pr.id
@@ -1828,6 +1843,7 @@ app.get('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
         `;
 
         const result = await pool.query(query, [vendedorId]);
+
         // Normalizar salida
         const rows = result.rows.map(r => ({
             id: r.id,
@@ -1934,7 +1950,8 @@ app.post('/api/vendedor/:vendedorId/pedidos', async (req, res) => {
         const total = subtotal + impuestos - descuento;
 
         // Usar el numero_orden enviado por el usuario, o generar uno automático si no se proporciona
-        const numero_orden = numero_orden_enviado || ('P' + Date.now());
+        const seqResult = await pool.query("SELECT nextval('pedidos_numero_orden_seq')");
+        const numero_orden = 'PED-' + seqResult.rows[0].nextval;
 
         const insert = await pool.query(
             `INSERT INTO pedidos (numero_orden, cliente_id, vendedor_id, producto_id, cantidad, subtotal, impuestos, descuento, total, estado, metodo_pago, direccion_envio, notas)
@@ -2014,44 +2031,57 @@ app.delete('/api/pedidos/:id', async (req, res) => {
     }
 });
 
-// Obtener seguimiento activo (pedidos no entregados)
 app.get('/api/vendedor/:vendedorId/seguimiento-activo', async (req, res) => {
     const { vendedorId } = req.params;
 
     try {
         const query = `
             SELECT 
-                s.id,
-                s.pedido_id,
-                s.estado_paquete,
-                s.ubicacion_actual,
-                s.fecha_estimada_entrega,
-                s.fecha_actualizacion,
+                p.id as pedido_id,
                 p.numero_orden,
                 p.total,
                 p.fecha_pedido,
-                c.nombre as cliente_nombre,
+                p.estado,
+                p.direccion_envio,
+                p.fecha_envio,
+                p.fecha_entrega,
                 c.id as cliente_id,
-                -- Info básica del pedido
-                'Pedido #' || p.numero_orden as productos
-            FROM seguimiento_pedidos s
-            JOIN pedidos p ON s.pedido_id = p.id
-            JOIN clientes c ON p.cliente_id = c.id
+                c.nombre as cliente_nombre,
+                c.telefono as cliente_telefono,
+                pr.nombre as producto_nombre,
+                p.cantidad
+            FROM pedidos p
+            LEFT JOIN clientes c ON p.cliente_id = c.id
+            LEFT JOIN productos pr ON p.producto_id = pr.id
             WHERE p.vendedor_id = $1
-                AND s.estado_paquete NOT IN ('entregado', 'cancelado', 'devuelto')
+              AND p.estado NOT IN ('entregado', 'cancelado')
             ORDER BY 
-                CASE s.estado_paquete
-                    WHEN 'en_reparto' THEN 1
-                    WHEN 'en_transito' THEN 2
-                    WHEN 'en_proceso' THEN 3
+                CASE p.estado
+                    WHEN 'enviado' THEN 1
+                    WHEN 'procesando' THEN 2
+                    WHEN 'confirmado' THEN 3
                     WHEN 'pendiente' THEN 4
                     ELSE 5
                 END,
-                s.fecha_estimada_entrega ASC
+                p.fecha_pedido ASC
         `;
 
         const result = await pool.query(query, [vendedorId]);
-        res.json(result.rows);
+
+        // Formatear para compatibilidad
+        const rows = result.rows.map(r => ({
+            id: r.pedido_id,
+            pedido_id: r.pedido_id,
+            pedido_numero: r.numero_orden,
+            cliente_nombre: r.cliente_nombre,
+            productos: r.producto_nombre || 'Producto no disponible',
+            estado_paquete: r.estado,
+            ubicacion_actual: r.direccion_envio || 'En preparación',
+            fecha_estimada_entrega: null,
+            fecha_actualizacion: r.fecha_envio || r.fecha_pedido
+        }));
+
+        res.json(rows);
 
     } catch (error) {
         console.error('Error obteniendo seguimiento activo:', error);
@@ -2553,20 +2583,20 @@ app.put('/api/productos/:productoId/estado', async (req, res) => {
     }
 });
 
-// Eliminar producto (solo si no tiene ventas asociadas)
+// Eliminar producto (sin usar carrito obsoleto)
 app.delete('/api/productos/:productoId', async (req, res) => {
     const { productoId } = req.params;
 
     try {
-        // Verificar si el producto tiene ventas
-        const ventasCheck = await pool.query(
-            'SELECT id FROM carrito WHERE producto_id = $1 LIMIT 1',
+        // Verificar si el producto tiene pedidos asociados
+        const pedidosCheck = await pool.query(
+            'SELECT id FROM pedidos WHERE producto_id = $1 LIMIT 1',
             [productoId]
         );
 
-        if (ventasCheck.rows.length > 0) {
+        if (pedidosCheck.rows.length > 0) {
             return res.status(400).json({
-                error: 'No se puede eliminar el producto porque tiene ventas asociadas. Desactívelo en su lugar.'
+                error: 'No se puede eliminar el producto porque tiene pedidos asociados. Desactívelo en su lugar.'
             });
         }
 
@@ -3788,6 +3818,61 @@ app.delete('/api/tarjetas/:tarjetaId', async (req, res) => {
     } catch (error) {
         console.error('Error eliminando tarjeta:', error);
         res.status(500).json({ error: 'Error al eliminar' });
+    }
+});
+
+// ==================== CONFIGURACIÓN GLOBAL ====================
+
+// Obtener configuración global (ej: IVA)
+app.get('/api/configuracion/:clave', async (req, res) => {
+    const { clave } = req.params;
+
+    try {
+        const result = await pool.query(
+            'SELECT valor FROM configuracion_global WHERE clave = $1',
+            [clave]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Configuración no encontrada' });
+        }
+
+        res.json({ clave, valor: result.rows[0].valor });
+
+    } catch (error) {
+        console.error('Error obteniendo configuración:', error);
+        res.status(500).json({ error: 'Error al obtener configuración' });
+    }
+});
+
+// Actualizar configuración (solo para admin)
+app.put('/api/configuracion/:clave', async (req, res) => {
+    const { clave } = req.params;
+    const { valor, usuario_id } = req.body;
+
+    // Verificar que el usuario sea admin (puedes ajustar según tu lógica)
+    if (!usuario_id) {
+        return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    try {
+        const result = await pool.query(
+            `UPDATE configuracion_global 
+             SET valor = $1, actualizado_por = $2, fecha_actualizacion = CURRENT_TIMESTAMP
+             WHERE clave = $3
+             RETURNING *`,
+            [valor, usuario_id, clave]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Configuración no encontrada' });
+        }
+
+        res.json({ message: 'Configuración actualizada', config: result.rows[0] });
+
+    } catch (error) {
+        console.error('Error actualizando configuración:', error);
+        res.status(500).json({ error: 'Error al actualizar configuración' });
     }
 });
 

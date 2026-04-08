@@ -6,7 +6,6 @@
     <title>Checkout - Perfumes & Aromas</title>
     <link rel="stylesheet" href="../css/base.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
-    <link rel="icon" href="https://via.placeholder.com/32?text=P&A" type="image/x-icon">
     <style>
         :root {
             --primary-color: #25D366;
@@ -92,7 +91,6 @@
                 font-weight: bold;
             }
 
-        /* Formulario principal */
         .checkout-form {
             background: white;
             border-radius: 15px;
@@ -137,7 +135,7 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 1rem;
-            background: white;
+            background: #f8f9fa;
             color: #333;
             box-sizing: border-box;
         }
@@ -148,119 +146,17 @@
                 box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.1);
             }
 
+            .form-input[readonly] {
+                background: #f0f0f0;
+                cursor: not-allowed;
+            }
+
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
 
-        /* Métodos de pago específicos */
-        .payment-method-details {
-            display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .payment-method-details.active {
-            display: block;
-        }
-
-        /* Estilos específicos para Transferencia */
-        .bank-details-box {
-            background: #e8f4ff;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
-            border: 1px solid #cce5ff;
-        }
-
-            .bank-details-box p {
-                margin: 8px 0;
-                font-family: monospace;
-                font-size: 0.95rem;
-            }
-
-        .reference-code {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 1.1rem;
-            font-weight: bold;
-            text-align: center;
-            margin: 10px 0;
-        }
-
-        /* Estilos específicos para Efectivo */
-        .store-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin: 15px 0;
-        }
-
-        .store-option {
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-            .store-option:hover {
-                border-color: var(--primary-color);
-                background: #f0fff4;
-            }
-
-            .store-option.selected {
-                border-color: var(--primary-color);
-                background: #e8f5e9;
-            }
-
-        .store-icon {
-            font-size: 2rem;
-            margin-bottom: 8px;
-        }
-
-        .commission-info {
-            color: #666;
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-
-        /* Instrucciones de pago */
-        .payment-instructions {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 15px 0;
-            border-left: 4px solid var(--primary-color);
-        }
-
-            .payment-instructions h4 {
-                margin-top: 0;
-                color: #333;
-            }
-
-        /* Resumen del pedido */
         .order-summary {
             background: white;
             border-radius: 15px;
@@ -296,7 +192,6 @@
             border-top: 2px solid var(--border-color);
         }
 
-        /* Botones */
         .action-buttons {
             display: flex;
             gap: 15px;
@@ -331,7 +226,6 @@
             font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
-            text-decoration: none;
             text-align: center;
             flex: 2;
             transition: all 0.3s;
@@ -342,6 +236,140 @@
                 transform: translateY(-2px);
             }
 
+            .pay-btn:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        .saved-cards {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .saved-card {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .saved-card:hover {
+                border-color: var(--secondary-color);
+                background: #f9f9f9;
+            }
+
+            .saved-card.selected {
+                border-color: var(--secondary-color);
+                background: #f3e5f5;
+            }
+
+            .saved-card input {
+                margin-right: 12px;
+                transform: scale(1.1);
+            }
+
+            .saved-card label {
+                flex: 1;
+                cursor: pointer;
+                font-weight: 500;
+            }
+
+            .saved-card small {
+                display: block;
+                color: #666;
+                font-size: 0.75rem;
+            }
+
+        .new-card-btn {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            cursor: pointer;
+            padding: 10px;
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+            .new-card-btn:hover {
+                text-decoration: underline;
+            }
+
+        .bank-details-box {
+            background: #e8f4ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #cce5ff;
+        }
+
+        .payment-instructions {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .payment-method-details {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+            .payment-method-details.active {
+                display: block;
+            }
+
+        .reference-code {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 14px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 3000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+            .toast.show {
+                opacity: 1;
+            }
+
+            .toast.success {
+                background: #43a047;
+            }
+
+            .toast.error {
+                background: #e53935;
+            }
+
         @media (max-width: 768px) {
             .checkout-container {
                 grid-template-columns: 1fr;
@@ -350,7 +378,6 @@
 
             .form-row {
                 grid-template-columns: 1fr;
-                gap: 15px;
             }
 
             .order-summary {
@@ -365,10 +392,6 @@
             .step-label {
                 font-size: 0.8rem;
             }
-
-            .store-options {
-                grid-template-columns: repeat(2, 1fr);
-            }
         }
     </style>
 </head>
@@ -379,9 +402,8 @@
     <div class="checkout-container">
         <div class="checkout-header">
             <h1>Finalizar Compra</h1>
-            <p>Completa tus datos para procesar el pedido</p>
+            <p>Confirma tus datos y selecciona el método de pago</p>
 
-            <!-- Barra de progreso -->
             <div class="progress-bar">
                 <div class="progress-step">
                     <div class="step-number">1</div>
@@ -400,289 +422,478 @@
             </div>
         </div>
 
-        <!-- FORMULARIO PRINCIPAL -->
         <div class="checkout-form">
-            <!-- Sección 1: Información personal -->
+            <!-- Sección 1: Información personal (solo lectura) -->
             <div class="form-section">
-                <h2>👤 Información Personal</h2>
+                <h2>👤 Información de Envío</h2>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="firstName">Nombre(s)</label>
-                        <input type="text" id="firstName" class="form-input" placeholder="Juan Carlos">
+                        <label>Nombre completo</label>
+                        <input type="text" id="nombreCompleto" class="form-input" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label for="lastName">Apellidos</label>
-                        <input type="text" id="lastName" class="form-input" placeholder="Díaz de León García">
+                        <label>Correo electrónico</label>
+                        <input type="email" id="email" class="form-input" readonly>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="email">Correo electrónico</label>
-                    <input type="email" id="email" class="form-input" placeholder="tu@email.com">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="tel" id="telefono" class="form-input" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Dirección</label>
+                        <input type="text" id="direccion" class="form-input" readonly>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="phone">Teléfono</label>
-                    <input type="tel" id="phone" class="form-input" placeholder="449 123 4567">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ciudad</label>
+                        <input type="text" id="ciudad" class="form-input" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Código Postal</label>
+                        <input type="text" id="codigoPostal" class="form-input" readonly>
+                    </div>
                 </div>
             </div>
 
-            <!-- Sección 2: Dirección de envío -->
-            <div class="form-section">
-                <h2>🏠 Dirección de Envío</h2>
-
-                <div class="form-group">
-                    <label for="address">Dirección completa</label>
-                    <input type="text" id="address" class="form-input" placeholder="Calle, número, colonia">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="city">Ciudad</label>
-                        <input type="text" id="city" class="form-input" placeholder="Aguascalientes">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="state">Estado</label>
-                        <input type="text" id="state" class="form-input" placeholder="Aguascalientes">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="zipCode">Código Postal</label>
-                        <input type="text" id="zipCode" class="form-input" placeholder="20000">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="country">País</label>
-                        <input type="text" id="country" class="form-input" value="México" readonly>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="instructions">Instrucciones especiales de entrega</label>
-                    <textarea id="instructions" class="form-input" rows="3" placeholder="Opcional: Referencias, horario preferido, etc."></textarea>
-                </div>
-            </div>
-
-            <!-- Sección 3: Método de pago -->
+            <!-- Sección 2: Método de pago -->
             <div class="form-section">
                 <h2>💳 Método de Pago</h2>
 
                 <div class="form-group">
-                    <label for="paymentMethod">Selecciona tu método de pago</label>
+                    <label>Selecciona tu método de pago</label>
                     <select id="paymentMethod" class="form-input" onchange="showPaymentDetails()">
                         <option value="">-- Selecciona un método --</option>
                         <option value="card">💳 Tarjeta de Crédito/Débito</option>
-                        <option value="digital">📱 Monedero Digital (PayPal, Mercado Pago)</option>
                         <option value="transfer">🏦 Transferencia Bancaria</option>
                         <option value="cash">💵 Pago en Efectivo</option>
-                        <option value="check">🧾 Cheque Electrónico</option>
-                        <option value="cajero">🏧 Pago en Cajero</option>
+                        <option value="wallet">👛 Monedero Digital</option>
                     </select>
                 </div>
 
-                <!-- Detalles para Tarjeta -->
                 <div id="cardDetails" class="payment-method-details">
-                    <div class="form-group">
-                        <label for="cardNumber">Número de tarjeta</label>
-                        <input type="text" id="cardNumber" class="form-input" placeholder="1234 5678 9012 3456">
+                    <div class="saved-cards" id="savedCardsContainer">
+                        <h4>💳 Tarjetas guardadas</h4>
+                        <div id="tarjetasList"></div>
+                        <button type="button" class="new-card-btn" onclick="mostrarNuevaTarjeta()">+ Usar una tarjeta nueva</button>
                     </div>
 
-                    <div class="form-row">
+                    <div id="nuevaTarjetaForm" style="display: none;">
+                        <h4>➕ Nueva tarjeta</h4>
                         <div class="form-group">
-                            <label for="cardExpiry">Fecha de expiración</label>
-                            <input type="text" id="cardExpiry" class="form-input" placeholder="MM/AA">
+                            <label>Número de tarjeta</label>
+                            <input type="text" id="cardNumber" class="form-input" placeholder="1234 5678 9012 3456">
                         </div>
-
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Fecha expiración</label>
+                                <input type="month" id="cardExpiry" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>CVV</label>
+                                <input type="password" id="cardCVV" class="form-input" maxlength="4">
+                            </div>
+                        </div>
                         <div class="form-group">
-                            <label for="cardCVV">CVV</label>
-                            <input type="text" id="cardCVV" class="form-input" placeholder="123" maxlength="3">
+                            <label>Nombre del titular</label>
+                            <input type="text" id="cardName" class="form-input">
                         </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="cardName">Nombre en la tarjeta</label>
-                        <input type="text" id="cardName" class="form-input" placeholder="Como aparece en la tarjeta">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="guardarTarjeta"> Guardar esta tarjeta para futuras compras
+                            </label>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Detalles para Monedero Digital -->
-                <div id="digitalDetails" class="payment-method-details">
-                    <div class="form-group">
-                        <label for="digitalEmail">Correo del monedero digital</label>
-                        <input type="email" id="digitalEmail" class="form-input" placeholder="ejemplo@paypal.com">
-                    </div>
-
-                    <div class="form-group">
-                        <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">
-                            Serás redirigido a la plataforma de pago seleccionada para completar la transacción de forma segura.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- NUEVA SECCIÓN: Detalles para Transferencia -->
                 <div id="transferDetails" class="payment-method-details">
                     <div class="payment-instructions">
                         <h4>📋 Instrucciones para transferencia:</h4>
-                        <p>1. Realiza la transferencia desde tu banca en línea o aplicación móvil</p>
+                        <p>1. Realiza la transferencia desde tu banca en línea</p>
                         <p>2. Utiliza los datos bancarios proporcionados</p>
                         <p>3. Guarda el comprobante de transferencia</p>
                     </div>
-
                     <div class="bank-details-box">
-                        <h4>📊 Datos Bancarios:</h4>
                         <p><strong>Banco:</strong> BBVA</p>
                         <p><strong>Beneficiario:</strong> PERFUMES & AROMAS S.A. DE C.V.</p>
                         <p><strong>CLABE:</strong> 012 180 00123456789 1</p>
-                        <p><strong>Cuenta:</strong> 1234 5678 9012 3456</p>
-                        <p><strong>Concepto:</strong> PEDIDO <span id="transferReference">#PFA-0000</span></p>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="transferComprobante">Número de comprobante (opcional)</label>
-                        <input type="text" id="transferComprobante" class="form-input" placeholder="TRF2025123456789">
+                        <p><strong>Referencia:</strong> <span id="transferReference">PFA-0000</span></p>
                     </div>
                 </div>
 
-                <!-- NUEVA SECCIÓN: Detalles para Efectivo -->
                 <div id="cashDetails" class="payment-method-details">
                     <div class="payment-instructions">
                         <h4>📋 Instrucciones para pago en efectivo:</h4>
-                        <p>1. Selecciona la tienda donde pagarás</p>
-                        <p>2. Acude con tu código de referencia</p>
-                        <p>3. Realiza el pago en efectivo</p>
-                        <p>4. Guarda tu comprobante</p>
+                        <p>1. Presenta este código en la tienda de conveniencia</p>
+                        <p>2. Realiza el pago en efectivo</p>
+                        <p>3. Guarda tu comprobante</p>
                     </div>
-
                     <div class="reference-code">
-                        Tu código de referencia: <span id="cashReference">PFA-EF-0000</span>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Selecciona una tienda:</label>
-                        <div class="store-options">
-                            <div class="store-option" onclick="selectStore(this, 'oxxo')">
-                                <div class="store-icon">🏪</div>
-                                <strong>OXXO</strong>
-                                <div class="commission-info">+$10 comisión</div>
-                            </div>
-                            <div class="store-option" onclick="selectStore(this, 'seven')">
-                                <div class="store-icon">🏪</div>
-                                <strong>7-Eleven</strong>
-                                <div class="commission-info">+$12 comisión</div>
-                            </div>
-                            <div class="store-option" onclick="selectStore(this, 'farmacia')">
-                                <div class="store-icon">💊</div>
-                                <strong>Farmacias Guadalajara</strong>
-                                <div class="commission-info">+$8 comisión</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Monto a pagar en tienda:</label>
-                        <input type="text" id="cashAmount" class="form-input" value="$148.00" readonly style="font-weight: bold; text-align: center;">
+                        Código de referencia: <span id="cashReference">PFA-EF-0000</span>
                     </div>
                 </div>
 
-                <!-- Detalles para Cheque -->
-                <div id="checkDetails" class="payment-method-details">
-                    <div class="form-group">
-                        <label for="numCheque">Número de cheque</label>
-                        <input type="text" id="numCheque" class="form-input" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="montoCheque">Monto</label>
-                        <input type="number" id="montoCheque" class="form-input" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="bancoCheque">Banco</label>
-                        <input type="text" id="bancoCheque" class="form-input" required>
-                    </div>
-                </div>
-
-                <!-- Detalles para Cajero -->
-                <div id="cajeroDetails" class="payment-method-details">
+                <div id="walletDetails" class="payment-method-details">
                     <div class="payment-instructions">
-                        <h4>📋 Instrucciones para pago en cajero:</h4>
-                        <p>1. Acude a cualquier cajero automático</p>
-                        <p>2. Selecciona "Pago de servicios"</p>
-                        <p>3. Busca "Perfumes & Aromas"</p>
-                        <p>4. Ingresa tu referencia: <strong id="cajeroReference">PFA-CJ-0000</strong></p>
-                        <p>5. Realiza el depósito</p>
+                        <h4>👛 Pago con Monedero Digital</h4>
+                        <p>Saldo disponible: <strong id="walletBalance">$0.00</strong></p>
+                        <p>Se cargará el total del pedido a tu monedero digital.</p>
+                    </div>
+                    <div class="reference-code" id="walletInfo">
+                        Saldo suficiente para cubrir el pago
                     </div>
                 </div>
             </div>
 
-            <!-- Botones de acción -->
             <div class="action-buttons">
                 <a href="cart.html" class="back-btn">← Volver al Carrito</a>
-                <button class="pay-btn" onclick="processCheckout()">🔒 Proceder al Pago</button>
+                <button class="pay-btn" id="btnPagar" onclick="procesarPago()">🔒 Confirmar Pago</button>
             </div>
         </div>
 
-        <!-- RESUMEN DEL PEDIDO -->
         <div class="order-summary">
             <h2>Resumen del Pedido</h2>
-
-            <div class="summary-item">
-                <span>NAVIGO (x1)</span>
-                <span>$25.00</span>
-            </div>
-
-            <div class="summary-item">
-                <span>9PM (x2)</span>
-                <span>$90.00</span>
-            </div>
-
-            <div class="summary-item">
-                <span>VERSACE EROS FLAME (x1)</span>
-                <span>$38.00</span>
-            </div>
-
+            <div id="resumenProductos"></div>
             <div class="summary-item">
                 <span>Subtotal:</span>
-                <span>$153.00</span>
+                <span id="resumenSubtotal">$0.00</span>
             </div>
-
+            <div class="summary-item">
+                <span>IVA (<span id="ivaPorcentaje">16</span>%):</span>
+                <span id="resumenIVA">$0.00</span>
+            </div>
             <div class="summary-item">
                 <span>Envío:</span>
                 <span>$5.00</span>
             </div>
-
-            <div class="summary-item">
-                <span>Descuento:</span>
-                <span style="color: #4caf50;">-$10.00</span>
-            </div>
-
             <div class="summary-total">
-                <span>Total:</span>
-                <span>$148.00</span>
+                <span>Total a pagar:</span>
+                <span id="resumenTotal">$5.00</span>
             </div>
-
             <div style="margin-top: 20px; font-size: 0.9rem; color: #666;">
-                <p>
-                    ✅ Pago seguro<br>
-                    📦 Envío en 24-48h<br>
-                    🔄 30 días para devolución
-                </p>
+                <p>✅ Pago seguro<br>📦 Envío en 24-48h<br>🔄 30 días para devolución</p>
             </div>
         </div>
     </div>
 
+    <div class="toast" id="toast"></div>
+
     <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let carritoItems = [];
+        let subtotal = 0;
+        let ivaPorcentaje = 16;
+        let tarjetasGuardadas = [];
+        let metodoPagoSeleccionado = null;
+        let tarjetaSeleccionada = null;
+
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `toast show ${type}`;
+            setTimeout(() => t.className = 'toast', 3000);
+        }
+
+        function getCurrentUser() {
+            const cliente = localStorage.getItem('cliente');
+            return cliente ? JSON.parse(cliente) : null;
+        }
+
+        // Cargar datos del cliente
+        function cargarDatosCliente() {
+            const user = getCurrentUser();
+            if (!user) {
+                showToast('Debes iniciar sesión para continuar', 'error');
+                setTimeout(() => window.location.href = 'clientelogin.html', 2000);
+                return false;
+            }
+
+            document.getElementById('nombreCompleto').value = user.nombre || '';
+            document.getElementById('email').value = user.correo || '';
+            document.getElementById('telefono').value = user.telefono || '';
+            document.getElementById('direccion').value = user.direccion || '';
+            document.getElementById('ciudad').value = user.ciudad || '';
+            document.getElementById('codigoPostal').value = user.codigo_postal || '';
+
+            return true;
+        }
+
+        // Cargar tarjetas del cliente
+        async function cargarTarjetasCliente(clienteId) {
+            try {
+                const response = await fetch(`${API_BASE}/tarjetas-cliente/${clienteId}`);
+                if (response.ok) {
+                    tarjetasGuardadas = await response.json();
+                    renderTarjetas();
+                }
+            } catch (error) {
+                console.error('Error cargando tarjetas:', error);
+            }
+        }
+
+        function renderTarjetas() {
+            const container = document.getElementById('tarjetasList');
+            if (tarjetasGuardadas.length === 0) {
+                container.innerHTML = '<p style="color:#999;">No tienes tarjetas guardadas</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            tarjetasGuardadas.forEach(tarjeta => {
+                const numeroOculto = '**** **** **** ' + tarjeta.numero.slice(-4);
+                const div = document.createElement('div');
+                div.className = 'saved-card';
+                div.onclick = () => seleccionarTarjeta(tarjeta.id);
+                div.innerHTML = `
+                        <input type="radio" name="saved_card" value="${tarjeta.id}" id="card_${tarjeta.id}">
+                        <label for="card_${tarjeta.id}">
+                            <strong>${tarjeta.tipo}</strong> - ${numeroOculto}
+                            <small>Expira: ${new Date(tarjeta.expiracion).toLocaleDateString()}</small>
+                        </label>
+                    `;
+                container.appendChild(div);
+            });
+        }
+
+        function seleccionarTarjeta(tarjetaId) {
+            tarjetaSeleccionada = tarjetasGuardadas.find(t => t.id === tarjetaId);
+            document.getElementById('nuevaTarjetaForm').style.display = 'none';
+
+            const radios = document.querySelectorAll('input[name="saved_card"]');
+            radios.forEach(radio => {
+                radio.checked = radio.value == tarjetaId;
+                radio.closest('.saved-card').classList.toggle('selected', radio.checked);
+            });
+        }
+
+        function mostrarNuevaTarjeta() {
+            document.getElementById('nuevaTarjetaForm').style.display = 'block';
+            tarjetaSeleccionada = null;
+
+            const radios = document.querySelectorAll('input[name="saved_card"]');
+            radios.forEach(radio => {
+                radio.checked = false;
+                radio.closest('.saved-card').classList.remove('selected');
+            });
+        }
+
+        // Cargar IVA desde la base de datos
+        async function cargarIVA() {
+            try {
+                const response = await fetch(`${API_BASE}/configuracion/iva_porcentaje`);
+                if (response.ok) {
+                    const data = await response.json();
+                    ivaPorcentaje = parseFloat(data.valor) || 16;
+                    document.getElementById('ivaPorcentaje').textContent = ivaPorcentaje;
+                }
+            } catch (error) {
+                console.error('Error cargando IVA:', error);
+            }
+        }
+
+        // RECUPERAR DATOS DEL CARRITO DESDE localStorage
+        function cargarCarritoDesdeLocalStorage() {
+            const pendingCheckout = localStorage.getItem('pendingCheckout');
+
+            if (!pendingCheckout) {
+                showToast('No hay información del carrito. Redirigiendo...', 'error');
+                setTimeout(() => window.location.href = 'cart.html', 2000);
+                return false;
+            }
+
+            try {
+                const checkoutData = JSON.parse(pendingCheckout);
+                carritoItems = checkoutData.items || [];
+                subtotal = checkoutData.subtotal || 0;
+                ivaPorcentaje = checkoutData.iva_porcentaje || 16;
+
+                if (carritoItems.length === 0) {
+                    showToast('El carrito está vacío', 'error');
+                    setTimeout(() => window.location.href = 'cart.html', 1500);
+                    return false;
+                }
+
+                renderResumen();
+                return true;
+            } catch (error) {
+                console.error('Error al parsear datos del carrito:', error);
+                showToast('Error al cargar los datos del carrito', 'error');
+                return false;
+            }
+        }
+
+        function renderResumen() {
+            const container = document.getElementById('resumenProductos');
+
+            if (carritoItems.length === 0) {
+                container.innerHTML = '<p style="color:#999;">No hay productos en el carrito</p>';
+                document.getElementById('btnPagar').disabled = true;
+                return;
+            }
+
+            document.getElementById('btnPagar').disabled = false;
+
+            container.innerHTML = '';
+            carritoItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'summary-item';
+                div.innerHTML = `
+                        <span>${escapeHtml(item.nombre)} (x${item.cantidad})</span>
+                        <span>$${(item.precio_unitario * item.cantidad).toFixed(2)}</span>
+                    `;
+                container.appendChild(div);
+            });
+
+            const iva = subtotal * (ivaPorcentaje / 100);
+            const envio = 5;
+            const total = subtotal + iva + envio;
+
+            document.getElementById('resumenSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('resumenIVA').textContent = `$${iva.toFixed(2)}`;
+            document.getElementById('resumenTotal').textContent = `$${total.toFixed(2)}`;
+
+            // Actualizar referencias
+            document.getElementById('transferReference').textContent = 'PFA-' + Math.floor(Math.random() * 10000);
+            document.getElementById('cashReference').textContent = 'PFA-EF-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        }
+
+        function showPaymentDetails() {
+            const method = document.getElementById('paymentMethod').value;
+            metodoPagoSeleccionado = method;
+
+            document.querySelectorAll('.payment-method-details').forEach(detail => {
+                detail.classList.remove('active');
+            });
+
+            if (method === 'card') {
+                document.getElementById('cardDetails').classList.add('active');
+            } else if (method === 'transfer') {
+                document.getElementById('transferDetails').classList.add('active');
+            } else if (method === 'cash') {
+                document.getElementById('cashDetails').classList.add('active');
+            } else if (method === 'wallet') {
+                document.getElementById('walletDetails').classList.add('active');
+                cargarSaldoMonedero();
+            }
+        }
+
+        async function cargarSaldoMonedero() {
+            const user = getCurrentUser();
+            if (!user) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/monedero-cliente/${user.id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const total = parseFloat(document.getElementById('resumenTotal').textContent.replace('$', ''));
+                    document.getElementById('walletBalance').textContent = `$${data.saldo.toFixed(2)}`;
+
+                    const walletInfo = document.getElementById('walletInfo');
+                    if (data.saldo >= total) {
+                        walletInfo.innerHTML = '✅ Saldo suficiente para cubrir el pago';
+                        walletInfo.style.background = '#d4edda';
+                    } else {
+                        walletInfo.innerHTML = `⚠️ Saldo insuficiente. Faltan $${(total - data.saldo).toFixed(2)}`;
+                        walletInfo.style.background = '#fff3cd';
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando monedero:', error);
+            }
+        }
+
+        async function procesarPago() {
+            if (carritoItems.length === 0) {
+                showToast('No hay productos en el carrito', 'error');
+                return;
+            }
+
+            if (!metodoPagoSeleccionado) {
+                showToast('Selecciona un método de pago', 'error');
+                return;
+            }
+
+            const user = getCurrentUser();
+            if (!user) {
+                showToast('Debes iniciar sesión', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnPagar');
+            btn.textContent = '⏳ Procesando...';
+            btn.disabled = true;
+
+            try {
+                const items = carritoItems.map(item => ({
+                    producto_id: item.producto_id,
+                    cantidad: item.cantidad
+                }));
+
+                const response = await fetch(`${API_BASE}/comprar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Limpiar localStorage del carrito pendiente
+                    localStorage.removeItem('pendingCheckout');
+
+                    const total = document.getElementById('resumenTotal').textContent;
+
+                    const orderData = {
+                        orderId: 'PED-' + Date.now(),
+                        total: total,
+                        subtotal: subtotal,
+                        iva: subtotal * (ivaPorcentaje / 100),
+                        iva_porcentaje: ivaPorcentaje,
+                        items_count: carritoItems.reduce((s, i) => s + i.cantidad, 0),
+                        metodo_pago: document.getElementById('paymentMethod').options[document.getElementById('paymentMethod').selectedIndex]?.text,
+                        timestamp: new Date().toISOString(),
+                        productos: carritoItems.map(i => ({ nombre: i.nombre, cantidad: i.cantidad, precio: i.precio_unitario }))
+                    };
+
+                    localStorage.setItem('lastOrder', JSON.stringify(orderData));
+                    showToast('✅ Compra realizada con éxito');
+
+                    setTimeout(() => {
+                        window.location.href = 'confirmacionpago.html';
+                    }, 1500);
+                } else {
+                    showToast(data.error || 'Error al procesar el pago', 'error');
+                    btn.textContent = '🔒 Confirmar Pago';
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error de conexión', 'error');
+                btn.textContent = '🔒 Confirmar Pago';
+                btn.disabled = false;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Cargar navbar
         fetch('navbar.html')
             .then(r => r.text())
             .then(html => {
                 document.getElementById('navbar-container').innerHTML = html;
-                // Inicializar dropdown
                 const dropdownBtn = document.querySelector('.dropdown-btn');
                 const dropdownContent = document.querySelector('.dropdown-content');
                 if (dropdownBtn && dropdownContent) {
@@ -693,130 +904,15 @@
                 }
             });
 
-        // Generar códigos de referencia
-        document.addEventListener('DOMContentLoaded', function () {
-            // Referencia para transferencia
-            const transferRef = 'PFA-TRF-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-            document.getElementById('transferReference').textContent = transferRef;
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', async function () {
+            const userValid = cargarDatosCliente();
+            if (!userValid) return;
 
-            // Referencia para efectivo
-            const cashRef = 'PFA-EF-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-            document.getElementById('cashReference').textContent = cashRef;
-
-            // Referencia para cajero
-            const cajeroRef = 'PFA-CJ-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-            document.getElementById('cajeroReference').textContent = cajeroRef;
-
-            // Actualizar resumen con valor por defecto
-            updateCashAmount('oxxo');
+            await cargarIVA();
+            await cargarTarjetasCliente(getCurrentUser().id);
+            cargarCarritoDesdeLocalStorage();
         });
-
-        // Mostrar detalles del método de pago seleccionado
-        function showPaymentDetails() {
-            const method = document.getElementById('paymentMethod').value;
-
-            // Ocultar todos los detalles primero
-            document.querySelectorAll('.payment-method-details').forEach(detail => {
-                detail.classList.remove('active');
-            });
-
-            // Mostrar los detalles correspondientes
-            if (method === 'card') {
-                document.getElementById('cardDetails').classList.add('active');
-            } else if (method === 'digital') {
-                document.getElementById('digitalDetails').classList.add('active');
-            } else if (method === 'transfer') {
-                document.getElementById('transferDetails').classList.add('active');
-            } else if (method === 'cash') {
-                document.getElementById('cashDetails').classList.add('active');
-            } else if (method === 'check') {
-                document.getElementById('checkDetails').classList.add('active');
-            } else if (method === 'cajero') {
-                document.getElementById('cajeroDetails').classList.add('active');
-            }
-        }
-
-        // Función para seleccionar tienda de pago en efectivo
-        function selectStore(element, storeType) {
-            // Remover selección anterior
-            document.querySelectorAll('.store-option').forEach(store => {
-                store.classList.remove('selected');
-            });
-
-            // Agregar selección actual
-            element.classList.add('selected');
-
-            // Actualizar monto según tienda seleccionada
-            updateCashAmount(storeType);
-        }
-
-        // Actualizar monto de efectivo según tienda seleccionada
-        function updateCashAmount(storeType) {
-            let commission = 0;
-            switch (storeType) {
-                case 'oxxo': commission = 10; break;
-                case 'seven': commission = 12; break;
-                case 'farmacia': commission = 8; break;
-            }
-
-            const total = 148 + commission;
-            document.getElementById('cashAmount').value = `$${total}.00 (incluye $${commission} comisión)`;
-        }
-
-        // Procesar checkout - SIN VALIDACIÓN DE CAMPOS VACÍOS
-        function processCheckout() {
-            // Obtener datos del formulario (pueden estar vacíos)
-            const firstName = document.getElementById('firstName').value || "";
-            const lastName = document.getElementById('lastName').value || "";
-            const email = document.getElementById('email').value || "";
-            const phone = document.getElementById('phone').value || "";
-            const address = document.getElementById('address').value || "";
-            const city = document.getElementById('city').value || "";
-            const state = document.getElementById('state').value || "";
-            const zipCode = document.getElementById('zipCode').value || "";
-            const paymentMethod = document.getElementById('paymentMethod').value || "No seleccionado";
-            const paymentText = document.getElementById('paymentMethod').options[document.getElementById('paymentMethod').selectedIndex]?.text || "No seleccionado";
-
-            // Obtener datos específicos según método de pago
-            let paymentDetails = {};
-            if (paymentMethod === 'transfer') {
-                paymentDetails.reference = document.getElementById('transferReference').textContent;
-                paymentDetails.comprobante = document.getElementById('transferComprobante').value || "";
-            } else if (paymentMethod === 'cash') {
-                paymentDetails.reference = document.getElementById('cashReference').textContent;
-                paymentDetails.store = getSelectedStore();
-            }
-
-            // Guardar datos en localStorage para la página de confirmación
-            const customerData = {
-                firstName: firstName || "Cliente",
-                lastName: lastName || "Perfumes & Aromas",
-                email: email || "cliente@perfumesyaromas.com",
-                phone: phone || "449 000 0000",
-                address: address || "Dirección no especificada",
-                city: city || "Aguascalientes",
-                state: state || "Aguascalientes",
-                zipCode: zipCode || "20000",
-                paymentMethod: paymentText,
-                paymentDetails: paymentDetails,
-                total: '$148.00',
-                timestamp: new Date().toISOString()
-            };
-
-            localStorage.setItem('customerData', JSON.stringify(customerData));
-
-            // Redirigir a la página de confirmación SIN VALIDACIÓN
-            window.location.href = 'confirmacionpago.html';
-        }
-
-        // Obtener tienda seleccionada para pago en efectivo
-        function getSelectedStore() {
-            const selectedStore = document.querySelector('.store-option.selected');
-            if (selectedStore) {
-                return selectedStore.querySelector('strong').textContent;
-            }
-            return "No seleccionada";
-        }
     </script>
 </body>
 </html>
