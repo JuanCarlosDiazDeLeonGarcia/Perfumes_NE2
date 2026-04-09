@@ -2881,7 +2881,7 @@ app.get('/api/movimientos-recursos', async (req, res) => {
 
 // ---------- 5. ENDPOINT COMPRA (descuenta stock + registra movimiento + alerta push) ------
 app.post('/api/comprar', async (req, res) => {
-    const { items } = req.body; // [{ producto_id, cantidad }]
+    const { items, item_ids, cliente_id, session_id, carrito_id } = req.body; // items: [{ producto_id, cantidad }]
 
     if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: 'Se requiere un arreglo de items' });
@@ -2892,6 +2892,32 @@ app.post('/api/comprar', async (req, res) => {
         await client.query('BEGIN');
         const resultados = [];
         const alertasPush = [];
+
+        // Resolver carritos a vaciar (pueden existir varios: cliente + sesión)
+        const carritoIdsParaVaciar = new Set();
+        const carritoIdNum = carrito_id ? parseInt(carrito_id) : null;
+        const clienteIdNum = cliente_id ? parseInt(cliente_id) : null;
+        const sessionIdStr = session_id ? String(session_id) : null;
+
+        if (carritoIdNum) carritoIdsParaVaciar.add(carritoIdNum);
+
+        if (clienteIdNum) {
+            const carritoRes = await client.query(
+                `SELECT id FROM carritos_persistentes
+                 WHERE cliente_id = $1 AND session_id IS NULL
+                 ORDER BY fecha_creacion DESC LIMIT 1`,
+                [clienteIdNum]
+            );
+            if (carritoRes.rows[0]?.id) carritoIdsParaVaciar.add(carritoRes.rows[0].id);
+        }
+
+        if (sessionIdStr) {
+            const carritoRes = await client.query(
+                'SELECT id FROM carritos_persistentes WHERE session_id = $1 LIMIT 1',
+                [sessionIdStr]
+            );
+            if (carritoRes.rows[0]?.id) carritoIdsParaVaciar.add(carritoRes.rows[0].id);
+        }
 
         for (const item of items) {
             const prodId = parseInt(item.producto_id);
@@ -2953,6 +2979,50 @@ app.post('/api/comprar', async (req, res) => {
             }
         }
 
+        // Vaciar carritos persistentes si aplica (la compra representa el checkout completo)
+        const carritoVaciado = [];
+
+        // Opción más precisa: borrar por item_ids explícitos
+        const itemIds = Array.isArray(item_ids) ? item_ids.map(x => parseInt(x)).filter(n => Number.isFinite(n)) : [];
+        if (itemIds.length > 0) {
+            const carritosAfectadosRes = await client.query(
+                'SELECT DISTINCT carrito_id FROM carrito_items_persistentes WHERE id = ANY($1::int[])',
+                [itemIds]
+            );
+            const carritosAfectados = carritosAfectadosRes.rows.map(r => r.carrito_id).filter(Boolean);
+
+            const delRes = await client.query(
+                'DELETE FROM carrito_items_persistentes WHERE id = ANY($1::int[])',
+                [itemIds]
+            );
+
+            for (const cid of carritosAfectados) {
+                await client.query('UPDATE carritos_persistentes SET fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $1', [cid]);
+                carritoVaciado.push({ carrito_id: cid, cleared: null });
+            }
+
+            // Si se enviaron item_ids, no es necesario borrar por carrito_id; pero igual limpiamos ids explícitos del set
+            // para evitar dobles borrados en logs.
+            carritoIdsParaVaciar.clear();
+            carritoVaciado.unshift({ mode: 'by_item_ids', cleared: delRes.rowCount || 0, item_ids: itemIds.length });
+        }
+
+        // Fallback: vaciar por carrito_id/cliente_id/session_id
+        for (const cid of carritoIdsParaVaciar) {
+            const delRes = await client.query('DELETE FROM carrito_items_persistentes WHERE carrito_id = $1', [cid]);
+            await client.query('UPDATE carritos_persistentes SET fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $1', [cid]);
+            carritoVaciado.push({ carrito_id: cid, cleared: delRes.rowCount || 0, mode: 'by_carrito_id' });
+        }
+
+        if (carritoVaciado.length > 0) {
+            console.log('🧹 Carrito vaciado en compra:', {
+                cliente_id: cliente_id || null,
+                session_id: session_id || null,
+                carrito_id: carrito_id || null,
+                resumen: carritoVaciado
+            });
+        }
+
         await client.query('COMMIT');
 
         // Enviar WhatsApp para productos push que alcanzaron stock mínimo
@@ -2986,6 +3056,7 @@ app.post('/api/comprar', async (req, res) => {
         res.json({
             success: true,
             resultados,
+            carrito_vaciado: carritoVaciado,
             alertas_push: alertasPush.map(p => ({
                 nombre: p.nombre, stock_antes_restock: p.stock_antes_restock,
                 stock_nuevo: p.stock_nuevo, auto_restock: p.auto_restock,
@@ -3702,6 +3773,58 @@ app.delete('/api/carrito/items/:itemId', async (req, res) => {
     } catch (error) {
         console.error('Error eliminando item:', error);
         res.status(500).json({ error: 'Error al eliminar item' });
+    }
+});
+
+// Vaciar carrito completo
+app.post('/api/carrito/vaciar', async (req, res) => {
+    const { carrito_id, cliente_id, session_id } = req.body || {};
+
+    try {
+        const carritoIds = new Set();
+        const carritoIdNum = carrito_id ? parseInt(carrito_id) : null;
+        const clienteIdNum = cliente_id ? parseInt(cliente_id) : null;
+        const sessionIdStr = session_id ? String(session_id) : null;
+
+        if (carritoIdNum) carritoIds.add(carritoIdNum);
+
+        if (clienteIdNum) {
+            const carritoRes = await pool.query(
+                `SELECT id FROM carritos_persistentes
+                 WHERE cliente_id = $1 AND session_id IS NULL
+                 ORDER BY fecha_creacion DESC LIMIT 1`,
+                [clienteIdNum]
+            );
+            if (carritoRes.rows[0]?.id) carritoIds.add(carritoRes.rows[0].id);
+        }
+
+        if (sessionIdStr) {
+            const carritoRes = await pool.query(
+                'SELECT id FROM carritos_persistentes WHERE session_id = $1 LIMIT 1',
+                [sessionIdStr]
+            );
+            if (carritoRes.rows[0]?.id) carritoIds.add(carritoRes.rows[0].id);
+        }
+
+        if (carritoIds.size === 0) {
+            return res.json({ success: true, cleared: 0, carritos: [] });
+        }
+
+        const carritos = [];
+        let clearedTotal = 0;
+        for (const cid of carritoIds) {
+            const delRes = await pool.query('DELETE FROM carrito_items_persistentes WHERE carrito_id = $1', [cid]);
+            await pool.query('UPDATE carritos_persistentes SET fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $1', [cid]);
+            const cleared = delRes.rowCount || 0;
+            clearedTotal += cleared;
+            carritos.push({ carrito_id: cid, cleared });
+        }
+
+        res.json({ success: true, cleared: clearedTotal, carritos });
+        console.log('🧹 Carrito vaciar endpoint:', { carrito_id, cliente_id, session_id, cleared: clearedTotal, carritos });
+    } catch (error) {
+        console.error('Error vaciando carrito:', error);
+        res.status(500).json({ error: 'Error al vaciar carrito' });
     }
 });
 

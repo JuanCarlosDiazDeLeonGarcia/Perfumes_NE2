@@ -546,6 +546,11 @@
             await cargarIVA();
             await cargarCarrito();
         });
+
+        // Al volver a esta página (incluye botón atrás / BFCache), recargar carrito
+        window.addEventListener('pageshow', async function () {
+            await cargarCarrito();
+        });
     </script>
 </body>
 </html>

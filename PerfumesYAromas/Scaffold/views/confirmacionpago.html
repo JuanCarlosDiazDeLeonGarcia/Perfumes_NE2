@@ -285,51 +285,79 @@
 
         // Cargar datos del localStorage
         document.addEventListener('DOMContentLoaded', function () {
-            // Obtener datos del localStorage
-            const customerData = JSON.parse(localStorage.getItem('customerData')) || {};
-            const orderNumber = localStorage.getItem('orderNumber') || generateOrderNumber();
-            const transactionId = localStorage.getItem('transactionId') || generateTransactionId();
+            const lastOrder = safeJsonParse(localStorage.getItem('lastOrder'));
+            const customerData = safeJsonParse(localStorage.getItem('customerData')) || {};
+            const cliente = safeJsonParse(localStorage.getItem('cliente')) || {};
 
-            // Si no hay datos, usar valores por defecto
-            const fullName = (customerData.firstName || "Cliente") + " " + (customerData.lastName || "");
-            const email = customerData.email || "juan.carlos@perfumesyaromas.com";
-            const phone = customerData.phone || "449 438 9825";
-            const address = customerData.address || "No especificada";
-            const city = customerData.city || "No especificada";
-            const state = customerData.state || "No especificado";
-            const zipCode = customerData.zipCode || "No especificado";
-            const paymentMethod = customerData.paymentMethod || "Tarjeta Visa terminación 4512";
-            const total = customerData.total || "$148.00";
+            const orderNumber = (lastOrder && (lastOrder.orderId || lastOrder.orderNumber))
+                ? (lastOrder.orderId || lastOrder.orderNumber)
+                : (localStorage.getItem('orderNumber') || generateOrderNumber());
 
-            // Obtener fecha actual
-            const now = new Date();
+            const transactionId = (lastOrder && lastOrder.transactionId)
+                ? lastOrder.transactionId
+                : (localStorage.getItem('transactionId') || generateTransactionId());
+
+            // Datos del cliente: prioriza lo más completo disponible
+            const email = customerData.email || cliente.correo || cliente.email || 'juan.carlos@perfumesyaromas.com';
+            const phone = customerData.phone || cliente.telefono || cliente.phone || '449 438 9825';
+
+            // Totales / método de pago
+            const paymentMethod = (lastOrder && lastOrder.metodo_pago) || customerData.paymentMethod || 'Tarjeta de Crédito';
+            const total = (lastOrder && lastOrder.total) || customerData.total || '$0.00';
+
+            // Productos comprados
+            const productos = (lastOrder && Array.isArray(lastOrder.productos)) ? lastOrder.productos : [];
+            const itemsCount = (lastOrder && typeof lastOrder.items_count === 'number')
+                ? lastOrder.items_count
+                : productos.reduce((sum, p) => sum + (parseInt(p.cantidad, 10) || 0), 0);
+            const uniqueCount = productos.length;
+
+            // Fecha
+            const timestamp = (lastOrder && lastOrder.timestamp) ? new Date(lastOrder.timestamp) : new Date();
             const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            const currentDate = now.toLocaleDateString('es-ES', options);
+            const currentDate = timestamp.toLocaleDateString('es-ES', options);
 
-            // Guardar datos para la factura
+            // Guardar datos para la factura (lo usa factura.html)
             const invoiceData = {
-                orderNumber: orderNumber,
-                transactionId: transactionId,
-                customerData: customerData,
+                orderNumber,
+                transactionId,
+                customerData: {
+                    ...customerData,
+                    email,
+                    phone,
+                },
                 date: currentDate,
-                total: total
+                timestamp: timestamp.toISOString(),
+                paymentMethod,
+                products: productos,
+                totals: lastOrder ? {
+                    subtotal: lastOrder.subtotal,
+                    iva: lastOrder.iva,
+                    iva_porcentaje: lastOrder.iva_porcentaje,
+                    shipping: 5,
+                    discount: 0,
+                    total: lastOrder.total
+                } : undefined
             };
             localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
 
             // Actualizar elementos en la página
             document.getElementById('orderNumber').textContent = orderNumber;
-            document.getElementById('totalAmount').textContent = total + ' MXN';
+            document.getElementById('productos').textContent = uniqueCount > 0
+                ? formatProductosResumen(productos)
+                : 'Productos no disponibles';
+            document.getElementById('totalAmount').textContent = ensureCurrency(total);
             document.getElementById('paymentMethod').textContent = paymentMethod;
             document.getElementById('transactionDate').textContent = currentDate;
             document.getElementById('transactionId').textContent = transactionId;
             document.getElementById('customerEmail').textContent = email;
             document.getElementById('customerPhone').textContent = phone;
 
-            // Mostrar detalles en consola para debugging
             console.log('Confirmación de pago generada:', {
-                orderNumber: orderNumber,
-                transactionId: transactionId,
-                customerData: customerData,
+                orderNumber,
+                transactionId,
+                productos,
+                totals: lastOrder ? { subtotal: lastOrder.subtotal, iva: lastOrder.iva, total: lastOrder.total } : null,
                 date: currentDate
             });
 
@@ -342,6 +370,43 @@
                 }
             }, 500);
         });
+
+        function safeJsonParse(value) {
+            if (!value) return null;
+            try {
+                return JSON.parse(value);
+            } catch {
+                return null;
+            }
+        }
+
+        function ensureCurrency(value) {
+            if (typeof value === 'number') return `$${value.toFixed(2)} MXN`;
+            const str = String(value || '').trim();
+            if (!str) return '$0.00 MXN';
+            if (str.includes('MXN')) return str;
+            if (str.startsWith('$')) return `${str} MXN`;
+            return `$${str} MXN`;
+        }
+
+        function formatProductosResumen(productos) {
+            if (!Array.isArray(productos) || productos.length === 0) return 'Productos no disponibles';
+
+            const parts = productos
+                .map(p => {
+                    const nombre = String(p.nombre || 'Producto').trim();
+                    const cantidad = parseInt(p.cantidad, 10) || 0;
+                    return cantidad > 1 ? `${nombre} (x${cantidad})` : nombre;
+                })
+                .filter(Boolean);
+
+            const maxItems = 3;
+            const shown = parts.slice(0, maxItems);
+            const remaining = parts.length - shown.length;
+            return remaining > 0
+                ? `${shown.join(', ')} y ${remaining} más`
+                : shown.join(', ');
+        }
 
         // Generar número de orden
         function generateOrderNumber() {

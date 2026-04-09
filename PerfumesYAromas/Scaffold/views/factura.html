@@ -251,27 +251,6 @@
             </thead>
             <tbody id="productsBody">
                 <!-- Los productos se cargarán dinámicamente -->
-                <tr>
-                    <td>1</td>
-                    <td>NAVIGO</td>
-                    <td>Aromas frescos y delicados con notas de jazmín y rosa</td>
-                    <td>$25.00</td>
-                    <td>$25.00</td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td>9PM</td>
-                    <td>Perfume nocturno con notas intensas</td>
-                    <td>$45.00</td>
-                    <td>$90.00</td>
-                </tr>
-                <tr>
-                    <td>1</td>
-                    <td>VERSACE EROS FLAME</td>
-                    <td>Fragancia intensa y elegante</td>
-                    <td>$38.00</td>
-                    <td>$38.00</td>
-                </tr>
             </tbody>
         </table>
 
@@ -297,7 +276,7 @@
 
         <!-- BOTÓN PARA "DESCARGAR" -->
         <div class="acciones-factura">
-            <button class="btn-descargar" onclick="descargarFacturaSimulada()">
+            <button class="btn-descargar" onclick="descargarFacturaPDF()">
                 🧾 Descargar Factura (PDF)
             </button>
             <button class="btn-descargar" style="background: linear-gradient(90deg, #25D366, #1da851); margin-left: 10px;" onclick="window.location.href='catalog.html'">
@@ -343,31 +322,46 @@
 
         // Cargar datos dinámicos
         document.addEventListener('DOMContentLoaded', function () {
-            // Obtener datos del localStorage
-            const invoiceData = JSON.parse(localStorage.getItem('invoiceData')) || {};
+            const invoiceData = safeJsonParse(localStorage.getItem('invoiceData')) || {};
+            const lastOrder = safeJsonParse(localStorage.getItem('lastOrder')) || {};
             const customerData = invoiceData.customerData || {};
-            const orderNumber = invoiceData.orderNumber || 'ORD-' + Math.floor(Math.random() * 9000 + 1000);
-            const transactionId = invoiceData.transactionId || 'TXN-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
 
-            // Obtener fecha actual
-            const now = new Date();
-            const dateString = now.toISOString().split('T')[0];
-            const formattedDate = now.toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
+            const orderNumber = invoiceData.orderNumber || lastOrder.orderId || lastOrder.orderNumber || ('ORD-' + Math.floor(Math.random() * 9000 + 1000));
+            const transactionId = invoiceData.transactionId || lastOrder.transactionId || ('TXN-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0'));
 
-            // Generar folio único
-            const folio = 'FCT-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            const now = invoiceData.timestamp ? new Date(invoiceData.timestamp) : new Date();
+            const formattedDate = invoiceData.date || now.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
 
-            // Calcular IVA (16%)
-            const subtotal = 153.00;
-            const shipping = 5.00;
-            const discount = 10.00;
-            const totalSinIVA = subtotal + shipping - discount;
-            const iva = totalSinIVA * 0.16;
-            const totalConIVA = totalSinIVA + iva;
+            const folio = invoiceData.folio || ('FCT-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0'));
+
+            // Productos: prioriza invoiceData.products, luego lastOrder.productos
+            const products = Array.isArray(invoiceData.products)
+                ? invoiceData.products
+                : (Array.isArray(lastOrder.productos) ? lastOrder.productos : []);
+
+            // Totales: usa los del checkout si existen; si no, calcula desde productos
+            const ivaPorcentaje = (invoiceData.totals && Number.isFinite(invoiceData.totals.iva_porcentaje))
+                ? Number(invoiceData.totals.iva_porcentaje)
+                : (Number.isFinite(lastOrder.iva_porcentaje) ? Number(lastOrder.iva_porcentaje) : 16);
+
+            const computedSubtotal = products.reduce((sum, p) => {
+                const cantidad = toNumber(p.cantidad, 0);
+                const precio = toNumber(p.precio_unitario ?? p.precio, 0);
+                return sum + (cantidad * precio);
+            }, 0);
+
+            const subtotal = (invoiceData.totals && Number.isFinite(invoiceData.totals.subtotal))
+                ? Number(invoiceData.totals.subtotal)
+                : (Number.isFinite(lastOrder.subtotal) ? Number(lastOrder.subtotal) : computedSubtotal);
+
+            const shipping = (invoiceData.totals && Number.isFinite(invoiceData.totals.shipping)) ? Number(invoiceData.totals.shipping) : (products.length > 0 ? 5 : 0);
+            const discount = (invoiceData.totals && Number.isFinite(invoiceData.totals.discount)) ? Number(invoiceData.totals.discount) : 0;
+
+            const iva = (invoiceData.totals && Number.isFinite(invoiceData.totals.iva))
+                ? Number(invoiceData.totals.iva)
+                : (subtotal * (ivaPorcentaje / 100));
+
+            const totalConIVA = subtotal + iva + shipping - discount;
 
             // Actualizar elementos en la página
             document.getElementById('invoiceFolio').textContent = folio;
@@ -387,35 +381,41 @@
                 (customerData.zipCode || '00000');
 
             // Información de pago
-            document.getElementById('paymentMethod').textContent = customerData.paymentMethod || 'Tarjeta de Crédito';
+            document.getElementById('paymentMethod').textContent = invoiceData.paymentMethod || customerData.paymentMethod || lastOrder.metodo_pago || 'Tarjeta de Crédito';
             document.getElementById('paymentDate').textContent = formattedDate;
 
+            // Renderizar tabla de productos
+            renderProducts(products);
+
             // Totales
-            document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
-            document.getElementById('shipping').textContent = `$${shipping.toFixed(2)}`;
-            document.getElementById('discount').textContent = `-$${discount.toFixed(2)}`;
-            document.getElementById('iva').textContent = `$${iva.toFixed(2)}`;
-            document.getElementById('totalAmount').textContent = `$${totalConIVA.toFixed(2)} MXN`;
+            document.getElementById('subtotal').textContent = formatMoney(subtotal);
+            document.getElementById('shipping').textContent = formatMoney(shipping);
+            document.getElementById('discount').textContent = discount > 0 ? `-${formatMoney(discount)}` : formatMoney(0);
+            document.getElementById('iva').textContent = formatMoney(iva);
+            document.getElementById('totalAmount').textContent = `${formatMoney(totalConIVA)} MXN`;
 
             // Fecha de certificación
             document.getElementById('certificationDate').textContent = now.toISOString().replace('T', ' ').substring(0, 19);
 
-            // Guardar datos de la factura para futuras referencias
+            // Guardar datos de la factura
             const completeInvoiceData = {
                 ...invoiceData,
-                folio: folio,
+                orderNumber,
+                transactionId,
+                folio,
                 date: formattedDate,
+                products,
                 totals: {
-                    subtotal: subtotal,
-                    shipping: shipping,
-                    discount: discount,
-                    iva: iva,
+                    subtotal,
+                    shipping,
+                    discount,
+                    iva,
+                    iva_porcentaje: ivaPorcentaje,
                     total: totalConIVA
                 }
             };
             localStorage.setItem('completeInvoiceData', JSON.stringify(completeInvoiceData));
 
-            // Mostrar en consola para debugging
             console.log('Factura generada:', completeInvoiceData);
 
             // Resaltar el botón del carrito en el navbar (si existe)
@@ -428,13 +428,120 @@
             }, 500);
         });
 
-        function descargarFacturaSimulada() {
-            // Usamos la impresión del navegador, el usuario puede elegir "Guardar como PDF"
-            window.print();
+        function renderProducts(products) {
+            const body = document.getElementById('productsBody');
+            body.innerHTML = '';
 
-            // Opcional: Mostrar mensaje de éxito
-            alert('La factura se ha generado correctamente. Selecciona "Guardar como PDF" en las opciones de impresión.');
+            if (!Array.isArray(products) || products.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td colspan="5" style="text-align:center;color:#666;">No hay productos registrados para esta compra</td>
+                `;
+                body.appendChild(tr);
+                return;
+            }
+
+            products.forEach((p) => {
+                const cantidad = toNumber(p.cantidad, 0);
+                const nombre = escapeHtml(p.nombre || 'Producto');
+                const descripcion = escapeHtml(p.descripcion || p.marca || '—');
+                const precioUnit = toNumber(p.precio_unitario ?? p.precio, 0);
+                const importe = cantidad * precioUnit;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${cantidad}</td>
+                    <td>${nombre}</td>
+                    <td>${descripcion}</td>
+                    <td>${formatMoney(precioUnit)}</td>
+                    <td>${formatMoney(importe)}</td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        function safeJsonParse(value) {
+            if (!value) return null;
+            try {
+                return JSON.parse(value);
+            } catch {
+                return null;
+            }
+        }
+
+        function toNumber(value, fallback = 0) {
+            const n = typeof value === 'string' ? Number(value.replace(/[^0-9.-]/g, '')) : Number(value);
+            return Number.isFinite(n) ? n : fallback;
+        }
+
+        function formatMoney(value) {
+            const n = toNumber(value, 0);
+            return `$${n.toFixed(2)}`;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function descargarFacturaPDF() {
+            const container = document.querySelector('.factura-container');
+            const acciones = document.querySelector('.acciones-factura');
+            if (!container) return;
+
+            if (!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) {
+                alert('No se pudieron cargar las librerías para generar el PDF. Intenta recargar la página.');
+                return;
+            }
+
+            const folio = (document.getElementById('invoiceFolio')?.textContent || 'FACTURA').trim();
+
+            const prevDisplay = acciones ? acciones.style.display : '';
+            if (acciones) acciones.style.display = 'none';
+
+            try {
+                const canvas = await window.html2canvas(container, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+
+                const imgWidth = pageWidth;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                pdf.save(`${folio}.pdf`);
+            } catch (error) {
+                console.error('Error generando PDF:', error);
+                alert('Ocurrió un error al generar el PDF.');
+            } finally {
+                if (acciones) acciones.style.display = prevDisplay;
+            }
         }
     </script>
+
+    <!-- Librerías para generar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>

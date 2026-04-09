@@ -837,15 +837,43 @@
                     cantidad: item.cantidad
                 }));
 
+                const carritoItemIds = (Array.isArray(carritoItems) ? carritoItems : [])
+                    .map(i => i && i.id)
+                    .filter(Boolean);
+
                 const response = await fetch(`${API_BASE}/comprar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ items })
+                    body: JSON.stringify({
+                        items,
+                        item_ids: carritoItemIds,
+                        cliente_id: user.id,
+                        session_id: localStorage.getItem('session_id') || null
+                        ,carrito_id: (carritoItems && carritoItems[0] && carritoItems[0].carrito_id) ? carritoItems[0].carrito_id : null
+                    })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
+                    // Vaciar carrito persistente (BD) para que no queden productos al volver al carrito
+                    await vaciarCarritoBackend(user);
+
+                    // Verificar que el carrito realmente quedó vacío (y reintentar si es necesario)
+                    await asegurarCarritoVacio(user);
+
+                    // Feedback visible
+                    try {
+                        const remaining = await obtenerItemsCarrito(user.id, localStorage.getItem('session_id') || null);
+                        if (remaining.length === 0) {
+                            showToast('🧹 Carrito vaciado correctamente');
+                        } else {
+                            showToast(`⚠️ Carrito aún tiene ${remaining.length} item(s)`, 'error');
+                        }
+                    } catch {
+                        // no-op
+                    }
+
                     // Limpiar localStorage del carrito pendiente
                     localStorage.removeItem('pendingCheckout');
 
@@ -879,6 +907,112 @@
                 showToast('Error de conexión', 'error');
                 btn.textContent = '🔒 Confirmar Pago';
                 btn.disabled = false;
+            }
+        }
+
+        async function vaciarCarritoBackend(user) {
+            try {
+                if (!user || !user.id) return;
+
+                const carritoId = (carritoItems && carritoItems[0] && carritoItems[0].carrito_id) ? carritoItems[0].carrito_id : null;
+
+                // Opción preferida: vaciar carrito completo en backend
+                const vaciarRes = await fetch(`${API_BASE}/carrito/vaciar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        carrito_id: carritoId,
+                        cliente_id: user.id,
+                        session_id: localStorage.getItem('session_id') || null
+                    })
+                });
+                if (vaciarRes.ok) return;
+
+                // 1) Intentar borrar por IDs que ya vienen en carritoItems
+                const idsDirectos = (Array.isArray(carritoItems) ? carritoItems : [])
+                    .map(i => i && i.id)
+                    .filter(Boolean);
+
+                if (idsDirectos.length > 0) {
+                    await Promise.allSettled(
+                        idsDirectos.map(id => fetch(`${API_BASE}/carrito/items/${id}`, { method: 'DELETE' }))
+                    );
+                    return;
+                }
+
+                // 2) Fallback: pedir el carrito actual del cliente y borrar sus items
+                const carritoRes = await fetch(`${API_BASE}/carrito?cliente_id=${user.id}`);
+                if (!carritoRes.ok) return;
+                const carritoData = await carritoRes.json();
+                const ids = (carritoData.items || []).map(i => i.id).filter(Boolean);
+
+                if (ids.length === 0) return;
+                await Promise.allSettled(ids.map(id => fetch(`${API_BASE}/carrito/items/${id}`, { method: 'DELETE' })));
+            } catch (error) {
+                console.warn('No se pudo vaciar el carrito en backend:', error);
+            }
+        }
+
+        async function asegurarCarritoVacio(user) {
+            try {
+                if (!user || !user.id) return;
+
+                const sessionId = localStorage.getItem('session_id') || null;
+
+                // Revisión #1
+                let items = await obtenerItemsCarrito(user.id, sessionId);
+                if (items.length === 0) return;
+
+                // Reintento: vaciar por endpoint completo
+                await fetch(`${API_BASE}/carrito/vaciar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        carrito_id: (items[0] && items[0].carrito_id) ? items[0].carrito_id : null,
+                        cliente_id: user.id,
+                        session_id: sessionId
+                    })
+                });
+
+                // Revisión #2
+                items = await obtenerItemsCarrito(user.id, sessionId);
+                if (items.length === 0) return;
+
+                // Último recurso: borrar por itemId desde el carrito real
+                await Promise.allSettled(
+                    items.map(i => fetch(`${API_BASE}/carrito/items/${i.id}`, { method: 'DELETE' }))
+                );
+
+                // Revisión #3
+                items = await obtenerItemsCarrito(user.id, sessionId);
+                if (items.length > 0) {
+                    showToast('⚠️ No se pudo vaciar el carrito. Recarga y revisa.', 'error');
+                }
+            } catch (error) {
+                console.warn('No se pudo verificar/vaciar el carrito:', error);
+            }
+        }
+
+        async function obtenerItemsCarrito(clienteId, sessionId) {
+            try {
+                // Preferencia: carrito del cliente
+                const resCliente = await fetch(`${API_BASE}/carrito?cliente_id=${clienteId}`);
+                if (resCliente.ok) {
+                    const data = await resCliente.json();
+                    return Array.isArray(data.items) ? data.items : [];
+                }
+
+                // Fallback: carrito por sesión
+                if (sessionId) {
+                    const resSesion = await fetch(`${API_BASE}/carrito?session_id=${encodeURIComponent(sessionId)}`);
+                    if (resSesion.ok) {
+                        const data = await resSesion.json();
+                        return Array.isArray(data.items) ? data.items : [];
+                    }
+                }
+                return [];
+            } catch {
+                return [];
             }
         }
 
