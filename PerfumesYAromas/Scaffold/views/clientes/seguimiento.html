@@ -506,8 +506,10 @@
                     ultimaActualizacion = new Date(pedido.fecha_pedido).toLocaleDateString();
                 }
 
-                tr.innerHTML = `
-              <td><strong>${pedido.numero_orden || `#${String(pedido.id).padStart(3, '0')}`}</strong></td>
+                                const numeroOrden = pedido.numero_orden || '';
+
+                                tr.innerHTML = `
+                            <td><strong>${numeroOrden || `#${String(pedido.id).padStart(3, '0')}`}</strong></td>
               <td>${productosTexto}</td>
               <td>${new Date(pedido.fecha_pedido).toLocaleDateString()}</td>
               <td class="${estadoClass}">${estadoIcon} ${pedido.estado || 'Pendiente'}</td>
@@ -515,6 +517,7 @@
               <td>${ubicacion}</td>
               <td>
                 <button class="btn-editar" onclick="verDetalleSeguimiento(${pedido.id})">👁️ Ver</button>
+                                ${numeroOrden ? `<button class="btn-editar" onclick="verFactura('${numeroOrden}')">🧾 Factura</button>` : ''}
               </td>
             `;
                 tbody.appendChild(tr);
@@ -601,6 +604,12 @@
                 console.error('Error cargando detalle:', error);
                 showMessage('error', 'Error al cargar detalles del seguimiento');
             }
+        }
+
+        function verFactura(numeroOrden) {
+            if (!numeroOrden) return;
+            const orderParam = encodeURIComponent(String(numeroOrden));
+            window.location.href = `../factura.html?order=${orderParam}`;
         }
 
         function mostrarModalDetalle(seguimiento) {

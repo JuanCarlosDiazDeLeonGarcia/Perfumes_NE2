@@ -5,6 +5,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
 
     if (usuario) {
+        const rolLower = (usuario.rol || '').toLowerCase();
+        if (rolLower) {
+            // Reparar userType si quedó como "cliente" u otro valor
+            localStorage.setItem('userType', rolLower);
+        }
+        // Normalizar rol guardado para que otros scripts comparen bien
+        if (usuario.rol && usuario.rol !== rolLower) {
+            usuario.rol = rolLower;
+            localStorage.setItem('usuarioActual', JSON.stringify(usuario));
+        }
         // Si ya hay sesión activa, redirigir según el rol
         redirigirSegunRol(usuario.rol);
     }
@@ -65,7 +75,7 @@ async function iniciarSesion(event) {
         // Guardar datos de sesión
         localStorage.setItem('usuarioActual', JSON.stringify(usuario));
         localStorage.setItem('token', data.token || '');
-        localStorage.setItem('userType', usuario.rol); // Guardar el rol como tipo de usuario
+        localStorage.setItem('userType', (usuario.rol || '').toLowerCase()); // Guardar el rol normalizado
 
         // Guardar email si se seleccionó "recordar"
         if (recordar) {

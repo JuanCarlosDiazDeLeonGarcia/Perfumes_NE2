@@ -369,10 +369,13 @@
         // Verificar sesion
         document.addEventListener('DOMContentLoaded', function() {
             const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
-            if (!usuario || usuario.rol !== 'admin') {
+            const rol = (usuario?.rol || '').toLowerCase();
+            if (!usuario || rol !== 'admin') {
                 window.location.href = '../adminlogin.html';
                 return;
             }
+
+            localStorage.setItem('userType', rol);
         });
 
         function cerrarSesion() {

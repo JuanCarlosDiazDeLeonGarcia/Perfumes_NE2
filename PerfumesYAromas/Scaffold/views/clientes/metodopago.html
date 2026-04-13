@@ -284,7 +284,7 @@
 
         <!-- Formulario nueva tarjeta -->
         <section class="tabla-admin" id="formularioTarjeta" style="display:none;">
-            <div class="titulo-tabla"><h2>➕ Agregar Nueva Tarjeta</h2></div>
+            <div class="titulo-tabla"><h2 id="tarjetaFormTitle">➕ Agregar Nueva Tarjeta</h2></div>
             <form id="formTarjeta" style="max-width:500px; margin:auto;">
                 <label>Tipo de tarjeta *</label>
                 <select id="tipoTarjeta" required>
@@ -308,7 +308,7 @@
                     <div>
                         <label>CVV *</label>
                         <input type="password" id="cvv" maxlength="4" required placeholder="123">
-                        <small style="color:#666;">No se almacena, solo para verificación</small>
+                        <small id="cvvHelp" style="color:#666;">No se almacena, solo para verificación</small>
                     </div>
                 </div>
 
@@ -317,7 +317,7 @@
                 </label>
 
                 <div style="display:flex;justify-content:space-between;margin-top:25px;">
-                    <button type="submit" class="btn-agregar">💾 Guardar Tarjeta</button>
+                    <button id="btnGuardarTarjeta" type="submit" class="btn-agregar">💾 Guardar Tarjeta</button>
                     <button type="button" class="btn-agregar" style="background:gray;" onclick="cancelarFormularioTarjeta()">Cancelar</button>
                 </div>
             </form>
@@ -370,6 +370,7 @@
     <script>
         const API_BASE_URL = 'http://localhost:3000';
         let tarjetasCliente = [];
+        let tarjetaEditandoId = null;
 
         function showMessage(type, text) {
             const successDiv = document.getElementById('successMessage');
@@ -474,11 +475,42 @@
                         <td>${tarjeta.principal ? '✅ Sí' : '❌ No'}</td>
                         <td>
                             ${!tarjeta.principal ? `<button class="btn-principal" onclick="establecerPrincipal(${tarjeta.id})">⭐ Principal</button>` : ''}
+                            <button class="btn-principal" onclick="editarTarjeta(${tarjeta.id})">✏️ Editar</button>
                             <button class="btn-eliminar" onclick="eliminarTarjeta(${tarjeta.id})">🗑️</button>
                         </td>
                     `;
                 tbody.appendChild(tr);
             });
+        }
+
+        function editarTarjeta(tarjetaId) {
+            const tarjeta = tarjetasCliente.find(t => t.id === tarjetaId);
+            if (!tarjeta) {
+                showMessage('error', 'Tarjeta no encontrada');
+                return;
+            }
+
+            tarjetaEditandoId = tarjetaId;
+            document.getElementById('tarjetaFormTitle').textContent = '✏️ Editar Tarjeta';
+            document.getElementById('btnGuardarTarjeta').textContent = '💾 Guardar Cambios';
+
+            const cvvInput = document.getElementById('cvv');
+            const cvvHelp = document.getElementById('cvvHelp');
+            cvvInput.required = false;
+            cvvInput.value = '';
+            cvvInput.placeholder = 'Opcional';
+            if (cvvHelp) cvvHelp.textContent = 'Deja vacío para conservar el CVV actual';
+
+            document.getElementById('tipoTarjeta').value = tarjeta.tipo || '';
+            document.getElementById('titular').value = tarjeta.titular || '';
+            document.getElementById('numero').value = (tarjeta.numero || '').toString().replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+
+            const expStr = (tarjeta.expiracion || '').toString();
+            document.getElementById('expiracion').value = expStr.length >= 7 ? expStr.slice(0, 7) : '';
+
+            document.getElementById('predeterminada').checked = !!tarjeta.principal;
+            document.getElementById('formularioTarjeta').style.display = 'block';
+            document.getElementById('seccionTarjetas').style.display = 'block';
         }
 
         async function guardarTarjeta(event) {
@@ -505,19 +537,23 @@
             };
 
             try {
-                const response = await fetch(`${API_BASE_URL}/api/tarjetas`, {
-                    method: 'POST',
+                const isEdit = tarjetaEditandoId !== null;
+                const url = isEdit ? `${API_BASE_URL}/api/tarjetas/${tarjetaEditandoId}` : `${API_BASE_URL}/api/tarjetas`;
+                const method = isEdit ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(tarjetaData)
                 });
 
                 if (response.ok) {
-                    showMessage('success', '✅ Tarjeta registrada correctamente');
+                    showMessage('success', isEdit ? '✅ Tarjeta actualizada correctamente' : '✅ Tarjeta registrada correctamente');
                     cancelarFormularioTarjeta();
                     await cargarTarjetasCliente();
                 } else {
                     const error = await response.json();
-                    showMessage('error', error.message || 'Error al guardar tarjeta');
+                    showMessage('error', error.message || error.error || 'Error al guardar tarjeta');
                 }
             } catch (error) {
                 showMessage('error', 'Error de conexión');
@@ -625,10 +661,30 @@
             document.getElementById('formularioTarjeta').style.display = 'block';
             document.getElementById('formTarjeta').reset();
             document.getElementById('seccionTarjetas').style.display = 'block';
+
+            tarjetaEditandoId = null;
+            document.getElementById('tarjetaFormTitle').textContent = '➕ Agregar Nueva Tarjeta';
+            document.getElementById('btnGuardarTarjeta').textContent = '💾 Guardar Tarjeta';
+
+            const cvvInput = document.getElementById('cvv');
+            const cvvHelp = document.getElementById('cvvHelp');
+            cvvInput.required = true;
+            cvvInput.placeholder = '123';
+            if (cvvHelp) cvvHelp.textContent = 'No se almacena, solo para verificación';
         }
 
         function cancelarFormularioTarjeta() {
             document.getElementById('formularioTarjeta').style.display = 'none';
+
+            tarjetaEditandoId = null;
+            document.getElementById('tarjetaFormTitle').textContent = '➕ Agregar Nueva Tarjeta';
+            document.getElementById('btnGuardarTarjeta').textContent = '💾 Guardar Tarjeta';
+
+            const cvvInput = document.getElementById('cvv');
+            const cvvHelp = document.getElementById('cvvHelp');
+            cvvInput.required = true;
+            cvvInput.placeholder = '123';
+            if (cvvHelp) cvvHelp.textContent = 'No se almacena, solo para verificación';
         }
 
         function cerrarSesion() {

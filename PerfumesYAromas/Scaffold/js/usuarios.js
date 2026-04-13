@@ -5,8 +5,11 @@ let modoEdicion = false;
 let usuarios = [];
 
 document.addEventListener('DOMContentLoaded', function() {
-    verificarSesion();
-    cargarUsuarios();
+    const ok = verificarSesion();
+    // Solo cargar gestión de usuarios si la página tiene la tabla
+    if (ok && document.getElementById('cuerpoTabla')) {
+        cargarUsuarios();
+    }
     
     const inputTelefono = document.getElementById('telefono');
     if (inputTelefono) {
@@ -16,25 +19,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function verificarSesion() {
     const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
+
+    const isInAdminsFolder = (window.location.pathname || '').includes('/admins/');
+    const adminLoginPath = isInAdminsFolder ? '../adminlogin.html' : 'adminlogin.html';
+    const catalogPath = isInAdminsFolder ? '../catalog.html' : 'catalog.html';
     
     if (!usuario) {
-        window.location.href = 'clientelogin.html';
-        return;
+        window.location.href = adminLoginPath;
+        return false;
+    }
+
+    const rolLower = (usuario.rol || '').toLowerCase();
+    if (rolLower) {
+        // Reparar userType si quedó con otro valor (ej: "cliente")
+        localStorage.setItem('userType', rolLower);
+    }
+    if (usuario.rol && usuario.rol !== rolLower) {
+        usuario.rol = rolLower;
+        localStorage.setItem('usuarioActual', JSON.stringify(usuario));
     }
     
-    if (usuario.rol !== 'admin') {
+    if (rolLower !== 'admin') {
         alert('Acceso denegado. Solo administradores pueden gestionar usuarios.');
-        window.location.href = 'index.html';
-        return;
+        window.location.href = catalogPath;
+        return false;
     }
-    
-    document.getElementById('usuarioActual').textContent = usuario.nombre;
+
+    const usuarioActualEl = document.getElementById('usuarioActual');
+    if (usuarioActualEl) {
+        usuarioActualEl.textContent = usuario.nombre || '';
+    }
+
+    return true;
 }
 
 function cerrarSesion() {
     if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
         localStorage.removeItem('usuarioActual');
-        window.location.href = '../catalog.html';
+        localStorage.removeItem('token');
+        localStorage.removeItem('userType');
+
+        const isInAdminsFolder = (window.location.pathname || '').includes('/admins/');
+        window.location.href = isInAdminsFolder ? '../catalog.html' : 'catalog.html';
     }
 }
 

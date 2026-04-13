@@ -805,12 +805,14 @@
         // Verificar sesión al cargar
         document.addEventListener('DOMContentLoaded', function () {
             const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
-            const userType = localStorage.getItem('userType');
+            const rol = (usuario?.rol || '').toLowerCase();
 
-            if (!usuario || userType !== 'admin') {
+            if (!usuario || rol !== 'admin') {
                 window.location.href = '../adminlogin.html';
                 return;
             }
+
+            localStorage.setItem('userType', rol);
 
             document.getElementById('userName').textContent = usuario.nombre || 'Administrador';
         });

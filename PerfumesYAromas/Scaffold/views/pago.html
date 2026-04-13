@@ -850,6 +850,8 @@
                         cliente_id: user.id,
                         session_id: localStorage.getItem('session_id') || null
                         ,carrito_id: (carritoItems && carritoItems[0] && carritoItems[0].carrito_id) ? carritoItems[0].carrito_id : null
+                        ,metodo_pago: document.getElementById('paymentMethod').options[document.getElementById('paymentMethod').selectedIndex]?.text
+                        ,direccion_envio: (document.getElementById('direccion') && document.getElementById('direccion').value) ? document.getElementById('direccion').value : null
                     })
                 });
 
@@ -880,7 +882,7 @@
                     const total = document.getElementById('resumenTotal').textContent;
 
                     const orderData = {
-                        orderId: 'PED-' + Date.now(),
+                        orderId: (data && data.numero_orden) ? data.numero_orden : ('PED-' + Date.now()),
                         total: total,
                         subtotal: subtotal,
                         iva: subtotal * (ivaPorcentaje / 100),
@@ -895,7 +897,8 @@
                     showToast('✅ Compra realizada con éxito');
 
                     setTimeout(() => {
-                        window.location.href = 'confirmacionpago.html';
+                        const orderParam = encodeURIComponent(orderData.orderId || '');
+                        window.location.href = `factura.html?order=${orderParam}`;
                     }, 1500);
                 } else {
                     showToast(data.error || 'Error al procesar el pago', 'error');

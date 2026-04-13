@@ -170,11 +170,13 @@
             // Verificar que el usuario esté autenticado y sea admin
             try {
                 const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
-                if (!usuario || usuario.rol !== 'admin') {
+                const rol = (usuario?.rol || '').toLowerCase();
+                if (!usuario || rol !== 'admin') {
                     alert('Acceso restringido. Inicia sesión como administrador.');
                     window.location.href = '../adminlogin.html';
                     return;
                 }
+                localStorage.setItem('userType', rol);
                 // Mostrar nombre del usuario si hay espacio
                 const usrEl = document.getElementById('usuarioActual');
                 if (usrEl && usuario.nombre) usrEl.textContent = usuario.nombre;

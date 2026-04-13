@@ -7,7 +7,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
     
     if (usuario) {
-       
+        const rolLower = (usuario.rol || '').toLowerCase();
+        if (rolLower) {
+            localStorage.setItem('userType', rolLower);
+        }
+        if (usuario.rol && usuario.rol !== rolLower) {
+            usuario.rol = rolLower;
+            localStorage.setItem('usuarioActual', JSON.stringify(usuario));
+        }
+
         redirigirSegunRol(usuario.rol);
     }
     
@@ -65,6 +73,7 @@ async function iniciarSesion(event) {
         
    
         localStorage.setItem('usuarioActual', JSON.stringify(usuario));
+        localStorage.setItem('userType', (usuario.rol || '').toLowerCase());
        
         if (recordar) {
             localStorage.setItem('emailRecordado', email);

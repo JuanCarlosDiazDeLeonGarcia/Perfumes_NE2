@@ -321,6 +321,8 @@
         // URL base del servidor
         const API_BASE_URL = 'http://localhost:3000';
 
+        let comprasCliente = [];
+
         // Mostrar mensajes
         function showMessage(type, text) {
             const successDiv = document.getElementById('successMessage');
@@ -358,8 +360,10 @@
                 // Cargar métricas del cliente
                 await cargarMetricasCliente(cliente.id);
 
-                // Cargar pedidos del cliente
-                await cargarPedidosCliente(cliente.id);
+                // Cargar compras (agrupadas por numero_orden)
+                const compras = await cargarComprasCliente(cliente.id);
+                // Fallback de métricas si la tabla metricas_clientes no está actualizada
+                aplicarMetricasFallbackSiHaceFalta(compras);
 
             } catch (error) {
                 console.error('Error cargando historial:', error);
@@ -375,9 +379,9 @@
                     const data = await response.json();
 
                     // Actualizar tarjetas
-                    document.getElementById('totalCompras').textContent = data.total_compras || 0;
-                    document.getElementById('gastoTotal').textContent = `$${(data.valor_total_compras || 0).toFixed(2)}`;
-                    document.getElementById('promedioPedido').textContent = `$${(data.ticket_promedio || 0).toFixed(2)}`;
+                    document.getElementById('totalCompras').textContent = toNumber(data.total_compras, 0);
+                    document.getElementById('gastoTotal').textContent = formatMoney(data.valor_total_compras || 0);
+                    document.getElementById('promedioPedido').textContent = formatMoney(data.ticket_promedio || 0);
 
                     // Cargar fecha de última compra
                     if (data.ultima_interaccion) {
@@ -390,24 +394,70 @@
             }
         }
 
-        // Cargar pedidos del cliente
-        async function cargarPedidosCliente(clienteId) {
+        function toNumber(value, fallback = 0) {
+            const n = typeof value === 'string' ? Number(value.replace(/[^0-9.-]/g, '')) : Number(value);
+            return Number.isFinite(n) ? n : fallback;
+        }
+
+        function formatMoney(value) {
+            const n = toNumber(value, 0);
+            return `$${n.toFixed(2)}`;
+        }
+
+        // Cargar compras del cliente (por numero_orden)
+        async function cargarComprasCliente(clienteId) {
             try {
                 const tbody = document.getElementById('comprasTableBody');
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px;">Cargando compras...</td></tr>';
 
-                const response = await fetch(`${API_BASE_URL}/api/pedidos-detallados/${clienteId}`);
+                const response = await fetch(`${API_BASE_URL}/api/facturas/cliente/${clienteId}`);
 
                 if (response.ok) {
-                    const pedidos = await response.json();
-                    actualizarTablaCompras(pedidos);
+                    const compras = await response.json();
+                    comprasCliente = Array.isArray(compras) ? compras : [];
+                    actualizarTablaCompras(compras);
+                    return compras;
                 } else {
                     mostrarSinCompras();
+                    comprasCliente = [];
+                    return [];
                 }
             } catch (error) {
                 console.error('Error cargando pedidos:', error);
                 mostrarSinCompras();
+                comprasCliente = [];
+                return [];
             }
+        }
+
+        function aplicarMetricasFallbackSiHaceFalta(compras) {
+            if (!Array.isArray(compras) || compras.length === 0) return;
+
+            const totalComprasEl = document.getElementById('totalCompras');
+            const gastoTotalEl = document.getElementById('gastoTotal');
+            const promedioEl = document.getElementById('promedioPedido');
+            const ultimaCompraEl = document.getElementById('ultimaCompra');
+
+            const totalComprasActual = toNumber(totalComprasEl?.textContent, 0);
+            const gastoActual = toNumber(String(gastoTotalEl?.textContent || ''), 0);
+
+            // Si ya hay métricas, no sobreescribimos
+            if (totalComprasActual > 0 || gastoActual > 0) return;
+
+            const totalCompras = compras.length;
+            const total = compras.reduce((s, c) => s + toNumber(c.total, 0), 0);
+            const promedio = totalCompras > 0 ? (total / totalCompras) : 0;
+
+            let ultima = null;
+            compras.forEach(c => {
+                const d = c.fecha_pedido ? new Date(c.fecha_pedido) : null;
+                if (d && !isNaN(d.getTime()) && (!ultima || d > ultima)) ultima = d;
+            });
+
+            if (totalComprasEl) totalComprasEl.textContent = String(totalCompras);
+            if (gastoTotalEl) gastoTotalEl.textContent = formatMoney(total);
+            if (promedioEl) promedioEl.textContent = formatMoney(promedio);
+            if (ultimaCompraEl) ultimaCompraEl.textContent = ultima ? ultima.toLocaleDateString() : '-';
         }
 
         function actualizarTablaCompras(pedidos) {
@@ -425,22 +475,24 @@
                 // Formatear lista de productos (máximo 2)
                 let productosTexto = 'Varios productos';
                 if (pedido.productos) {
-                    const productosArray = pedido.productos.split(', ').slice(0, 2);
+                    const partes = String(pedido.productos).split(',').map(p => p.trim()).filter(Boolean);
+                    const productosArray = partes.slice(0, 2);
                     productosTexto = productosArray.join(', ');
-                    if (pedido.productos.split(', ').length > 2) {
+                    if (partes.length > 2) {
                         productosTexto += '...';
                     }
                 }
 
                 // Contar items totales
-                const totalItems = pedido.cantidad_total || 1;
+                const totalItems = toNumber(pedido.items_count, 0) || 1;
 
                 // Determinar clase CSS según estado
+                const estadoNorm = String(pedido.estado || '').toLowerCase();
                 let estadoClass = 'estado-pendiente';
-                if (pedido.estado === 'entregado') estadoClass = 'estado-entregado';
-                else if (pedido.estado === 'enviado') estadoClass = 'estado-enviado';
-                else if (pedido.estado === 'procesando') estadoClass = 'estado-procesando';
-                else if (pedido.estado === 'cancelado') estadoClass = 'estado-cancelado';
+                if (estadoNorm === 'entregado') estadoClass = 'estado-entregado';
+                else if (estadoNorm === 'enviado') estadoClass = 'estado-enviado';
+                else if (estadoNorm === 'procesando') estadoClass = 'estado-procesando';
+                else if (estadoNorm === 'cancelado') estadoClass = 'estado-cancelado';
 
                 // Icono según estado
                 const estadoIcon = {
@@ -450,18 +502,23 @@
                     'confirmado': '📋',
                     'pendiente': '⏳',
                     'cancelado': '❌'
-                }[pedido.estado?.toLowerCase()] || '📄';
+                }[estadoNorm] || '📄';
 
-                tr.innerHTML = `
-              <td><strong>${pedido.numero_orden || `#${String(pedido.id).padStart(3, '0')}`}</strong></td>
-              <td>${new Date(pedido.fecha_pedido).toLocaleDateString()}</td>
+                                const numeroOrden = pedido.numero_orden || '';
+                                const fechaPedido = pedido.fecha_pedido ? new Date(pedido.fecha_pedido) : null;
+                                const fechaText = (fechaPedido && !isNaN(fechaPedido.getTime())) ? fechaPedido.toLocaleDateString() : '-';
+
+                                tr.innerHTML = `
+                            <td><strong>${numeroOrden || '-'}</strong></td>
+                            <td>${fechaText}</td>
               <td>${productosTexto}</td>
               <td>${totalItems}</td>
               <td>${pedido.metodo_pago || '💳 Tarjeta'}</td>
-              <td><strong>$${pedido.total?.toFixed(2) || '0.00'}</strong></td>
+                            <td><strong>${formatMoney(pedido.total || 0)}</strong></td>
               <td class="${estadoClass}">${estadoIcon} ${pedido.estado || 'Pendiente'}</td>
               <td>
-                <button class="btn-editar" onclick="verDetallePedido(${pedido.id})">👁️ Ver</button>
+                                <button class="btn-editar" onclick="verDetalleOrden('${String(numeroOrden).replace(/'/g, "\\'")}')">👁️ Ver</button>
+                                <button class="btn-editar" onclick="verFactura('${String(numeroOrden).replace(/'/g, "\\'")}')">🧾 Factura</button>
               </td>
             `;
                 tbody.appendChild(tr);
@@ -490,14 +547,20 @@
           `;
         }
 
-        // Ver detalles de un pedido específico
-        async function verDetallePedido(pedidoId) {
+        // Ver detalles de una orden (numero_orden)
+        async function verDetalleOrden(numeroOrden) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/pedido-detalle/${pedidoId}`);
+                const clienteData = localStorage.getItem('cliente');
+                if (!clienteData) {
+                    showMessage('error', 'No hay sesión activa.');
+                    return;
+                }
+                const cliente = JSON.parse(clienteData);
+                const response = await fetch(`${API_BASE_URL}/api/facturas/cliente/${cliente.id}/${encodeURIComponent(numeroOrden)}`);
 
                 if (response.ok) {
-                    const pedido = await response.json();
-                    mostrarModalDetalle(pedido);
+                    const factura = await response.json();
+                    mostrarModalDetalleOrden(factura);
                 } else {
                     showMessage('error', 'No se pudo cargar el detalle del pedido');
                 }
@@ -507,29 +570,33 @@
             }
         }
 
-        function mostrarModalDetalle(pedido) {
+        function mostrarModalDetalleOrden(factura) {
             const modal = document.getElementById('detalleModal');
             const modalTitulo = document.getElementById('modalTitulo');
             const modalBody = document.getElementById('modalBody');
 
             // Configurar título
-            modalTitulo.textContent = `Pedido: ${pedido.numero_orden || `#${String(pedido.id).padStart(3, '0')}`}`;
+            modalTitulo.textContent = `Pedido: ${factura.numero_orden || '-'}`;
 
             // Formatear estado con color
-            let estadoHTML = `<span class="estado-pendiente">${pedido.estado || 'Pendiente'}</span>`;
-            if (pedido.estado === 'entregado') estadoHTML = `<span class="estado-entregado">✅ ${pedido.estado}</span>`;
-            else if (pedido.estado === 'enviado') estadoHTML = `<span class="estado-enviado">🚚 ${pedido.estado}</span>`;
-            else if (pedido.estado === 'procesando') estadoHTML = `<span class="estado-procesando">⚙️ ${pedido.estado}</span>`;
-            else if (pedido.estado === 'cancelado') estadoHTML = `<span class="estado-cancelado">❌ ${pedido.estado}</span>`;
+            const estado = (factura.estado || '').toLowerCase();
+            let estadoHTML = `<span class="estado-pendiente">${factura.estado || 'Pendiente'}</span>`;
+            if (estado === 'entregado') estadoHTML = `<span class="estado-entregado">✅ ${factura.estado}</span>`;
+            else if (estado === 'enviado') estadoHTML = `<span class="estado-enviado">🚚 ${factura.estado}</span>`;
+            else if (estado === 'procesando') estadoHTML = `<span class="estado-procesando">⚙️ ${factura.estado}</span>`;
+            else if (estado === 'cancelado') estadoHTML = `<span class="estado-cancelado">❌ ${factura.estado}</span>`;
 
-            // Construir HTML de detalles
+                        const fecha = factura.fecha ? new Date(factura.fecha) : null;
+                        const fechaText = (fecha && !isNaN(fecha.getTime())) ? fecha.toLocaleString() : '-';
+
+                        // Construir HTML de detalles
             let detallesHTML = `
             <div style="margin-bottom: 20px;">
               <h3>Información del Pedido</h3>
-              <p><strong>Fecha:</strong> ${new Date(pedido.fecha_pedido).toLocaleString()}</p>
+                            <p><strong>Fecha:</strong> ${fechaText}</p>
               <p><strong>Estado:</strong> ${estadoHTML}</p>
-              <p><strong>Método de pago:</strong> ${pedido.metodo_pago || 'No especificado'}</p>
-              <p><strong>Dirección de envío:</strong> ${pedido.direccion_envio || 'No especificada'}</p>
+                            <p><strong>Método de pago:</strong> ${factura.metodo_pago || 'No especificado'}</p>
+                            <p><strong>Dirección de envío:</strong> ${factura.direccion_envio || 'No especificada'}</p>
             </div>
 
             <div style="margin-bottom: 20px;">
@@ -540,21 +607,24 @@
                     <th>Producto</th>
                     <th>Cantidad</th>
                     <th>Precio Unitario</th>
-                    <th>Subtotal</th>
+                                        <th>Importe</th>
                   </tr>
                 </thead>
                 <tbody>
           `;
 
             // Agregar productos si existen
-            if (pedido.detalles && pedido.detalles.length > 0) {
-                pedido.detalles.forEach(detalle => {
+                        if (factura.productos && factura.productos.length > 0) {
+                                factura.productos.forEach(detalle => {
+                                        const qty = toNumber(detalle.cantidad, 0);
+                                        const precio = toNumber(detalle.precio_unitario, 0);
+                                        const importe = toNumber(detalle.importe, qty * precio);
                     detallesHTML += `
                 <tr>
-                  <td>${detalle.nombre_producto || 'Producto'}</td>
-                  <td>${detalle.cantidad}</td>
-                  <td>$${detalle.precio_unitario?.toFixed(2)}</td>
-                  <td>$${detalle.subtotal?.toFixed(2)}</td>
+                                    <td>${detalle.nombre || 'Producto'}</td>
+                                    <td>${qty}</td>
+                                    <td>${formatMoney(precio)}</td>
+                                    <td>${formatMoney(importe)}</td>
                 </tr>
               `;
                 });
@@ -567,6 +637,7 @@
             }
 
             // Resumen total
+                        const totals = factura.totals || {};
             detallesHTML += `
                 </tbody>
               </table>
@@ -574,15 +645,20 @@
 
             <div style="background:#f9f9f9; padding:15px; border-radius:6px;">
               <h3>Resumen</h3>
-              <p><strong>Subtotal:</strong> $${pedido.subtotal?.toFixed(2) || '0.00'}</p>
-              <p><strong>Impuestos:</strong> $${pedido.impuestos?.toFixed(2) || '0.00'}</p>
-              <p><strong>Descuento:</strong> $${pedido.descuento?.toFixed(2) || '0.00'}</p>
-              <p><strong>Total:</strong> <span style="font-size:18px; font-weight:bold;">$${pedido.total?.toFixed(2) || '0.00'}</span></p>
+                            <p><strong>Subtotal:</strong> ${formatMoney(totals.subtotal || 0)}</p>
+                            <p><strong>Impuestos:</strong> ${formatMoney(totals.impuestos || 0)}</p>
+                            <p><strong>Descuento:</strong> ${formatMoney(totals.descuento || 0)}</p>
+                            <p><strong>Total:</strong> <span style="font-size:18px; font-weight:bold;">${formatMoney(totals.total || 0)}</span></p>
             </div>
           `;
 
             modalBody.innerHTML = detallesHTML;
             modal.style.display = 'block';
+        }
+
+        function verFactura(numeroOrden) {
+            if (!numeroOrden) return;
+            window.location.href = `../factura.html?order=${encodeURIComponent(String(numeroOrden))}`;
         }
 
         function cerrarModal() {
@@ -591,7 +667,48 @@
 
         // Descargar historial
         function descargarHistorial() {
-            showMessage('success', 'La funcionalidad de descarga estará disponible pronto.');
+            if (!Array.isArray(comprasCliente) || comprasCliente.length === 0) {
+                showMessage('error', 'No hay compras para descargar');
+                return;
+            }
+
+            const headers = ['numero_orden', 'fecha_pedido', 'productos', 'items_count', 'metodo_pago', 'total', 'estado'];
+            const rows = comprasCliente.map(c => {
+                const fecha = c.fecha_pedido ? new Date(c.fecha_pedido) : null;
+                const fechaText = (fecha && !isNaN(fecha.getTime())) ? fecha.toISOString() : '';
+                const productos = String(c.productos || '').replace(/\s+/g, ' ').trim();
+                return [
+                    c.numero_orden || '',
+                    fechaText,
+                    productos,
+                    String(toNumber(c.items_count, 0)),
+                    String(c.metodo_pago || ''),
+                    String(toNumber(c.total, 0)),
+                    String(c.estado || '')
+                ];
+            });
+
+            const escapeCsv = (val) => {
+                const s = String(val ?? '');
+                if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+                return s;
+            };
+
+            const csv = [headers, ...rows]
+                .map(r => r.map(escapeCsv).join(','))
+                .join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `historial_compras_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
+            showMessage('success', 'Historial descargado ✅');
         }
 
         // Cerrar sesión
@@ -609,7 +726,7 @@
             const cliente = localStorage.getItem('cliente');
             const userType = localStorage.getItem('userType');
 
-            if (!cliente || userType !== 'cliente') {
+            if (!cliente || String(userType || '').toLowerCase() !== 'cliente') {
                 window.location.href = '../clientelogin.html';
                 return false;
             }

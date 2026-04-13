@@ -279,6 +279,10 @@
             <button class="btn-descargar" onclick="descargarFacturaPDF()">
                 🧾 Descargar Factura (PDF)
             </button>
+            <input id="emailFactura" type="email" placeholder="📧 Correo destino" style="padding: 10px 12px; border-radius: 8px; border: 1px solid #ddd; margin-left: 10px; width: 260px; max-width: 100%;" />
+            <button class="btn-descargar" style="margin-left: 10px;" onclick="enviarFacturaPDFPorCorreo()">
+                ✉️ Enviar por correo
+            </button>
             <button class="btn-descargar" style="background: linear-gradient(90deg, #25D366, #1da851); margin-left: 10px;" onclick="window.location.href='catalog.html'">
                 🛍️ Continuar Comprando
             </button>
@@ -320,10 +324,57 @@
             }
         }
 
-        // Cargar datos dinámicos
-        document.addEventListener('DOMContentLoaded', function () {
-            const invoiceData = safeJsonParse(localStorage.getItem('invoiceData')) || {};
-            const lastOrder = safeJsonParse(localStorage.getItem('lastOrder')) || {};
+        function getClienteIdFromStorage() {
+            const cliente = safeJsonParse(localStorage.getItem('cliente')) || {};
+            if (cliente && cliente.id) return cliente.id;
+            if (cliente && cliente.cliente_id) return cliente.cliente_id;
+
+            const usuarioActual = safeJsonParse(localStorage.getItem('usuarioActual')) || {};
+            if (usuarioActual && usuarioActual.id) return usuarioActual.id;
+            if (usuarioActual && usuarioActual.cliente_id) return usuarioActual.cliente_id;
+
+            return null;
+        }
+
+        function buildInvoiceDataFromApiFactura(api) {
+            const cliente = api && api.cliente ? api.cliente : {};
+            const subtotal = toNumber(api?.totals?.subtotal, 0);
+            const impuestos = toNumber(api?.totals?.impuestos, 0);
+            const descuento = toNumber(api?.totals?.descuento, 0);
+            const shipping = toNumber(api?.totals?.shipping, 0);
+            const total = toNumber(api?.totals?.total, subtotal + impuestos + shipping - descuento);
+            const ivaPorcentaje = subtotal > 0 ? (impuestos / subtotal) * 100 : 16;
+
+            return {
+                orderNumber: api?.numero_orden || '',
+                transactionId: api?.transactionId || '',
+                folio: api?.folio || '',
+                timestamp: api?.fecha || new Date().toISOString(),
+                date: api?.fecha ? new Date(api.fecha).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : undefined,
+                paymentMethod: api?.metodo_pago || undefined,
+                customerData: {
+                    firstName: cliente?.nombre || 'Cliente',
+                    lastName: '',
+                    email: cliente?.correo || 'cliente@perfumesyaromas.com',
+                    phone: cliente?.telefono || '—',
+                    address: cliente?.direccion || 'Dirección no especificada',
+                    city: cliente?.ciudad || 'Ciudad no especificada',
+                    state: cliente?.estado || 'Estado no especificado',
+                    zipCode: cliente?.codigo_postal || '00000'
+                },
+                products: Array.isArray(api?.productos) ? api.productos : [],
+                totals: {
+                    subtotal,
+                    shipping,
+                    discount: descuento,
+                    iva: impuestos,
+                    iva_porcentaje: ivaPorcentaje,
+                    total
+                }
+            };
+        }
+
+        function renderFactura(invoiceData, lastOrder) {
             const customerData = invoiceData.customerData || {};
 
             const orderNumber = invoiceData.orderNumber || lastOrder.orderId || lastOrder.orderNumber || ('ORD-' + Math.floor(Math.random() * 9000 + 1000));
@@ -354,14 +405,21 @@
                 ? Number(invoiceData.totals.subtotal)
                 : (Number.isFinite(lastOrder.subtotal) ? Number(lastOrder.subtotal) : computedSubtotal);
 
-            const shipping = (invoiceData.totals && Number.isFinite(invoiceData.totals.shipping)) ? Number(invoiceData.totals.shipping) : (products.length > 0 ? 5 : 0);
-            const discount = (invoiceData.totals && Number.isFinite(invoiceData.totals.discount)) ? Number(invoiceData.totals.discount) : 0;
+            const shipping = (invoiceData.totals && Number.isFinite(invoiceData.totals.shipping))
+                ? Number(invoiceData.totals.shipping)
+                : (products.length > 0 ? 5 : 0);
+
+            const discount = (invoiceData.totals && Number.isFinite(invoiceData.totals.discount))
+                ? Number(invoiceData.totals.discount)
+                : 0;
 
             const iva = (invoiceData.totals && Number.isFinite(invoiceData.totals.iva))
                 ? Number(invoiceData.totals.iva)
                 : (subtotal * (ivaPorcentaje / 100));
 
-            const totalConIVA = subtotal + iva + shipping - discount;
+            const totalConIVA = (invoiceData.totals && Number.isFinite(invoiceData.totals.total))
+                ? Number(invoiceData.totals.total)
+                : (subtotal + iva + shipping - discount);
 
             // Actualizar elementos en la página
             document.getElementById('invoiceFolio').textContent = folio;
@@ -370,8 +428,11 @@
             document.getElementById('transactionId').textContent = transactionId;
 
             // Información del cliente
-            document.getElementById('customerName').textContent =
-                (customerData.firstName || 'Cliente') + ' ' + (customerData.lastName || 'Perfumes & Aromas');
+            const fullName = [customerData.firstName, customerData.lastName]
+                .filter(Boolean)
+                .join(' ')
+                .trim();
+            document.getElementById('customerName').textContent = fullName || 'Cliente';
             document.getElementById('customerEmail').textContent = customerData.email || 'cliente@perfumesyaromas.com';
             document.getElementById('customerPhone').textContent = customerData.phone || '449 438 9825';
             document.getElementById('customerAddress').textContent =
@@ -426,6 +487,36 @@
                     cartBtn.style.border = '2px solid #9b5de5';
                 }
             }, 500);
+        }
+
+        // Cargar datos dinámicos
+        document.addEventListener('DOMContentLoaded', async function () {
+            let invoiceData = safeJsonParse(localStorage.getItem('invoiceData')) || {};
+            const lastOrder = safeJsonParse(localStorage.getItem('lastOrder')) || {};
+
+            const orderParam = new URLSearchParams(window.location.search).get('order');
+            if (orderParam) {
+                const clienteId = getClienteIdFromStorage();
+                if (clienteId) {
+                    try {
+                        const API_BASE_URL = 'http://localhost:3000';
+                        const resp = await fetch(`${API_BASE_URL}/api/facturas/cliente/${encodeURIComponent(clienteId)}/${encodeURIComponent(orderParam)}`);
+                        const apiData = await resp.json();
+                        if (resp.ok && apiData) {
+                            invoiceData = buildInvoiceDataFromApiFactura(apiData);
+                            localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
+                        } else {
+                            console.warn('No se pudo cargar factura desde backend:', apiData);
+                        }
+                    } catch (e) {
+                        console.error('Error cargando factura desde backend:', e);
+                    }
+                } else {
+                    console.warn('No hay cliente_id en storage; usando datos locales');
+                }
+            }
+
+            renderFactura(invoiceData, lastOrder);
         });
 
         function renderProducts(products) {
@@ -534,6 +625,102 @@
             } catch (error) {
                 console.error('Error generando PDF:', error);
                 alert('Ocurrió un error al generar el PDF.');
+            } finally {
+                if (acciones) acciones.style.display = prevDisplay;
+            }
+        }
+
+        async function enviarFacturaPDFPorCorreo() {
+            const container = document.querySelector('.factura-container');
+            const acciones = document.querySelector('.acciones-factura');
+            const emailInput = document.getElementById('emailFactura');
+            if (!container || !emailInput) return;
+
+            const to = (emailInput.value || '').trim();
+            if (!to) {
+                alert('Ingresa un correo destino');
+                emailInput.focus();
+                return;
+            }
+
+            if (!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) {
+                alert('No se pudieron cargar las librerías para generar el PDF. Intenta recargar la página.');
+                return;
+            }
+
+            const folio = (document.getElementById('invoiceFolio')?.textContent || 'FACTURA').trim();
+            const orderNumber = (document.getElementById('orderNumber')?.textContent || '').trim();
+            const filename = `${(folio || 'FACTURA').replace(/[^a-zA-Z0-9._-]/g, '_')}.pdf`;
+
+            const prevDisplay = acciones ? acciones.style.display : '';
+            if (acciones) acciones.style.display = 'none';
+
+            try {
+                // Genera una versión más liviana que la de descarga (para no exceder límites)
+                const canvas = await window.html2canvas(container, {
+                    scale: 1.25,
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+
+                const imgWidth = pageWidth;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                const dataUri = pdf.output('datauristring');
+                const base64 = String(dataUri || '').split(',')[1];
+                if (!base64) throw new Error('No se pudo generar el PDF en base64');
+
+                const API_BASE_URL = 'http://localhost:3000';
+                const resp = await fetch(`${API_BASE_URL}/api/factura/enviar-pdf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to,
+                        pdf_base64: base64,
+                        filename,
+                        subject: `Factura ${folio}${orderNumber ? ' • Orden ' + orderNumber : ''}`,
+                        message: 'Adjunto encontrarás tu factura en formato PDF.'
+                    })
+                });
+
+                let data = {};
+                let rawText = '';
+                try {
+                    data = await resp.json();
+                } catch {
+                    rawText = await resp.text().catch(() => '');
+                }
+
+                if (!resp.ok || !data.success) {
+                    const msg = (data && (data.error || data.detail))
+                        ? (data.error || data.detail)
+                        : (rawText ? rawText : 'No se pudo enviar el correo');
+                    throw new Error(msg);
+                }
+
+                alert('Factura enviada por correo ✅');
+            } catch (error) {
+                console.error('Error enviando factura por correo:', error);
+                alert(`No se pudo enviar la factura: ${error.message || error}`);
             } finally {
                 if (acciones) acciones.style.display = prevDisplay;
             }

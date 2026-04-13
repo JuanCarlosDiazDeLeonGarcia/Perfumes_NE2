@@ -3,13 +3,15 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = 3000;
 
 // Middlewares must be registered before any routes that read req.body
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 
 const pool = new Pool({
@@ -19,6 +21,35 @@ const pool = new Pool({
     password: '2244', //Cambiar por su contraseña segun su BD
     port: 5432,
 });
+
+async function ensureTarjetasCreditoTable() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS public.tarjetas_credito (
+                id SERIAL PRIMARY KEY,
+                cliente_id INTEGER REFERENCES public.clientes(id) ON DELETE CASCADE,
+                tipo VARCHAR(20) NOT NULL,
+                titular VARCHAR(150) NOT NULL,
+                numero VARCHAR(20) NOT NULL,
+                expiracion DATE NOT NULL,
+                cvv VARCHAR(4) NOT NULL,
+                principal BOOLEAN DEFAULT FALSE,
+                activa BOOLEAN DEFAULT TRUE,
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(cliente_id, numero)
+            )
+        `);
+
+        await pool.query(
+            'CREATE INDEX IF NOT EXISTS idx_tarjetas_credito_cliente ON public.tarjetas_credito(cliente_id)'
+        );
+
+        console.log('✅ Tabla public.tarjetas_credito lista');
+    } catch (error) {
+        console.error('❌ Error verificando/creando tabla public.tarjetas_credito:', error.message);
+    }
+}
 
 // Login para usuarios (tabla usuarios) - usado por adminlogin
 app.post('/api/login-usuario', async (req, res) => {
@@ -88,6 +119,9 @@ pool.connect((err, client, release) => {
     console.log('✅ Conectado a PostgreSQL - Base de datos: perfumes');
     release();
 });
+
+// Verificar/crear tablas auxiliares al arrancar
+ensureTarjetasCreditoTable();
 
 app.use(express.static(path.join(__dirname, 'PerfumesYAromas', 'Scaffold')));
 
@@ -2881,10 +2915,15 @@ app.get('/api/movimientos-recursos', async (req, res) => {
 
 // ---------- 5. ENDPOINT COMPRA (descuenta stock + registra movimiento + alerta push) ------
 app.post('/api/comprar', async (req, res) => {
-    const { items, item_ids, cliente_id, session_id, carrito_id } = req.body; // items: [{ producto_id, cantidad }]
+    const { items, item_ids, cliente_id, session_id, carrito_id, metodo_pago, direccion_envio, notas } = req.body; // items: [{ producto_id, cantidad }]
 
     if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: 'Se requiere un arreglo de items' });
+    }
+
+    const clienteIdNumReq = cliente_id ? parseInt(cliente_id) : null;
+    if (!clienteIdNumReq) {
+        return res.status(400).json({ error: 'cliente_id es requerido para registrar el pedido' });
     }
 
     const client = await pool.connect();
@@ -2893,10 +2932,23 @@ app.post('/api/comprar', async (req, res) => {
         const resultados = [];
         const alertasPush = [];
 
+        const crypto = require('crypto');
+        const generarNumeroOrden = async () => {
+            for (let i = 0; i < 5; i++) {
+                const candidate = `PED-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
+                const exists = await client.query('SELECT 1 FROM pedidos WHERE numero_orden = $1 LIMIT 1', [candidate]);
+                if (exists.rowCount === 0) return candidate;
+            }
+            return `PED-${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
+        };
+
+        const numero_orden = await generarNumeroOrden();
+        const pedidos_creados = [];
+
         // Resolver carritos a vaciar (pueden existir varios: cliente + sesión)
         const carritoIdsParaVaciar = new Set();
         const carritoIdNum = carrito_id ? parseInt(carrito_id) : null;
-        const clienteIdNum = cliente_id ? parseInt(cliente_id) : null;
+        const clienteIdNum = clienteIdNumReq;
         const sessionIdStr = session_id ? String(session_id) : null;
 
         if (carritoIdNum) carritoIdsParaVaciar.add(carritoIdNum);
@@ -2951,6 +3003,45 @@ app.post('/api/comprar', async (req, res) => {
                  VALUES ($1, 'salida', $2, 'Venta desde catálogo')`,
                 [prodId, cant]
             );
+
+            // Registrar pedido (una fila por item)
+            const precio = parseFloat(producto.precio) || 0;
+            const ivaPorcentaje = Number.isFinite(parseFloat(producto.iva_porcentaje)) ? parseFloat(producto.iva_porcentaje) : 0;
+            const subtotal = precio * cant;
+            const impuestos = subtotal * (ivaPorcentaje / 100);
+            const descuento = 0;
+            const total = subtotal + impuestos - descuento;
+            const vendedorId = producto.vendedor_id ? parseInt(producto.vendedor_id) : null;
+
+            const pedidoIns = await client.query(
+                `INSERT INTO public.pedidos (
+                    numero_orden, cliente_id, vendedor_id, producto_id, cantidad,
+                    subtotal, impuestos, descuento, total,
+                    estado, metodo_pago, direccion_envio, notas
+                ) VALUES (
+                    $1,$2,$3,$4,$5,
+                    $6,$7,$8,$9,
+                    'pendiente',$10,$11,$12
+                ) RETURNING id`,
+                [
+                    numero_orden,
+                    clienteIdNum,
+                    vendedorId,
+                    prodId,
+                    cant,
+                    subtotal,
+                    impuestos,
+                    descuento,
+                    total,
+                    metodo_pago || null,
+                    direccion_envio || null,
+                    notas || null
+                ]
+            );
+
+            if (pedidoIns.rows[0]?.id) {
+                pedidos_creados.push(pedidoIns.rows[0].id);
+            }
 
             resultados.push({ id: prodId, nombre: producto.nombre, stock_anterior: producto.stock, stock_nuevo: stockNuevo });
 
@@ -3055,6 +3146,8 @@ app.post('/api/comprar', async (req, res) => {
 
         res.json({
             success: true,
+            numero_orden,
+            pedidos_creados,
             resultados,
             carrito_vaciado: carritoVaciado,
             alertas_push: alertasPush.map(p => ({
@@ -3174,6 +3267,98 @@ app.get('/api/proveedores', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// ==================== FACTURA POR EMAIL (PDF) ====================
+app.post('/api/factura/enviar-pdf', async (req, res) => {
+    const { to, pdf_base64, filename, subject, message } = req.body || {};
+
+    if (!to || typeof to !== 'string') {
+        return res.status(400).json({ error: 'El correo destino (to) es requerido' });
+    }
+    const email = to.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Correo destino inválido' });
+    }
+
+    if (!pdf_base64 || typeof pdf_base64 !== 'string') {
+        return res.status(400).json({ error: 'pdf_base64 es requerido' });
+    }
+
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = process.env.SMTP_PORT;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const smtpFrom = process.env.SMTP_FROM || smtpUser;
+    const smtpSecure = (process.env.SMTP_SECURE || '').toLowerCase() === 'true';
+
+    if (!smtpHost || !smtpPort || !smtpUser || !smtpPass || !smtpFrom) {
+        return res.status(500).json({
+            error: 'SMTP no configurado. Define SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS y (opcional) SMTP_FROM, SMTP_SECURE.'
+        });
+    }
+
+    let pdfBuffer;
+    try {
+        pdfBuffer = Buffer.from(pdf_base64, 'base64');
+    } catch {
+        return res.status(400).json({ error: 'pdf_base64 inválido' });
+    }
+
+    if (!pdfBuffer || pdfBuffer.length < 100) {
+        return res.status(400).json({ error: 'El PDF recibido está vacío o corrupto' });
+    }
+    if (pdfBuffer.length > 25 * 1024 * 1024) {
+        return res.status(413).json({ error: 'El PDF excede el tamaño máximo (25MB)' });
+    }
+
+    const safeFilename = (typeof filename === 'string' && filename.trim())
+        ? filename.trim().replace(/[^a-zA-Z0-9._-]/g, '_')
+        : 'factura.pdf';
+
+    try {
+        const transporter = nodemailer.createTransport({
+            host: smtpHost,
+            port: parseInt(smtpPort),
+            secure: smtpSecure,
+            auth: {
+                user: smtpUser,
+                pass: smtpPass
+            }
+        });
+
+        await transporter.sendMail({
+            from: smtpFrom,
+            to: email,
+            subject: (typeof subject === 'string' && subject.trim()) ? subject.trim() : 'Factura - Perfumes & Aromas',
+            text: (typeof message === 'string' && message.trim())
+                ? message.trim()
+                : 'Adjunto encontrarás tu factura en formato PDF.',
+            attachments: [
+                {
+                    filename: safeFilename,
+                    content: pdfBuffer,
+                    contentType: 'application/pdf'
+                }
+            ]
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error enviando factura por email:', error);
+        res.status(500).json({ error: 'No se pudo enviar el correo', detail: error.message });
+    }
+});
+
+// Manejo de errores del body parser (payload demasiado grande)
+app.use((err, req, res, next) => {
+    if (err && (err.type === 'entity.too.large' || err.status === 413)) {
+        return res.status(413).json({
+            error: 'El archivo es demasiado grande para enviarse por correo. Intenta con una factura más corta o reduce la escala del PDF.'
+        });
+    }
+    return next(err);
 });
 
 // Alias para clientes (el HTML llama /api/clientes)
@@ -3893,6 +4078,106 @@ app.post('/api/carrito/sincronizar', async (req, res) => {
     }
 });
 
+// Editar tarjeta
+app.put('/api/tarjetas/:tarjetaId', async (req, res) => {
+    const { tarjetaId } = req.params;
+    const { tipo, titular, numero, expiracion, cvv, principal, cliente_id } = req.body;
+
+    if (!cliente_id) {
+        return res.status(400).json({ error: 'Se requiere cliente_id' });
+    }
+    if (!tipo || !titular || !numero || !expiracion) {
+        return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    }
+
+    try {
+        // Verificar tarjeta existe y pertenece al cliente
+        const tarjetaActual = await pool.query(
+            'SELECT id, cliente_id FROM tarjetas_credito WHERE id = $1',
+            [tarjetaId]
+        );
+
+        if (tarjetaActual.rows.length === 0) {
+            return res.status(404).json({ error: 'Tarjeta no encontrada' });
+        }
+
+        if (String(tarjetaActual.rows[0].cliente_id) !== String(cliente_id)) {
+            return res.status(403).json({ error: 'No autorizado' });
+        }
+
+        // Validar duplicado de número (en otra tarjeta del mismo cliente)
+        const dup = await pool.query(
+            'SELECT id FROM tarjetas_credito WHERE cliente_id = $1 AND numero = $2 AND id <> $3',
+            [cliente_id, numero, tarjetaId]
+        );
+        if (dup.rows.length > 0) {
+            return res.status(400).json({ error: 'Esta tarjeta ya está registrada' });
+        }
+
+        await pool.query('BEGIN');
+
+        // Si será principal, quitar principal a las demás
+        if (principal === true) {
+            await pool.query(
+                'UPDATE tarjetas_credito SET principal = false WHERE cliente_id = $1 AND id <> $2',
+                [cliente_id, tarjetaId]
+            );
+        }
+
+        const setParts = [];
+        const values = [];
+        let idx = 1;
+
+        setParts.push(`tipo = $${idx++}`);
+        values.push(tipo);
+
+        setParts.push(`titular = $${idx++}`);
+        values.push(titular);
+
+        setParts.push(`numero = $${idx++}`);
+        values.push(numero);
+
+        setParts.push(`expiracion = $${idx++}`);
+        values.push(expiracion);
+
+        // CVV opcional en edición (si viene vacío/no viene, se conserva)
+        if (cvv && String(cvv).trim() !== '') {
+            setParts.push(`cvv = $${idx++}`);
+            values.push(cvv);
+        }
+
+        setParts.push(`principal = $${idx++}`);
+        values.push(principal === true);
+
+        setParts.push('fecha_actualizacion = CURRENT_TIMESTAMP');
+
+        const tarjetaIdParam = idx++;
+        const clienteIdParam = idx++;
+        values.push(tarjetaId, cliente_id);
+
+        const updateQuery = `
+            UPDATE tarjetas_credito
+            SET ${setParts.join(', ')}
+            WHERE id = $${tarjetaIdParam} AND cliente_id = $${clienteIdParam}
+            RETURNING *
+        `;
+
+        const updated = await pool.query(updateQuery, values);
+
+        await pool.query('COMMIT');
+
+        if (updated.rows.length === 0) {
+            return res.status(404).json({ error: 'Tarjeta no encontrada' });
+        }
+
+        res.json(updated.rows[0]);
+    } catch (error) {
+        try { await pool.query('ROLLBACK'); } catch (e) {}
+        console.error('Error editando tarjeta:', error);
+        res.status(500).json({ error: 'Error al editar tarjeta' });
+    }
+});
+
 // Establecer tarjeta como principal
 app.put('/api/tarjetas/:tarjetaId/principal', async (req, res) => {
     const { tarjetaId } = req.params;
@@ -3941,6 +4226,152 @@ app.delete('/api/tarjetas/:tarjetaId', async (req, res) => {
     } catch (error) {
         console.error('Error eliminando tarjeta:', error);
         res.status(500).json({ error: 'Error al eliminar' });
+    }
+});
+
+// ==================== FACTURAS (DESDE PEDIDOS) ====================
+
+// Listar facturas (agrupadas por numero_orden) de un cliente
+app.get('/api/facturas/cliente/:cliente_id', async (req, res) => {
+    const { cliente_id } = req.params;
+    const clienteIdNum = cliente_id ? parseInt(cliente_id) : null;
+
+    if (!clienteIdNum) {
+        return res.status(400).json({ error: 'cliente_id inválido' });
+    }
+
+    try {
+        const result = await pool.query(
+            `SELECT
+                p.numero_orden,
+                MIN(p.fecha_pedido) AS fecha_pedido,
+                SUM(COALESCE(p.subtotal, 0)) AS subtotal,
+                SUM(COALESCE(p.impuestos, 0)) AS impuestos,
+                SUM(COALESCE(p.descuento, 0)) AS descuento,
+                SUM(COALESCE(p.total, 0)) AS total,
+                MAX(p.metodo_pago) AS metodo_pago,
+                MAX(p.estado) AS estado,
+                SUM(COALESCE(p.cantidad, 0)) AS items_count,
+                STRING_AGG(DISTINCT COALESCE(pr.nombre, 'Producto'), ', ') AS productos
+             FROM pedidos p
+             LEFT JOIN productos pr ON pr.id = p.producto_id
+             WHERE p.cliente_id = $1
+             GROUP BY p.numero_orden
+             ORDER BY fecha_pedido DESC
+             LIMIT 100`,
+            [clienteIdNum]
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error listando facturas:', error);
+        res.status(500).json({ error: 'Error al listar facturas' });
+    }
+});
+
+// Obtener detalle de una factura por numero_orden
+app.get('/api/facturas/cliente/:cliente_id/:numero_orden', async (req, res) => {
+    const { cliente_id, numero_orden } = req.params;
+    const clienteIdNum = cliente_id ? parseInt(cliente_id) : null;
+
+    if (!clienteIdNum) {
+        return res.status(400).json({ error: 'cliente_id inválido' });
+    }
+    if (!numero_orden || typeof numero_orden !== 'string') {
+        return res.status(400).json({ error: 'numero_orden es requerido' });
+    }
+
+    try {
+        const clienteRes = await pool.query(
+            `SELECT id, nombre, correo, telefono, direccion, ciudad, estado, codigo_postal
+             FROM clientes
+             WHERE id = $1`,
+            [clienteIdNum]
+        );
+
+        if (clienteRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Cliente no encontrado' });
+        }
+
+        const rowsRes = await pool.query(
+            `SELECT
+                p.id,
+                p.numero_orden,
+                p.fecha_pedido,
+                p.estado,
+                p.metodo_pago,
+                p.direccion_envio,
+                p.notas,
+                p.producto_id,
+                p.cantidad,
+                p.subtotal,
+                p.impuestos,
+                p.descuento,
+                p.total,
+                pr.nombre AS producto_nombre,
+                pr.marca AS producto_marca,
+                pr.descripcion AS producto_descripcion,
+                pr.precio AS producto_precio
+             FROM pedidos p
+             LEFT JOIN productos pr ON pr.id = p.producto_id
+             WHERE p.cliente_id = $1 AND p.numero_orden = $2
+             ORDER BY p.id ASC`,
+            [clienteIdNum, numero_orden]
+        );
+
+        if (rowsRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Factura no encontrada para ese número de orden' });
+        }
+
+        const items = rowsRes.rows.map(r => {
+            const qty = parseInt(r.cantidad) || 0;
+            const precioUnit = r.producto_precio !== null && r.producto_precio !== undefined ? parseFloat(r.producto_precio) : 0;
+            return {
+                producto_id: r.producto_id,
+                cantidad: qty,
+                nombre: r.producto_nombre || 'Producto',
+                descripcion: r.producto_descripcion || r.producto_marca || '—',
+                precio_unitario: precioUnit,
+                importe: (Number.isFinite(precioUnit) ? precioUnit : 0) * qty
+            };
+        });
+
+        const subtotalSum = rowsRes.rows.reduce((s, r) => s + (parseFloat(r.subtotal) || 0), 0);
+        const impuestosSum = rowsRes.rows.reduce((s, r) => s + (parseFloat(r.impuestos) || 0), 0);
+        const descuentoSum = rowsRes.rows.reduce((s, r) => s + (parseFloat(r.descuento) || 0), 0);
+        const totalSum = rowsRes.rows.reduce((s, r) => s + (parseFloat(r.total) || 0), 0);
+
+        const crypto = require('crypto');
+        const txn = crypto.createHash('sha1').update(String(numero_orden)).digest('hex').slice(0, 12).toUpperCase();
+        const fechaPedido = rowsRes.rows.reduce((min, r) => {
+            const d = r.fecha_pedido ? new Date(r.fecha_pedido) : null;
+            if (!d || isNaN(d.getTime())) return min;
+            if (!min) return d;
+            return d < min ? d : min;
+        }, null);
+
+        res.json({
+            numero_orden,
+            folio: `FCT-${String(numero_orden).replace(/[^a-zA-Z0-9-]/g, '')}`,
+            transactionId: `TXN-${txn}`,
+            fecha: fechaPedido ? fechaPedido.toISOString() : null,
+            estado: rowsRes.rows[0].estado || null,
+            metodo_pago: rowsRes.rows[0].metodo_pago || null,
+            direccion_envio: rowsRes.rows[0].direccion_envio || null,
+            notas: rowsRes.rows[0].notas || null,
+            cliente: clienteRes.rows[0],
+            productos: items,
+            totals: {
+                subtotal: subtotalSum,
+                impuestos: impuestosSum,
+                descuento: descuentoSum,
+                shipping: 0,
+                total: totalSum
+            }
+        });
+    } catch (error) {
+        console.error('Error obteniendo factura:', error);
+        res.status(500).json({ error: 'Error al obtener factura' });
     }
 });
 
