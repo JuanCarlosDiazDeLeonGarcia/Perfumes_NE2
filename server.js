@@ -22,6 +22,104 @@ const pool = new Pool({
     port: 5432,
 });
 
+function getSmtpConfigOrNull() {
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = process.env.SMTP_PORT;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const smtpFrom = process.env.SMTP_FROM || smtpUser;
+    const smtpSecure = (process.env.SMTP_SECURE || '').toLowerCase() === 'true';
+
+    if (!smtpHost || !smtpPort || !smtpUser || !smtpPass || !smtpFrom) return null;
+
+    const portNum = parseInt(smtpPort);
+    if (!Number.isFinite(portNum) || portNum <= 0) return null;
+
+    return {
+        host: smtpHost,
+        port: portNum,
+        user: smtpUser,
+        pass: smtpPass,
+        from: smtpFrom,
+        secure: smtpSecure
+    };
+}
+
+function createSmtpTransporterFromEnv() {
+    const cfg = getSmtpConfigOrNull();
+    if (!cfg) return null;
+    return nodemailer.createTransport({
+        host: cfg.host,
+        port: cfg.port,
+        secure: cfg.secure,
+        auth: {
+            user: cfg.user,
+            pass: cfg.pass
+        }
+    });
+}
+
+async function enviarCorreoConfirmacionCompra({ to, nombre, numero_orden, total, metodo_pago, itemsResumen }) {
+    const cfg = getSmtpConfigOrNull();
+    if (!cfg) {
+        return { sent: false, skipped: true, reason: 'SMTP no configurado' };
+    }
+
+    if (!to || typeof to !== 'string') {
+        return { sent: false, skipped: true, reason: 'Cliente sin correo' };
+    }
+
+    const email = to.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return { sent: false, skipped: true, reason: 'Correo inválido' };
+    }
+
+    const transporter = createSmtpTransporterFromEnv();
+    if (!transporter) {
+        return { sent: false, skipped: true, reason: 'SMTP no configurado' };
+    }
+
+    const fecha = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+    const nombreSafe = (typeof nombre === 'string' && nombre.trim()) ? nombre.trim() : 'cliente';
+    const totalNum = Number.isFinite(parseFloat(total)) ? parseFloat(total) : null;
+    const metodo = (typeof metodo_pago === 'string' && metodo_pago.trim()) ? metodo_pago.trim() : 'N/A';
+
+    const lineasItems = Array.isArray(itemsResumen)
+        ? itemsResumen
+            .filter(i => i && i.nombre)
+            .map(i => `- ${i.nombre} x${i.cantidad || 1}`)
+            .slice(0, 50)
+        : [];
+
+    const text = [
+        `Hola ${nombreSafe},`,
+        '',
+        'Gracias por tu compra en Perfumes & Aromas.',
+        `Número de orden: ${numero_orden}`,
+        `Método de pago: ${metodo}`,
+        totalNum !== null ? `Total: $${totalNum.toFixed(2)}` : null,
+        `Fecha: ${fecha}`,
+        lineasItems.length ? '' : null,
+        lineasItems.length ? 'Productos:' : null,
+        lineasItems.length ? lineasItems.join('\n') : null,
+        '',
+        'Si tú no realizaste esta compra, por favor contáctanos.'
+    ].filter(Boolean).join('\n');
+
+    try {
+        await transporter.sendMail({
+            from: cfg.from,
+            to: email,
+            subject: `Confirmación de compra - ${numero_orden}`,
+            text
+        });
+        return { sent: true };
+    } catch (error) {
+        return { sent: false, skipped: false, reason: error.message };
+    }
+}
+
 async function ensureTarjetasCreditoTable() {
     try {
         await pool.query(`
@@ -2932,6 +3030,22 @@ app.post('/api/comprar', async (req, res) => {
         const resultados = [];
         const alertasPush = [];
 
+        // Obtener info del cliente (correo para confirmación)
+        let clienteCorreo = null;
+        let clienteNombre = null;
+        try {
+            const clienteRes = await client.query(
+                'SELECT nombre, correo FROM public.clientes WHERE id = $1 LIMIT 1',
+                [clienteIdNumReq]
+            );
+            if (clienteRes.rows[0]) {
+                clienteNombre = clienteRes.rows[0].nombre || null;
+                clienteCorreo = clienteRes.rows[0].correo || null;
+            }
+        } catch (e) {
+            console.warn('No se pudo obtener correo del cliente para confirmación:', e.message);
+        }
+
         const crypto = require('crypto');
         const generarNumeroOrden = async () => {
             for (let i = 0; i < 5; i++) {
@@ -2944,6 +3058,8 @@ app.post('/api/comprar', async (req, res) => {
 
         const numero_orden = await generarNumeroOrden();
         const pedidos_creados = [];
+        const itemsResumen = [];
+        let totalOrden = 0;
 
         // Resolver carritos a vaciar (pueden existir varios: cliente + sesión)
         const carritoIdsParaVaciar = new Set();
@@ -3011,6 +3127,7 @@ app.post('/api/comprar', async (req, res) => {
             const impuestos = subtotal * (ivaPorcentaje / 100);
             const descuento = 0;
             const total = subtotal + impuestos - descuento;
+            totalOrden += total;
             const vendedorId = producto.vendedor_id ? parseInt(producto.vendedor_id) : null;
 
             const pedidoIns = await client.query(
@@ -3044,6 +3161,7 @@ app.post('/api/comprar', async (req, res) => {
             }
 
             resultados.push({ id: prodId, nombre: producto.nombre, stock_anterior: producto.stock, stock_nuevo: stockNuevo });
+            itemsResumen.push({ nombre: producto.nombre, cantidad: cant });
 
             // Si es push y llegó al stock mínimo → auto-restock hasta el mínimo y alerta
             if (producto.restock === 'push' && stockNuevo <= (producto.stock_minimo || 10)) {
@@ -3144,12 +3262,36 @@ app.post('/api/comprar', async (req, res) => {
             }
         }
 
+        // Email de confirmación al cliente (no debe bloquear la compra si falla)
+        let email_confirmacion = { sent: false, skipped: true, reason: null };
+        try {
+            const r = await enviarCorreoConfirmacionCompra({
+                to: clienteCorreo,
+                nombre: clienteNombre,
+                numero_orden,
+                total: totalOrden,
+                metodo_pago,
+                itemsResumen
+            });
+            email_confirmacion = r;
+            if (r.sent) {
+                console.log('📧 Correo de confirmación enviado a cliente:', { cliente_id: clienteIdNumReq, to: clienteCorreo, numero_orden });
+            } else {
+                const reason = r && r.reason ? r.reason : 'No enviado';
+                console.warn('⚠️ No se envió correo de confirmación:', { cliente_id: clienteIdNumReq, to: clienteCorreo, numero_orden, reason });
+            }
+        } catch (e) {
+            console.warn('⚠️ Error inesperado enviando correo de confirmación:', e.message);
+            email_confirmacion = { sent: false, skipped: false, reason: e.message };
+        }
+
         res.json({
             success: true,
             numero_orden,
             pedidos_creados,
             resultados,
             carrito_vaciado: carritoVaciado,
+            email_confirmacion,
             alertas_push: alertasPush.map(p => ({
                 nombre: p.nombre, stock_antes_restock: p.stock_antes_restock,
                 stock_nuevo: p.stock_nuevo, auto_restock: p.auto_restock,

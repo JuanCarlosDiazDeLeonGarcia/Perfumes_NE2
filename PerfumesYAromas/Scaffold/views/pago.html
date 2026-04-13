@@ -898,7 +898,7 @@
 
                     setTimeout(() => {
                         const orderParam = encodeURIComponent(orderData.orderId || '');
-                        window.location.href = `factura.html?order=${orderParam}`;
+                        window.location.href = `confirmacionpago.html?order=${orderParam}`;
                     }, 1500);
                 } else {
                     showToast(data.error || 'Error al procesar el pago', 'error');
