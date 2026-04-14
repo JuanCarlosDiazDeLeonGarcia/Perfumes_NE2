@@ -6,7 +6,6 @@
     <title>Carrito de Compras - Perfumes & Aromas</title>
     <link rel="stylesheet" href="../css/base.css">
     <style>
-        /* Estilos específicos para el carrito */
         .cart-container {
             max-width: 1200px;
             margin: 100px auto 50px;
@@ -221,6 +220,121 @@
                 text-decoration: underline;
             }
 
+        /* ── ESTILOS CUPÓN ── */
+        .cupon-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f4ff;
+            border: 1px dashed #7e57c2;
+            border-radius: 10px;
+        }
+
+        .cupon-section label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .cupon-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .cupon-input {
+            flex: 1;
+            padding: 9px 12px;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .cupon-input:focus {
+            border-color: #7e57c2;
+        }
+
+        .cupon-btn {
+            padding: 9px 14px;
+            background: #7e57c2;
+            color: white;
+            border: none;
+            border-radius: 7px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .cupon-btn:hover {
+            background: #6a3fb5;
+        }
+
+        .cupon-btn:disabled {
+            background: #bbb;
+            cursor: not-allowed;
+        }
+
+        .cupon-mensaje {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            border-radius: 5px;
+            padding: 6px 10px;
+            display: none;
+        }
+
+        .cupon-mensaje.exito {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+
+        .cupon-mensaje.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+        }
+
+        .cupon-aplicado {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            background: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            border-radius: 7px;
+            padding: 8px 12px;
+            margin-top: 8px;
+        }
+
+        .cupon-aplicado.visible {
+            display: flex;
+        }
+
+        .cupon-aplicado span {
+            font-size: 0.9rem;
+            color: #2e7d32;
+            font-weight: bold;
+        }
+
+        .cupon-quitar {
+            background: none;
+            border: none;
+            color: #c62828;
+            cursor: pointer;
+            font-size: 0.85rem;
+            text-decoration: underline;
+        }
+
+        .summary-item.descuento span {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+
         @media (max-width: 768px) {
             .cart-container {
                 grid-template-columns: 1fr;
@@ -279,17 +393,52 @@
 
             <div class="summary-item">
                 <span>🚚 Envío estándar:</span>
-                <span>$5.00</span>
+                <span id="resumenEnvio">$5.00</span>
             </div>
 
-            <div class="summary-total">
+            <!-- DESCUENTO CUPÓN (oculto hasta aplicar) -->
+            <div class="summary-item descuento" id="filaCuponDescuento" style="display:none;">
+                <span>🎟️ Cupón <span id="cuponCodigoLabel"></span>:</span>
+                <span id="resumenDescuento" style="color:#2e7d32;">-$0.00</span>
+            </div>
+
+            <div class="summary-total" style="display:flex;justify-content:space-between;">
                 <span>Total a pagar:</span>
                 <span id="resumenTotal">$5.00</span>
             </div>
 
-            <!-- Información del IVA (solo lectura) -->
+            <!-- Información del IVA -->
             <div class="iva-info" id="ivaInfo">
                 💡 El IVA se calcula automáticamente según la configuración de la tienda
+            </div>
+
+            <!-- ── SECCIÓN CUPÓN ── -->
+            <div class="cupon-section">
+                <label>🎟️ ¿Tienes un cupón de descuento?</label>
+
+                <!-- Input para ingresar el código -->
+                <div class="cupon-input-row" id="cuponInputRow">
+                    <input
+                        type="text"
+                        id="cuponInput"
+                        class="cupon-input"
+                        placeholder="Ej: BIENVENIDO10"
+                        maxlength="50"
+                        autocomplete="off"
+                    />
+                    <button class="cupon-btn" id="cuponBtn" onclick="aplicarCupon()">
+                        Aplicar
+                    </button>
+                </div>
+
+                <!-- Mensaje de error o éxito -->
+                <div class="cupon-mensaje" id="cuponMensaje"></div>
+
+                <!-- Cupón aplicado (badge verde) -->
+                <div class="cupon-aplicado" id="cuponAplicadoBadge">
+                    <span id="cuponAplicadoTexto">✅ Cupón aplicado</span>
+                    <button class="cupon-quitar" onclick="quitarCupon()">✕ Quitar</button>
+                </div>
             </div>
 
             <button class="checkout-btn" id="btnComprar" onclick="irACheckout()">
@@ -310,7 +459,10 @@
         let sessionId = localStorage.getItem('session_id');
         let carritoItems = [];
         let subtotal = 0;
-        let ivaPorcentaje = 16; // Valor por defecto, se actualizará desde BD
+        let ivaPorcentaje = 16;
+
+        // Estado del cupón
+        let cuponAplicado = null; // { id, codigo, tipo, valor, descuento, envio_gratis }
 
         if (!sessionId) {
             sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -330,7 +482,6 @@
             setTimeout(() => t.style.opacity = '0', 3000);
         }
 
-        // Cargar IVA desde la base de datos
         async function cargarIVA() {
             try {
                 const response = await fetch(`${API_BASE}/configuracion/iva_porcentaje`);
@@ -339,24 +490,16 @@
                     ivaPorcentaje = parseFloat(data.valor) || 16;
                     document.getElementById('ivaLabel').innerHTML = `📊 IVA (${ivaPorcentaje}%):`;
                     actualizarTotales();
-                } else {
-                    console.warn('No se pudo cargar IVA, usando valor por defecto 16%');
                 }
             } catch (error) {
                 console.error('Error cargando IVA:', error);
             }
         }
 
-        // Cargar carrito
         async function cargarCarrito() {
             const user = getCurrentUser();
             let url = `${API_BASE}/carrito?`;
-
-            if (user) {
-                url += `cliente_id=${user.id}`;
-            } else {
-                url += `session_id=${sessionId}`;
-            }
+            url += user ? `cliente_id=${user.id}` : `session_id=${sessionId}`;
 
             try {
                 const response = await fetch(url);
@@ -377,69 +520,61 @@
 
         function renderCarrito() {
             const container = document.getElementById('cartItems');
-
             if (carritoItems.length === 0) {
                 mostrarCarritoVacio();
                 return;
             }
-
             container.innerHTML = '';
-
             carritoItems.forEach((item) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'cart-item';
                 itemDiv.innerHTML = `
-                        <img src="${item.imagen_url || 'https://via.placeholder.com/100x100?text=Perfume'}"
-                             class="item-image"
-                             onerror="this.src='https://via.placeholder.com/100x100?text=Perfume'">
-                        <div class="item-details">
-                            <h3>${escapeHtml(item.nombre)}</h3>
-                            <p>${item.marca || 'Marca propia'}</p>
-                            <p class="item-price">$${parseFloat(item.precio_unitario).toFixed(2)}</p>
-                            <div class="quantity-display">
-                                <span>Cantidad:</span>
-                                <button class="quantity-btn" onclick="cambiarCantidad(${item.id}, -1)">−</button>
-                                <div class="quantity-box">${item.cantidad}</div>
-                                <button class="quantity-btn" onclick="cambiarCantidad(${item.id}, 1)">+</button>
-                            </div>
+                    <img src="${item.imagen_url || 'https://via.placeholder.com/100x100?text=Perfume'}"
+                         class="item-image"
+                         onerror="this.src='https://via.placeholder.com/100x100?text=Perfume'">
+                    <div class="item-details">
+                        <h3>${escapeHtml(item.nombre)}</h3>
+                        <p>${item.marca || 'Marca propia'}</p>
+                        <p class="item-price">$${parseFloat(item.precio_unitario).toFixed(2)}</p>
+                        <div class="quantity-display">
+                            <span>Cantidad:</span>
+                            <button class="quantity-btn" onclick="cambiarCantidad(${item.id}, -1)">−</button>
+                            <div class="quantity-box">${item.cantidad}</div>
+                            <button class="quantity-btn" onclick="cambiarCantidad(${item.id}, 1)">+</button>
                         </div>
-                        <div class="item-controls">
-                            <p style="font-weight:bold;color:#333;font-size:1.1rem;">$${(item.precio_unitario * item.cantidad).toFixed(2)}</p>
-                            <button class="remove-btn" onclick="eliminarItem(${item.id})">🗑️ Eliminar</button>
-                        </div>
-                    `;
+                    </div>
+                    <div class="item-controls">
+                        <p style="font-weight:bold;color:#333;font-size:1.1rem;">$${(item.precio_unitario * item.cantidad).toFixed(2)}</p>
+                        <button class="remove-btn" onclick="eliminarItem(${item.id})">🗑️ Eliminar</button>
+                    </div>`;
                 container.appendChild(itemDiv);
             });
         }
 
         function mostrarCarritoVacio() {
-            const container = document.getElementById('cartItems');
-            container.innerHTML = `
-                    <div class="cart-empty">
-                        <p>🛒</p>
-                        <h3>Tu carrito está vacío</h3>
-                        <p>Agrega productos desde el <a href="catalog.html" style="color:#7e57c2;">catálogo</a></p>
-                    </div>`;
+            document.getElementById('cartItems').innerHTML = `
+                <div class="cart-empty">
+                    <p>🛒</p>
+                    <h3>Tu carrito está vacío</h3>
+                    <p>Agrega productos desde el <a href="catalog.html" style="color:#7e57c2;">catálogo</a></p>
+                </div>`;
         }
 
         async function cambiarCantidad(itemId, delta) {
             const item = carritoItems.find(i => i.id === itemId);
             if (!item) return;
-
             const nuevaCantidad = item.cantidad + delta;
             if (nuevaCantidad < 1) return;
             if (item.stock && nuevaCantidad > item.stock) {
                 showToast(`Stock máximo disponible: ${item.stock}`, 'error');
                 return;
             }
-
             try {
                 const response = await fetch(`${API_BASE}/carrito/items/${itemId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ cantidad: nuevaCantidad })
                 });
-
                 if (response.ok) {
                     await cargarCarrito();
                 } else {
@@ -447,17 +582,13 @@
                     showToast(error.error || 'Error al actualizar cantidad', 'error');
                 }
             } catch (error) {
-                console.error('Error:', error);
                 showToast('Error de conexión', 'error');
             }
         }
 
         async function eliminarItem(itemId) {
             try {
-                const response = await fetch(`${API_BASE}/carrito/items/${itemId}`, {
-                    method: 'DELETE'
-                });
-
+                const response = await fetch(`${API_BASE}/carrito/items/${itemId}`, { method: 'DELETE' });
                 if (response.ok) {
                     await cargarCarrito();
                     showToast('Producto eliminado del carrito');
@@ -465,28 +596,147 @@
                     showToast('Error al eliminar producto', 'error');
                 }
             } catch (error) {
-                console.error('Error:', error);
                 showToast('Error de conexión', 'error');
             }
         }
 
+        // ─────────────────────────────────────
+        // LÓGICA DE CUPONES
+        // ─────────────────────────────────────
+
+        async function aplicarCupon() {
+            const input = document.getElementById('cuponInput');
+            const codigo = input.value.trim().toUpperCase();
+            const btn = document.getElementById('cuponBtn');
+            const mensaje = document.getElementById('cuponMensaje');
+
+            if (!codigo) {
+                mostrarMensajeCupon('Por favor ingresa un código de cupón', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Verificando...';
+            mensaje.className = 'cupon-mensaje';
+            mensaje.style.display = 'none';
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/cupones/validar/${encodeURIComponent(codigo)}?subtotal=${subtotal}`
+                );
+                const data = await response.json();
+
+                if (!response.ok) {
+                    mostrarMensajeCupon(data.error || 'Cupón inválido', 'error');
+                    return;
+                }
+
+                // Cupón válido — guardar y aplicar
+                cuponAplicado = {
+                    id: data.cupon.id,
+                    codigo: data.cupon.codigo,
+                    tipo: data.cupon.tipo,
+                    valor: data.cupon.valor,
+                    descuento: data.descuento,
+                    envio_gratis: data.envio_gratis,
+                    descripcion: data.cupon.descripcion
+                };
+
+                // Mostrar badge de cupón aplicado
+                document.getElementById('cuponInputRow').style.display = 'none';
+                const badge = document.getElementById('cuponAplicadoBadge');
+                badge.classList.add('visible');
+                document.getElementById('cuponAplicadoTexto').textContent =
+                    `✅ ${data.cupon.codigo} — ${data.cupon.descripcion}`;
+
+                mostrarMensajeCupon(
+                    `¡Cupón aplicado! Ahorraste $${data.descuento.toFixed(2)}` +
+                    (data.envio_gratis ? ' + envío gratis 🎉' : ''),
+                    'exito'
+                );
+
+                actualizarTotales();
+
+            } catch (error) {
+                mostrarMensajeCupon('Error de conexión al validar el cupón', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Aplicar';
+            }
+        }
+
+        function quitarCupon() {
+            cuponAplicado = null;
+
+            // Restaurar input
+            document.getElementById('cuponInputRow').style.display = 'flex';
+            document.getElementById('cuponInput').value = '';
+            document.getElementById('cuponAplicadoBadge').classList.remove('visible');
+
+            const mensaje = document.getElementById('cuponMensaje');
+            mensaje.className = 'cupon-mensaje';
+            mensaje.style.display = 'none';
+
+            actualizarTotales();
+            showToast('Cupón eliminado');
+        }
+
+        function mostrarMensajeCupon(texto, tipo) {
+            const el = document.getElementById('cuponMensaje');
+            el.textContent = texto;
+            el.className = `cupon-mensaje ${tipo}`;
+        }
+
+        // Permitir aplicar cupón con Enter
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('cuponInput').addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') aplicarCupon();
+            });
+        });
+
+        // ─────────────────────────────────────
+        // TOTALES (ahora incluye descuento)
+        // ─────────────────────────────────────
+
         function actualizarTotales() {
-            const envio = carritoItems.length > 0 ? 5 : 0;
+            const envioBase = carritoItems.length > 0 ? 5 : 0;
             const iva = subtotal * (ivaPorcentaje / 100);
-            const total = subtotal + iva + envio;
+            let descuento = 0;
+            let envioFinal = envioBase;
+
+            if (cuponAplicado) {
+                descuento = cuponAplicado.descuento;
+                if (cuponAplicado.envio_gratis) envioFinal = 0;
+            }
+
+            const total = subtotal + iva + envioFinal - descuento;
 
             document.getElementById('resumenSubtotal').textContent = `$${subtotal.toFixed(2)}`;
             document.getElementById('resumenIVA').textContent = `$${iva.toFixed(2)}`;
-            document.getElementById('resumenTotal').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('resumenEnvio').textContent =
+                cuponAplicado?.envio_gratis ? '🎉 Gratis' : `$${envioBase.toFixed(2)}`;
+            document.getElementById('resumenTotal').textContent = `$${Math.max(0, total).toFixed(2)}`;
+
+            // Mostrar/ocultar fila de descuento
+            const filaCupon = document.getElementById('filaCuponDescuento');
+            if (cuponAplicado && descuento > 0) {
+                filaCupon.style.display = 'flex';
+                document.getElementById('cuponCodigoLabel').textContent = `(${cuponAplicado.codigo})`;
+                document.getElementById('resumenDescuento').textContent = `-$${descuento.toFixed(2)}`;
+            } else {
+                filaCupon.style.display = 'none';
+            }
         }
 
-        // FUNCIÓN MODIFICADA: Solo redirige al checkout, NO reduce stock
+        // ─────────────────────────────────────
+        // CHECKOUT — incluir cupón en los datos
+        // ─────────────────────────────────────
+
         function irACheckout() {
             if (carritoItems.length === 0) {
                 showToast('No hay productos en el carrito', 'error');
                 return;
             }
-
             const user = getCurrentUser();
             if (!user) {
                 showToast('Debes iniciar sesión para completar la compra', 'error');
@@ -494,20 +744,25 @@
                 return;
             }
 
-            // Guardar los datos del carrito en localStorage para el checkout
+            const envioFinal = cuponAplicado?.envio_gratis ? 0 : (carritoItems.length > 0 ? 5 : 0);
+            const descuento = cuponAplicado ? cuponAplicado.descuento : 0;
+            const iva = subtotal * (ivaPorcentaje / 100);
+            const total = subtotal + iva + envioFinal - descuento;
+
             const checkoutData = {
                 items: carritoItems,
                 subtotal: subtotal,
-                iva: subtotal * (ivaPorcentaje / 100),
+                iva: iva,
                 iva_porcentaje: ivaPorcentaje,
-                total: parseFloat(document.getElementById('resumenTotal').textContent.replace('$', '')),
+                descuento: descuento,
+                envio: envioFinal,
+                cupon: cuponAplicado || null,
+                total: Math.max(0, total),
                 items_count: carritoItems.reduce((s, i) => s + i.cantidad, 0),
                 timestamp: new Date().toISOString()
             };
 
             localStorage.setItem('pendingCheckout', JSON.stringify(checkoutData));
-
-            // Redirigir a la página de pago/checkout
             window.location.href = 'pago.html';
         }
 
@@ -531,23 +786,18 @@
                         dropdownContent.classList.toggle('show');
                     });
                 }
-
                 const user = getCurrentUser();
                 if (user) {
                     const userInfo = document.querySelector('.user-info');
-                    if (userInfo) {
-                        userInfo.innerHTML = `👋 Hola, ${user.nombre.split(' ')[0]}`;
-                    }
+                    if (userInfo) userInfo.innerHTML = `👋 Hola, ${user.nombre.split(' ')[0]}`;
                 }
             });
 
-        // Inicializar
         document.addEventListener('DOMContentLoaded', async function () {
             await cargarIVA();
             await cargarCarrito();
         });
 
-        // Al volver a esta página (incluye botón atrás / BFCache), recargar carrito
         window.addEventListener('pageshow', async function () {
             await cargarCarrito();
         });

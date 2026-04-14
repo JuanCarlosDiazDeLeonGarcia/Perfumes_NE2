@@ -4,6 +4,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const nodemailer = require('nodemailer');
+const cuponesRoutes = require('./PerfumesYAromas/Scaffold/js/cupones');
 
 const app = express();
 const PORT = 3000;
@@ -17,8 +18,8 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'perfumes', //cambiar si el nombre de la BD es diferente
-    password: '2244', //Cambiar por su contraseña segun su BD
+    database: 'perfumes_ne2', //cambiar si el nombre de la BD es diferente
+    password: '1234', //Cambiar por su contraseña segun su BD
     port: 5432,
 });
 
@@ -4572,14 +4573,10 @@ app.put('/api/configuracion/:clave', async (req, res) => {
     }
 });
 
+app.use('/api/cupones', cuponesRoutes);
 
-/////   SEPARACION DEL LISTEN Y RUTAS           /////////
-
+// ================= LISTEN =================
 app.listen(PORT, () => {
     console.log('🚀 Servidor corriendo en http://localhost:' + PORT);
     console.log('📡 API disponible en http://localhost:' + PORT + '/api');
-    console.log('');
 });
-
-const proveedoresRoutes = require('./proveedores');
-proveedoresRoutes(app, pool);
