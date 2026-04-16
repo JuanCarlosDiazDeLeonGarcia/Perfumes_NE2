@@ -594,6 +594,7 @@
         let tarjetasGuardadas = [];
         let metodoPagoSeleccionado = null;
         let tarjetaSeleccionada = null;
+        let cuponAplicado = null; 
 
         function showToast(msg, type = 'success') {
             const t = document.getElementById('toast');
@@ -715,6 +716,12 @@
                 subtotal = checkoutData.subtotal || 0;
                 ivaPorcentaje = checkoutData.iva_porcentaje || 16;
 
+                // LEER EL CUPÓN APLICADO
+                if (checkoutData.cupon) {
+                    cuponAplicado = checkoutData.cupon;
+                    console.log('Cupón aplicado en checkout:', cuponAplicado);
+                }
+
                 if (carritoItems.length === 0) {
                     showToast('El carrito está vacío', 'error');
                     setTimeout(() => window.location.href = 'cart.html', 1500);
@@ -746,19 +753,54 @@
                 const div = document.createElement('div');
                 div.className = 'summary-item';
                 div.innerHTML = `
-                        <span>${escapeHtml(item.nombre)} (x${item.cantidad})</span>
-                        <span>$${(item.precio_unitario * item.cantidad).toFixed(2)}</span>
-                    `;
+                <span>${escapeHtml(item.nombre)} (x${item.cantidad})</span>
+                <span>$${(item.precio_unitario * item.cantidad).toFixed(2)}</span>
+            `;
                 container.appendChild(div);
             });
 
             const iva = subtotal * (ivaPorcentaje / 100);
             const envio = 5;
-            const total = subtotal + iva + envio;
+            let descuento = 0;
+            let envioFinal = envio;
+
+            // ✅ APLICAR DESCUENTO DEL CUPÓN
+            if (cuponAplicado) {
+                descuento = cuponAplicado.descuento || 0;
+                if (cuponAplicado.envio_gratis) {
+                    envioFinal = 0;
+                }
+            }
+
+            const total = subtotal + iva + envioFinal - descuento;
 
             document.getElementById('resumenSubtotal').textContent = `$${subtotal.toFixed(2)}`;
             document.getElementById('resumenIVA').textContent = `$${iva.toFixed(2)}`;
             document.getElementById('resumenTotal').textContent = `$${total.toFixed(2)}`;
+
+            // ✅ Mostrar línea de descuento si hay cupón
+            const summaryContainer = document.querySelector('.order-summary');
+            let descuentoLine = document.getElementById('descuentoLine');
+            if (!descuentoLine && cuponAplicado && descuento > 0) {
+                const totalElement = document.querySelector('.summary-total');
+                const newDiv = document.createElement('div');
+                newDiv.className = 'summary-item';
+                newDiv.id = 'descuentoLine';
+                newDiv.style.color = '#2e7d32';
+                newDiv.innerHTML = `
+            <span>🎟️ Cupón (${cuponAplicado.codigo}):</span>
+            <span>-$${descuento.toFixed(2)}</span>
+        `;
+                totalElement.parentNode.insertBefore(newDiv, totalElement);
+            } else if (descuentoLine && cuponAplicado && descuento > 0) {
+                descuentoLine.innerHTML = `
+            <span>🎟️ Cupón (${cuponAplicado.codigo}):</span>
+            <span>-$${descuento.toFixed(2)}</span>
+        `;
+                descuentoLine.style.display = 'flex';
+            } else if (descuentoLine && (!cuponAplicado || descuento === 0)) {
+                descuentoLine.style.display = 'none';
+            }
 
             // Actualizar referencias
             document.getElementById('transferReference').textContent = 'PFA-' + Math.floor(Math.random() * 10000);
@@ -841,6 +883,16 @@
                     .map(i => i && i.id)
                     .filter(Boolean);
 
+                // ✅ Preparar datos del cupón para enviar
+                const cuponData = cuponAplicado ? {
+                    id: cuponAplicado.id,
+                    codigo: cuponAplicado.codigo,
+                    tipo: cuponAplicado.tipo,
+                    valor: cuponAplicado.valor,
+                    descuento: cuponAplicado.descuento,
+                    envio_gratis: cuponAplicado.envio_gratis
+                } : null;
+
                 const response = await fetch(`${API_BASE}/comprar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -848,23 +900,32 @@
                         items,
                         item_ids: carritoItemIds,
                         cliente_id: user.id,
-                        session_id: localStorage.getItem('session_id') || null
-                        ,carrito_id: (carritoItems && carritoItems[0] && carritoItems[0].carrito_id) ? carritoItems[0].carrito_id : null
-                        ,metodo_pago: document.getElementById('paymentMethod').options[document.getElementById('paymentMethod').selectedIndex]?.text
-                        ,direccion_envio: (document.getElementById('direccion') && document.getElementById('direccion').value) ? document.getElementById('direccion').value : null
+                        session_id: localStorage.getItem('session_id') || null,
+                        carrito_id: (carritoItems && carritoItems[0] && carritoItems[0].carrito_id) ? carritoItems[0].carrito_id : null,
+                        metodo_pago: document.getElementById('paymentMethod').options[document.getElementById('paymentMethod').selectedIndex]?.text,
+                        direccion_envio: (document.getElementById('direccion') && document.getElementById('direccion').value) ? document.getElementById('direccion').value : null,
+                        cupon: cuponData  // ✅ Enviar cupón al backend
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    // Vaciar carrito persistente (BD) para que no queden productos al volver al carrito
-                    await vaciarCarritoBackend(user);
+                    // ✅ Si se usó cupón, registrar su uso en el backend
+                    if (cuponAplicado && cuponAplicado.id) {
+                        try {
+                            await fetch(`${API_BASE}/cupones/${cuponAplicado.id}/usar`, {
+                                method: 'PUT'
+                            });
+                            console.log('Uso de cupón registrado:', cuponAplicado.codigo);
+                        } catch (cuponError) {
+                            console.warn('No se pudo registrar el uso del cupón:', cuponError);
+                        }
+                    }
 
-                    // Verificar que el carrito realmente quedó vacío (y reintentar si es necesario)
+                    await vaciarCarritoBackend(user);
                     await asegurarCarritoVacio(user);
 
-                    // Feedback visible
                     try {
                         const remaining = await obtenerItemsCarrito(user.id, localStorage.getItem('session_id') || null);
                         if (remaining.length === 0) {
@@ -876,10 +937,11 @@
                         // no-op
                     }
 
-                    // Limpiar localStorage del carrito pendiente
                     localStorage.removeItem('pendingCheckout');
 
                     const total = document.getElementById('resumenTotal').textContent;
+
+                    // En pago.html, dentro de procesarPago(), después de recibir la respuesta exitosa:
 
                     const orderData = {
                         orderId: (data && data.numero_orden) ? data.numero_orden : ('PED-' + Date.now()),
@@ -890,7 +952,22 @@
                         items_count: carritoItems.reduce((s, i) => s + i.cantidad, 0),
                         metodo_pago: document.getElementById('paymentMethod').options[document.getElementById('paymentMethod').selectedIndex]?.text,
                         timestamp: new Date().toISOString(),
-                        productos: carritoItems.map(i => ({ nombre: i.nombre, cantidad: i.cantidad, precio: i.precio_unitario }))
+                        productos: carritoItems.map(i => ({
+                            nombre: i.nombre,
+                            cantidad: i.cantidad,
+                            precio: i.precio_unitario,
+                            precio_unitario: i.precio_unitario
+                        })),
+                        // ✅ Guardar cupón si existe
+                        cupon: cuponAplicado ? {
+                            id: cuponAplicado.id,
+                            codigo: cuponAplicado.codigo,
+                            tipo: cuponAplicado.tipo,
+                            valor: cuponAplicado.valor,
+                            descuento: cuponAplicado.descuento,
+                            envio_gratis: cuponAplicado.envio_gratis,
+                            descripcion: cuponAplicado.descripcion
+                        } : null
                     };
 
                     localStorage.setItem('lastOrder', JSON.stringify(orderData));

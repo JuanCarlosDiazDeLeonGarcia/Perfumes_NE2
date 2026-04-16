@@ -324,6 +324,25 @@
             }
         }
 
+        // Variable global para el IVA
+        let ivaPorcentajeGlobal = 16;
+
+        // Cargar IVA desde la configuración global
+        async function cargarIVAConfiguracion() {
+            try {
+                const response = await fetch('http://localhost:3000/api/configuracion/iva_porcentaje');
+                if (response.ok) {
+                    const data = await response.json();
+                    ivaPorcentajeGlobal = parseFloat(data.valor) || 16;
+                    console.log('IVA cargado desde configuración:', ivaPorcentajeGlobal);
+                } else {
+                    console.warn('No se pudo cargar IVA, usando valor por defecto 16%');
+                }
+            } catch (error) {
+                console.error('Error cargando configuración de IVA:', error);
+            }
+        }
+
         function getClienteIdFromStorage() {
             const cliente = safeJsonParse(localStorage.getItem('cliente')) || {};
             if (cliente && cliente.id) return cliente.id;
@@ -338,16 +357,11 @@
 
         function buildInvoiceDataFromApiFactura(api) {
             const cliente = api && api.cliente ? api.cliente : {};
-            const subtotal = toNumber(api?.totals?.subtotal, 0);
-            const impuestos = toNumber(api?.totals?.impuestos, 0);
-            const descuento = toNumber(api?.totals?.descuento, 0);
-            const shipping = toNumber(api?.totals?.shipping, 0);
-            const total = toNumber(api?.totals?.total, subtotal + impuestos + shipping - descuento);
-            const ivaPorcentaje = subtotal > 0 ? (impuestos / subtotal) * 100 : 16;
+            const totals = api?.totals || {};
 
             return {
                 orderNumber: api?.numero_orden || '',
-                transactionId: api?.transactionId || '',
+                transactionId: api?.transactionId || `TXN-${api?.numero_orden?.slice(-6) || '000000'}`,
                 folio: api?.folio || '',
                 timestamp: api?.fecha || new Date().toISOString(),
                 date: api?.fecha ? new Date(api.fecha).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : undefined,
@@ -364,12 +378,12 @@
                 },
                 products: Array.isArray(api?.productos) ? api.productos : [],
                 totals: {
-                    subtotal,
-                    shipping,
-                    discount: descuento,
-                    iva: impuestos,
-                    iva_porcentaje: ivaPorcentaje,
-                    total
+                    subtotal: totals.subtotal || 0,
+                    shipping: totals.shipping || 5,
+                    discount: totals.descuento || 0,
+                    iva: totals.impuestos || 0,
+                    iva_porcentaje: totals.iva_porcentaje || 16,  // ✅ Usar el IVA de la compra
+                    total: totals.total || 0
                 }
             };
         }
@@ -385,41 +399,61 @@
 
             const folio = invoiceData.folio || ('FCT-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0'));
 
-            // Productos: prioriza invoiceData.products, luego lastOrder.productos
-            const products = Array.isArray(invoiceData.products)
+            // Productos
+            let products = Array.isArray(invoiceData.products)
                 ? invoiceData.products
                 : (Array.isArray(lastOrder.productos) ? lastOrder.productos : []);
 
-            // Totales: usa los del checkout si existen; si no, calcula desde productos
-            const ivaPorcentaje = (invoiceData.totals && Number.isFinite(invoiceData.totals.iva_porcentaje))
-                ? Number(invoiceData.totals.iva_porcentaje)
-                : (Number.isFinite(lastOrder.iva_porcentaje) ? Number(lastOrder.iva_porcentaje) : 16);
+            // ✅ Obtener el porcentaje de IVA desde invoiceData o usar el global
+            let ivaPorcentajeMostrar = ivaPorcentajeGlobal;
 
-            const computedSubtotal = products.reduce((sum, p) => {
-                const cantidad = toNumber(p.cantidad, 0);
-                const precio = toNumber(p.precio_unitario ?? p.precio, 0);
-                return sum + (cantidad * precio);
-            }, 0);
+            // Si los productos tienen precio_unitario y subtotal, calcular el IVA correctamente
+            let subtotal = 0;
+            let ivaCalculado = 0;
 
-            const subtotal = (invoiceData.totals && Number.isFinite(invoiceData.totals.subtotal))
-                ? Number(invoiceData.totals.subtotal)
-                : (Number.isFinite(lastOrder.subtotal) ? Number(lastOrder.subtotal) : computedSubtotal);
+            if (products.length > 0) {
+                // Calcular subtotal real de los productos
+                products.forEach(p => {
+                    const cantidad = toNumber(p.cantidad, 0);
+                    const precio = toNumber(p.precio_unitario ?? p.precio, 0);
+                    subtotal += cantidad * precio;
+                });
 
-            const shipping = (invoiceData.totals && Number.isFinite(invoiceData.totals.shipping))
-                ? Number(invoiceData.totals.shipping)
-                : (products.length > 0 ? 5 : 0);
+                // Usar el IVA de invoiceData si existe, si no calcularlo
+                if (invoiceData.totals && invoiceData.totals.iva > 0) {
+                    ivaCalculado = invoiceData.totals.iva;
+                    if (subtotal > 0) {
+                        ivaPorcentajeMostrar = (ivaCalculado / subtotal) * 100;
+                    }
+                } else if (lastOrder && lastOrder.iva > 0) {
+                    ivaCalculado = lastOrder.iva;
+                    ivaPorcentajeMostrar = lastOrder.iva_porcentaje || ivaPorcentajeGlobal;
+                } else {
+                    ivaCalculado = subtotal * (ivaPorcentajeGlobal / 100);
+                }
+            } else {
+                // Usar valores de invoiceData si no hay productos calculables
+                subtotal = (invoiceData.totals && invoiceData.totals.subtotal) || (lastOrder.subtotal || 0);
+                ivaCalculado = (invoiceData.totals && invoiceData.totals.iva) || (lastOrder.iva || 0);
+                ivaPorcentajeMostrar = (invoiceData.totals && invoiceData.totals.iva_porcentaje) || (lastOrder.iva_porcentaje || ivaPorcentajeGlobal);
+            }
 
-            const discount = (invoiceData.totals && Number.isFinite(invoiceData.totals.discount))
-                ? Number(invoiceData.totals.discount)
-                : 0;
+            // Descuento
+            let descuento = 0;
+            let cuponCodigo = null;
 
-            const iva = (invoiceData.totals && Number.isFinite(invoiceData.totals.iva))
-                ? Number(invoiceData.totals.iva)
-                : (subtotal * (ivaPorcentaje / 100));
+            if (invoiceData.totals && Number.isFinite(invoiceData.totals.discount)) {
+                descuento = Number(invoiceData.totals.discount);
+                cuponCodigo = invoiceData.totals.cupon_codigo;
+            } else if (lastOrder.cupon && lastOrder.cupon.descuento) {
+                descuento = Number(lastOrder.cupon.descuento);
+                cuponCodigo = lastOrder.cupon.codigo;
+            } else if (Number.isFinite(lastOrder.descuento)) {
+                descuento = Number(lastOrder.descuento);
+            }
 
-            const totalConIVA = (invoiceData.totals && Number.isFinite(invoiceData.totals.total))
-                ? Number(invoiceData.totals.total)
-                : (subtotal + iva + shipping - discount);
+            const shipping = 5;
+            const total = subtotal + ivaCalculado + shipping - descuento;
 
             // Actualizar elementos en la página
             document.getElementById('invoiceFolio').textContent = folio;
@@ -448,12 +482,32 @@
             // Renderizar tabla de productos
             renderProducts(products);
 
+            // ✅ Mostrar descuento
+            const discountElement = document.getElementById('discount');
+            if (descuento > 0) {
+                const discountText = cuponCodigo
+                    ? `-${formatMoney(descuento)} (Cupón: ${cuponCodigo})`
+                    : `-${formatMoney(descuento)}`;
+                discountElement.textContent = discountText;
+                discountElement.style.color = '#4caf50';
+            } else {
+                discountElement.textContent = formatMoney(0);
+            }
+
+            // ✅ Mostrar IVA con el porcentaje correcto
+            const ivaElement = document.getElementById('iva');
+            ivaElement.textContent = formatMoney(ivaCalculado);
+
+            // Actualizar el texto del IVA con el porcentaje
+            const ivaLabelElement = document.querySelector('.totales p:nth-child(4) strong')
+            if (ivaLabelElement) {
+                ivaLabelElement.innerHTML = `IVA (${ivaPorcentajeMostrar.toFixed(0)}%):`;
+            }
+
             // Totales
             document.getElementById('subtotal').textContent = formatMoney(subtotal);
             document.getElementById('shipping').textContent = formatMoney(shipping);
-            document.getElementById('discount').textContent = discount > 0 ? `-${formatMoney(discount)}` : formatMoney(0);
-            document.getElementById('iva').textContent = formatMoney(iva);
-            document.getElementById('totalAmount').textContent = `${formatMoney(totalConIVA)} MXN`;
+            document.getElementById('totalAmount').textContent = `${formatMoney(total)} MXN`;
 
             // Fecha de certificación
             document.getElementById('certificationDate').textContent = now.toISOString().replace('T', ' ').substring(0, 19);
@@ -466,31 +520,33 @@
                 folio,
                 date: formattedDate,
                 products,
+                cupon: cuponCodigo ? { codigo: cuponCodigo, descuento: descuento } : null,
                 totals: {
                     subtotal,
                     shipping,
-                    discount,
-                    iva,
-                    iva_porcentaje: ivaPorcentaje,
-                    total: totalConIVA
+                    discount: descuento,
+                    iva: ivaCalculado,
+                    iva_porcentaje: ivaPorcentajeMostrar,
+                    total
                 }
             };
             localStorage.setItem('completeInvoiceData', JSON.stringify(completeInvoiceData));
 
-            console.log('Factura generada:', completeInvoiceData);
-
-            // Resaltar el botón del carrito en el navbar (si existe)
-            setTimeout(() => {
-                const cartBtn = document.querySelector('.cart-btn');
-                if (cartBtn) {
-                    cartBtn.style.background = 'rgba(155, 93, 229, 0.2)';
-                    cartBtn.style.border = '2px solid #9b5de5';
-                }
-            }, 500);
+            console.log('Factura generada:', {
+                subtotal,
+                iva: ivaCalculado,
+                iva_porcentaje: ivaPorcentajeMostrar,
+                descuento,
+                total
+            });
         }
 
         // Cargar datos dinámicos
+        // Modificar el DOMContentLoaded
         document.addEventListener('DOMContentLoaded', async function () {
+            // ✅ Primero cargar la configuración del IVA
+            await cargarIVAConfiguracion();
+
             let invoiceData = safeJsonParse(localStorage.getItem('invoiceData')) || {};
             const lastOrder = safeJsonParse(localStorage.getItem('lastOrder')) || {};
 
@@ -500,9 +556,9 @@
                 if (clienteId) {
                     try {
                         const API_BASE_URL = 'http://localhost:3000';
-                        const resp = await fetch(`${API_BASE_URL}/api/facturas/cliente/${encodeURIComponent(clienteId)}/${encodeURIComponent(orderParam)}`);
+                        const resp = await fetch(`${API_BASE_URL}/api/factura/agrupada/${encodeURIComponent(clienteId)}/${encodeURIComponent(orderParam)}`);
                         const apiData = await resp.json();
-                        if (resp.ok && apiData) {
+                        if (resp.ok && apiData && apiData.success) {
                             invoiceData = buildInvoiceDataFromApiFactura(apiData);
                             localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
                         } else {
@@ -511,8 +567,6 @@
                     } catch (e) {
                         console.error('Error cargando factura desde backend:', e);
                     }
-                } else {
-                    console.warn('No hay cliente_id en storage; usando datos locales');
                 }
             }
 
