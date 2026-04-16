@@ -4,7 +4,6 @@ const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const nodemailer = require('nodemailer');
-const cuponesRoutes = require('./PerfumesYAromas/Scaffold/js/cupones');
 
 const app = express();
 const PORT = 3000;
@@ -18,8 +17,8 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'perfumes_ne2', //cambiar si el nombre de la BD es diferente
-    password: '1234', //Cambiar por su contraseña segun su BD
+    database: 'perfumes', //cambiar si el nombre de la BD es diferente
+    password: '2244', //Cambiar por su contraseña segun su BD
     port: 5432,
 });
 
@@ -3014,58 +3013,25 @@ app.get('/api/movimientos-recursos', async (req, res) => {
 
 // ---------- 5. ENDPOINT COMPRA (descuenta stock + registra movimiento + alerta push) ------
 app.post('/api/comprar', async (req, res) => {
-    const { items, item_ids, cliente_id, session_id, carrito_id, metodo_pago, direccion_envio, notas } = req.body; // items: [{ producto_id, cantidad }]
+    const { items, item_ids, cliente_id, session_id, carrito_id, metodo_pago, direccion_envio, notas } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: 'Se requiere un arreglo de items' });
     }
 
-    const clienteIdNumReq = cliente_id ? parseInt(cliente_id) : null;
-    if (!clienteIdNumReq) {
+    const clienteIdNum = cliente_id ? parseInt(cliente_id) : null;
+
+    if (!clienteIdNum) {
         return res.status(400).json({ error: 'cliente_id es requerido para registrar el pedido' });
     }
 
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const resultados = [];
-        const alertasPush = [];
 
-        // Obtener info del cliente (correo para confirmación)
-        let clienteCorreo = null;
-        let clienteNombre = null;
-        try {
-            const clienteRes = await client.query(
-                'SELECT nombre, correo FROM public.clientes WHERE id = $1 LIMIT 1',
-                [clienteIdNumReq]
-            );
-            if (clienteRes.rows[0]) {
-                clienteNombre = clienteRes.rows[0].nombre || null;
-                clienteCorreo = clienteRes.rows[0].correo || null;
-            }
-        } catch (e) {
-            console.warn('No se pudo obtener correo del cliente para confirmación:', e.message);
-        }
-
-        const crypto = require('crypto');
-        const generarNumeroOrden = async () => {
-            for (let i = 0; i < 5; i++) {
-                const candidate = `PED-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
-                const exists = await client.query('SELECT 1 FROM pedidos WHERE numero_orden = $1 LIMIT 1', [candidate]);
-                if (exists.rowCount === 0) return candidate;
-            }
-            return `PED-${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
-        };
-
-        const numero_orden = await generarNumeroOrden();
-        const pedidos_creados = [];
-        const itemsResumen = [];
-        let totalOrden = 0;
-
-        // Resolver carritos a vaciar (pueden existir varios: cliente + sesión)
+        // DEFINIR carritoIdsParaVaciar AQUÍ
         const carritoIdsParaVaciar = new Set();
         const carritoIdNum = carrito_id ? parseInt(carrito_id) : null;
-        const clienteIdNum = clienteIdNumReq;
         const sessionIdStr = session_id ? String(session_id) : null;
 
         if (carritoIdNum) carritoIdsParaVaciar.add(carritoIdNum);
@@ -3087,6 +3053,41 @@ app.post('/api/comprar', async (req, res) => {
             );
             if (carritoRes.rows[0]?.id) carritoIdsParaVaciar.add(carritoRes.rows[0].id);
         }
+
+        const resultados = [];
+        const alertasPush = [];
+
+        // Obtener info del cliente
+        let clienteCorreo = null;
+        let clienteNombre = null;
+        try {
+            const clienteRes = await client.query(
+                'SELECT nombre, correo FROM public.clientes WHERE id = $1 LIMIT 1',
+                [clienteIdNum]
+            );
+            if (clienteRes.rows[0]) {
+                clienteNombre = clienteRes.rows[0].nombre || null;
+                clienteCorreo = clienteRes.rows[0].correo || null;
+            }
+        } catch (e) {
+            console.warn('No se pudo obtener correo del cliente para confirmación:', e.message);
+        }
+
+        // Generar número de orden único
+        const crypto = require('crypto');
+        const generarNumeroOrdenUnico = async () => {
+            for (let i = 0; i < 5; i++) {
+                const candidate = `PED-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+                const exists = await client.query('SELECT 1 FROM pedidos WHERE numero_orden = $1 LIMIT 1', [candidate]);
+                if (exists.rowCount === 0) return candidate;
+            }
+            return `PED-${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
+        };
+
+        const numero_orden_unico = await generarNumeroOrdenUnico();
+        const pedidos_creados = [];
+        const itemsResumen = [];
+        let totalOrden = 0;
 
         for (const item of items) {
             const prodId = parseInt(item.producto_id);
@@ -3121,28 +3122,29 @@ app.post('/api/comprar', async (req, res) => {
                 [prodId, cant]
             );
 
-            // Registrar pedido (una fila por item)
+            // Calcular montos
             const precio = parseFloat(producto.precio) || 0;
             const ivaPorcentaje = Number.isFinite(parseFloat(producto.iva_porcentaje)) ? parseFloat(producto.iva_porcentaje) : 0;
             const subtotal = precio * cant;
             const impuestos = subtotal * (ivaPorcentaje / 100);
             const descuento = 0;
-            const total = subtotal + impuestos - descuento;
-            totalOrden += total;
+            const totalItem = subtotal + impuestos - descuento;
+            totalOrden += totalItem;
             const vendedorId = producto.vendedor_id ? parseInt(producto.vendedor_id) : null;
 
+            // Crear pedido con el MISMO numero_orden para todos los productos
             const pedidoIns = await client.query(
                 `INSERT INTO public.pedidos (
                     numero_orden, cliente_id, vendedor_id, producto_id, cantidad,
                     subtotal, impuestos, descuento, total,
                     estado, metodo_pago, direccion_envio, notas
                 ) VALUES (
-                    $1,$2,$3,$4,$5,
-                    $6,$7,$8,$9,
-                    'pendiente',$10,$11,$12
+                    $1, $2, $3, $4, $5,
+                    $6, $7, $8, $9,
+                    'pendiente', $10, $11, $12
                 ) RETURNING id`,
                 [
-                    numero_orden,
+                    numero_orden_unico,
                     clienteIdNum,
                     vendedorId,
                     prodId,
@@ -3150,7 +3152,7 @@ app.post('/api/comprar', async (req, res) => {
                     subtotal,
                     impuestos,
                     descuento,
-                    total,
+                    totalItem,
                     metodo_pago || null,
                     direccion_envio || null,
                     notas || null
@@ -3164,7 +3166,7 @@ app.post('/api/comprar', async (req, res) => {
             resultados.push({ id: prodId, nombre: producto.nombre, stock_anterior: producto.stock, stock_nuevo: stockNuevo });
             itemsResumen.push({ nombre: producto.nombre, cantidad: cant });
 
-            // Si es push y llegó al stock mínimo → auto-restock hasta el mínimo y alerta
+            // Si es push y llegó al stock mínimo → auto-restock
             if (producto.restock === 'push' && stockNuevo <= (producto.stock_minimo || 10)) {
                 const minimo = producto.stock_minimo || 10;
                 const autoRestock = minimo - stockNuevo;
@@ -3181,18 +3183,23 @@ app.post('/api/comprar', async (req, res) => {
                     [prodId, autoRestock]
                 );
 
-                // Actualizar el resultado para que refleje el stock final correcto
                 const idx = resultados.findIndex(r => r.id === prodId);
                 if (idx >= 0) resultados[idx].stock_nuevo = stockFinal;
 
-                alertasPush.push({ ...producto, stock_nuevo: stockFinal, stock_antes_restock: stockNuevo, stock_anterior: producto.stock, auto_restock: autoRestock });
+                alertasPush.push({
+                    ...producto,
+                    stock_nuevo: stockFinal,
+                    stock_antes_restock: stockNuevo,
+                    stock_anterior: producto.stock,
+                    auto_restock: autoRestock
+                });
             }
         }
 
-        // Vaciar carritos persistentes si aplica (la compra representa el checkout completo)
+        // Vaciar carritos persistentes
         const carritoVaciado = [];
 
-        // Opción más precisa: borrar por item_ids explícitos
+        // Opción: borrar por item_ids explícitos
         const itemIds = Array.isArray(item_ids) ? item_ids.map(x => parseInt(x)).filter(n => Number.isFinite(n)) : [];
         if (itemIds.length > 0) {
             const carritosAfectadosRes = await client.query(
@@ -3211,13 +3218,11 @@ app.post('/api/comprar', async (req, res) => {
                 carritoVaciado.push({ carrito_id: cid, cleared: null });
             }
 
-            // Si se enviaron item_ids, no es necesario borrar por carrito_id; pero igual limpiamos ids explícitos del set
-            // para evitar dobles borrados en logs.
             carritoIdsParaVaciar.clear();
             carritoVaciado.unshift({ mode: 'by_item_ids', cleared: delRes.rowCount || 0, item_ids: itemIds.length });
         }
 
-        // Fallback: vaciar por carrito_id/cliente_id/session_id
+        // Fallback: vaciar por carrito_id
         for (const cid of carritoIdsParaVaciar) {
             const delRes = await client.query('DELETE FROM carrito_items_persistentes WHERE carrito_id = $1', [cid]);
             await client.query('UPDATE carritos_persistentes SET fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $1', [cid]);
@@ -3233,13 +3238,12 @@ app.post('/api/comprar', async (req, res) => {
             });
         }
 
-        await client.query('COMMIT');
+        await client.query('COMMIT');  // Solo un COMMIT
 
-        // Enviar WhatsApp para productos push que alcanzaron stock mínimo
+        // Enviar WhatsApp para productos push
         for (const prod of alertasPush) {
             const fecha = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
-            const mensaje =
-`⚠️ *RESTOCK AUTOMÁTICO - Perfumes NE2*
+            const mensaje = `⚠️ *RESTOCK AUTOMÁTICO - Perfumes NE2*
 
 📦 *Producto:* ${prod.nombre}
 🏷️ *Marca:* ${prod.marca || 'N/A'}
@@ -3255,7 +3259,7 @@ app.post('/api/comprar', async (req, res) => {
                     twilioClient.messages.create({ from: TWILIO_FROM, to: numero, body: mensaje })
                 ));
                 prod.whatsapp_enviado = true;
-                console.log(`⚠️ Alerta push enviada: ${prod.nombre} stock: ${prod.stock_nuevo}/${prod.stock_minimo || 10}`);
+                console.log(`⚠️ Alerta push enviada: ${prod.nombre}`);
             } catch (waErr) {
                 prod.whatsapp_enviado = false;
                 prod.whatsapp_error = waErr.message;
@@ -3263,23 +3267,22 @@ app.post('/api/comprar', async (req, res) => {
             }
         }
 
-        // Email de confirmación al cliente (no debe bloquear la compra si falla)
+        // Email de confirmación
         let email_confirmacion = { sent: false, skipped: true, reason: null };
         try {
             const r = await enviarCorreoConfirmacionCompra({
                 to: clienteCorreo,
                 nombre: clienteNombre,
-                numero_orden,
+                numero_orden: numero_orden_unico,
                 total: totalOrden,
                 metodo_pago,
                 itemsResumen
             });
             email_confirmacion = r;
             if (r.sent) {
-                console.log('📧 Correo de confirmación enviado a cliente:', { cliente_id: clienteIdNumReq, to: clienteCorreo, numero_orden });
+                console.log('📧 Correo de confirmación enviado a cliente:', { cliente_id: clienteIdNum, to: clienteCorreo, numero_orden: numero_orden_unico });
             } else {
-                const reason = r && r.reason ? r.reason : 'No enviado';
-                console.warn('⚠️ No se envió correo de confirmación:', { cliente_id: clienteIdNumReq, to: clienteCorreo, numero_orden, reason });
+                console.warn('⚠️ No se envió correo de confirmación:', { cliente_id: clienteIdNum, to: clienteCorreo, reason: r.reason });
             }
         } catch (e) {
             console.warn('⚠️ Error inesperado enviando correo de confirmación:', e.message);
@@ -3288,14 +3291,16 @@ app.post('/api/comprar', async (req, res) => {
 
         res.json({
             success: true,
-            numero_orden,
+            numero_orden: numero_orden_unico,
             pedidos_creados,
             resultados,
             carrito_vaciado: carritoVaciado,
             email_confirmacion,
             alertas_push: alertasPush.map(p => ({
-                nombre: p.nombre, stock_antes_restock: p.stock_antes_restock,
-                stock_nuevo: p.stock_nuevo, auto_restock: p.auto_restock,
+                nombre: p.nombre,
+                stock_antes_restock: p.stock_antes_restock,
+                stock_nuevo: p.stock_nuevo,
+                auto_restock: p.auto_restock,
                 stock_minimo: p.stock_minimo || 10,
                 whatsapp_enviado: p.whatsapp_enviado || false,
                 whatsapp_error: p.whatsapp_error || null
@@ -4518,6 +4523,195 @@ app.get('/api/facturas/cliente/:cliente_id/:numero_orden', async (req, res) => {
     }
 });
 
+// ==================== ENDPOINTS PARA CUPONES ====================
+
+// Validar cupón
+app.get('/api/cupones/validar/:codigo', async (req, res) => {
+    const { codigo } = req.params;
+    const subtotal = parseFloat(req.query.subtotal) || 0;
+
+    try {
+        const result = await pool.query(
+            `SELECT * FROM public.cupones WHERE UPPER(codigo) = UPPER($1)`,
+            [codigo.trim()]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Cupón no encontrado' });
+        }
+
+        const cupon = result.rows[0];
+
+        // Verificar si está activo
+        if (!cupon.activo) {
+            return res.status(400).json({ error: 'Este cupón no está disponible' });
+        }
+
+        // Verificar fechas de vigencia
+        const ahora = new Date();
+
+        if (cupon.fecha_inicio && new Date(cupon.fecha_inicio) > ahora) {
+            return res.status(400).json({ error: 'Este cupón aún no está vigente' });
+        }
+
+        if (cupon.fecha_fin && new Date(cupon.fecha_fin) < ahora) {
+            return res.status(400).json({ error: 'Este cupón ha expirado' });
+        }
+
+        // Verificar límite de usos
+        if (cupon.usos_maximos !== null && cupon.usos_actuales >= cupon.usos_maximos) {
+            return res.status(400).json({ error: 'Este cupón ha alcanzado su límite de usos' });
+        }
+
+        // Verificar monto mínimo de compra
+        if (subtotal < parseFloat(cupon.minimo_compra)) {
+            return res.status(400).json({
+                error: `Compra mínima de $${parseFloat(cupon.minimo_compra).toFixed(2)}`
+            });
+        }
+
+        // Calcular descuento
+        let descuento = 0;
+        let envio_gratis = false;
+
+        if (cupon.tipo === 'porcentaje') {
+            descuento = subtotal * (parseFloat(cupon.valor) / 100);
+        } else if (cupon.tipo === 'monto_fijo') {
+            descuento = Math.min(parseFloat(cupon.valor), subtotal);
+        } else if (cupon.tipo === 'envio_gratis') {
+            envio_gratis = true;
+            descuento = 0; // El envío gratis se maneja aparte
+        }
+
+        return res.json({
+            valido: true,
+            cupon: {
+                id: cupon.id,
+                codigo: cupon.codigo,
+                descripcion: cupon.descripcion,
+                tipo: cupon.tipo,
+                valor: parseFloat(cupon.valor)
+            },
+            descuento: parseFloat(descuento.toFixed(2)),
+            envio_gratis
+        });
+
+    } catch (error) {
+        console.error('Error validando cupón:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Listar todos los cupones (admin)
+app.get('/api/cupones', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT c.*, u.nombre as creado_por_nombre
+             FROM public.cupones c
+             LEFT JOIN public.usuarios u ON c.creado_por = u.id
+             ORDER BY c.fecha_creacion DESC`
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error listando cupones:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Crear nuevo cupón (admin)
+app.post('/api/cupones', async (req, res) => {
+    const { codigo, descripcion, tipo, valor, minimo_compra, usos_maximos, fecha_fin, creado_por } = req.body;
+
+    if (!codigo || !tipo || valor === undefined) {
+        return res.status(400).json({ error: 'Código, tipo y valor son requeridos' });
+    }
+
+    try {
+        const result = await pool.query(
+            `INSERT INTO public.cupones 
+             (codigo, descripcion, tipo, valor, minimo_compra, usos_maximos, fecha_fin, creado_por)
+             VALUES (UPPER($1), $2, $3, $4, $5, $6, $7, $8)
+             RETURNING *`,
+            [codigo.trim(), descripcion, tipo, valor, minimo_compra || 0, usos_maximos || null, fecha_fin || null, creado_por || null]
+        );
+
+        res.status(201).json(result.rows[0]);
+
+    } catch (error) {
+        if (error.code === '23505') {
+            return res.status(400).json({ error: 'Ya existe ese cupón' });
+        }
+        console.error('Error creando cupón:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Incrementar uso de cupón
+app.put('/api/cupones/:id/usar', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query(
+            `UPDATE public.cupones SET usos_actuales = usos_actuales + 1 WHERE id = $1 RETURNING *`,
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Cupón no encontrado' });
+        }
+
+        res.json({ success: true, cupon: result.rows[0] });
+
+    } catch (error) {
+        console.error('Error actualizando uso:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Desactivar cupón (soft delete)
+app.delete('/api/cupones/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query(
+            `UPDATE public.cupones SET activo = FALSE WHERE id = $1 RETURNING *`,
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Cupón no encontrado' });
+        }
+
+        res.json({ success: true, cupon: result.rows[0] });
+
+    } catch (error) {
+        console.error('Error desactivando cupón:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Obtener un cupón específico por ID
+app.get('/api/cupones/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query(
+            `SELECT * FROM public.cupones WHERE id = $1`,
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Cupón no encontrado' });
+        }
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error('Error obteniendo cupón:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // ==================== CONFIGURACIÓN GLOBAL ====================
 
 // Obtener configuración global (ej: IVA)
@@ -4572,8 +4766,6 @@ app.put('/api/configuracion/:clave', async (req, res) => {
         res.status(500).json({ error: 'Error al actualizar configuración' });
     }
 });
-
-app.use('/api/cupones', cuponesRoutes);
 
 // ================= LISTEN =================
 app.listen(PORT, () => {

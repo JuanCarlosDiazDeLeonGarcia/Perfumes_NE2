@@ -621,9 +621,7 @@
             mensaje.style.display = 'none';
 
             try {
-                const response = await fetch(
-                    `${API_BASE}/cupones/validar/${encodeURIComponent(codigo)}?subtotal=${subtotal}`
-                );
+                const response = await fetch(`${API_BASE}/cupones/validar/${encodeURIComponent(codigo)}?subtotal=${subtotal}`);
                 const data = await response.json();
 
                 if (!response.ok) {
