@@ -205,7 +205,7 @@
             <div>
                 <h1>Factura Electrónica</h1>
                 <p>🌸 <strong>Perfumes & Aromas</strong></p>
-                <p style="color: #666; font-size: 0.9rem;">RFC: PFA250301ABC</p>
+                <p style="color: #666; font-size: 0.9rem;">RFC del emisor: PFA250301ABC</p>
             </div>
             <div class="factura-datos">
                 <p><strong>Folio:</strong> <span id="invoiceFolio">FCT-001</span></p>
@@ -223,6 +223,8 @@
         <!-- INFORMACIÓN DEL CLIENTE (dinámica) -->
         <div class="customer-info-box" id="customerInfo">
             <p><strong>👤 Cliente:</strong> <span id="customerName">Cliente de demostración</span></p>
+            <p><strong>🧾 RFC:</strong> <span id="customerRfc">—</span></p>
+            <p><strong>🏷️ Nombre para facturar:</strong> <span id="customerFiscalName">—</span></p>
             <p><strong>📧 Correo:</strong> <span id="customerEmail">cliente@email.com</span></p>
             <p><strong>📞 Teléfono:</strong> <span id="customerPhone">449 000 0000</span></p>
             <p><strong>🏠 Dirección:</strong> <span id="customerAddress">Calle Ficticia 123, Ciudad Demo, MX</span></p>
@@ -343,6 +345,28 @@
             }
         }
 
+        async function cargarDatosFiscalesCliente(clienteId) {
+            if (!clienteId) return null;
+            try {
+                const API_BASE_URL = 'http://localhost:3000';
+                const resp = await fetch(`${API_BASE_URL}/api/clientes/${encodeURIComponent(clienteId)}/datos-fiscales`);
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || !data.success || !data.data) return null;
+
+                const row = data.data;
+                const facturacionData = {
+                    rfc: row.rfc,
+                    nombreFiscal: row.nombre_fiscal,
+                    updatedAt: row.fecha_actualizacion || new Date().toISOString()
+                };
+                localStorage.setItem('facturacionData', JSON.stringify(facturacionData));
+                return facturacionData;
+            } catch (error) {
+                console.error('Error cargando datos fiscales del cliente:', error);
+                return null;
+            }
+        }
+
         function getClienteIdFromStorage() {
             const cliente = safeJsonParse(localStorage.getItem('cliente')) || {};
             if (cliente && cliente.id) return cliente.id;
@@ -390,6 +414,11 @@
 
         function renderFactura(invoiceData, lastOrder) {
             const customerData = invoiceData.customerData || {};
+
+            // Datos fiscales capturados por el cliente (RFC + nombre completo)
+            const facturacionData = safeJsonParse(localStorage.getItem('facturacionData')) || {};
+            const rfcFiscal = facturacionData.rfc || customerData.rfc || '—';
+            const nombreFiscal = facturacionData.nombreFiscal || customerData.nombreFiscal || '';
 
             const orderNumber = invoiceData.orderNumber || lastOrder.orderId || lastOrder.orderNumber || ('ORD-' + Math.floor(Math.random() * 9000 + 1000));
             const transactionId = invoiceData.transactionId || lastOrder.transactionId || ('TXN-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0'));
@@ -466,7 +495,10 @@
                 .filter(Boolean)
                 .join(' ')
                 .trim();
-            document.getElementById('customerName').textContent = fullName || 'Cliente';
+            const nombreMostrar = (nombreFiscal || fullName || 'Cliente').trim();
+            document.getElementById('customerName').textContent = nombreMostrar;
+            document.getElementById('customerRfc').textContent = rfcFiscal;
+            document.getElementById('customerFiscalName').textContent = nombreFiscal ? nombreFiscal : nombreMostrar;
             document.getElementById('customerEmail').textContent = customerData.email || 'cliente@perfumesyaromas.com';
             document.getElementById('customerPhone').textContent = customerData.phone || '449 438 9825';
             document.getElementById('customerAddress').textContent =
@@ -549,6 +581,16 @@
 
             let invoiceData = safeJsonParse(localStorage.getItem('invoiceData')) || {};
             const lastOrder = safeJsonParse(localStorage.getItem('lastOrder')) || {};
+
+            // ✅ Cargar datos fiscales persistidos y anexarlos a invoiceData
+            const clienteId = getClienteIdFromStorage();
+            const fiscal = await cargarDatosFiscalesCliente(clienteId);
+            if (fiscal) {
+                invoiceData.customerData = invoiceData.customerData || {};
+                invoiceData.customerData.rfc = fiscal.rfc;
+                invoiceData.customerData.nombreFiscal = fiscal.nombreFiscal;
+                localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
+            }
 
             const orderParam = new URLSearchParams(window.location.search).get('order');
             if (orderParam) {

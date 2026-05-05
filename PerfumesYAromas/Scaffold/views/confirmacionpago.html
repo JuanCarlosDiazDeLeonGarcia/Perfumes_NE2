@@ -237,8 +237,8 @@
             </div>
 
             <div class="action-buttons">
-                <button class="invoice-btn" onclick="window.location.href='factura.html'">
-                    Ver Factura
+                <button class="invoice-btn" id="btnFactura" type="button">
+                    Solicitar factura
                 </button>
                 <button class="catalog-btn" onclick="window.location.href='errorpago.html'">
                     Continuar Comprando
@@ -377,7 +377,60 @@
                         cartBtn.style.border = '2px solid #25D366';
                     }
                 }, 500);
+
+                // ✅ Botón: Solicitar factura (redirige a facturación SOLO si faltan datos)
+                const btnFactura = document.getElementById('btnFactura');
+                if (btnFactura) {
+                    btnFactura.addEventListener('click', async function () {
+                        const destino = await getDestinoFactura(orderNumber);
+                        window.location.href = destino;
+                    });
+                }
             });
+
+            function getClienteIdFromStorage() {
+                const cliente = safeJsonParse(localStorage.getItem('cliente')) || {};
+                if (cliente && cliente.id) return cliente.id;
+                if (cliente && cliente.cliente_id) return cliente.cliente_id;
+                return null;
+            }
+
+            function tieneDatosFiscalesEnCache() {
+                const facturacionData = safeJsonParse(localStorage.getItem('facturacionData')) || {};
+                return Boolean(facturacionData.rfc && facturacionData.nombreFiscal);
+            }
+
+            async function tieneDatosFiscalesEnBackend(clienteId) {
+                if (!clienteId) return false;
+                try {
+                    const resp = await fetch(`http://localhost:3000/api/clientes/${encodeURIComponent(clienteId)}/datos-fiscales`);
+                    const data = await resp.json().catch(() => ({}));
+                    if (!resp.ok || !data.success || !data.data) return false;
+                    return Boolean(data.data.rfc && data.data.nombre_fiscal);
+                } catch (e) {
+                    // Backend caído: no bloquea, se usará cache local
+                    return false;
+                }
+            }
+
+            async function getDestinoFactura(orderNumber) {
+                const orderParam = orderNumber ? `?order=${encodeURIComponent(orderNumber)}` : '';
+                const clienteId = getClienteIdFromStorage();
+
+                // 1) Si hay cache local, va directo a factura
+                if (tieneDatosFiscalesEnCache()) {
+                    return `factura.html${orderParam}`;
+                }
+
+                // 2) Si backend dice que ya tiene datos fiscales, va directo a factura
+                const tieneBackend = await tieneDatosFiscalesEnBackend(clienteId);
+                if (tieneBackend) {
+                    return `factura.html${orderParam}`;
+                }
+
+                // 3) Si no, primero capturar datos
+                return `clientes/facturacion.html${orderParam}`;
+            }
 
             function safeJsonParse(value) {
                 if (!value) return null;

@@ -149,6 +149,29 @@ async function ensureTarjetasCreditoTable() {
     }
 }
 
+async function ensureDatosFiscalesClientesTable() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS public.datos_fiscales_clientes (
+                cliente_id INTEGER PRIMARY KEY REFERENCES public.clientes(id) ON DELETE CASCADE,
+                rfc VARCHAR(13) NOT NULL,
+                nombre_fiscal VARCHAR(200) NOT NULL,
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT datos_fiscales_clientes_rfc_len CHECK (char_length(rfc) = 13)
+            )
+        `);
+
+        await pool.query(
+            'CREATE INDEX IF NOT EXISTS idx_datos_fiscales_clientes_rfc ON public.datos_fiscales_clientes(rfc)'
+        );
+
+        console.log('✅ Tabla public.datos_fiscales_clientes lista');
+    } catch (error) {
+        console.error('❌ Error verificando/creando tabla public.datos_fiscales_clientes:', error.message);
+    }
+}
+
 // Login para usuarios (tabla usuarios) - usado por adminlogin
 app.post('/api/login-usuario', async (req, res) => {
     const { email, password } = req.body;
@@ -220,6 +243,92 @@ pool.connect((err, client, release) => {
 
 // Verificar/crear tablas auxiliares al arrancar
 ensureTarjetasCreditoTable();
+ensureDatosFiscalesClientesTable();
+
+// ==================== DATOS FISCALES (FACTURACIÓN) ====================
+
+function normalizarRfc(raw) {
+    return String(raw || '').trim().toUpperCase().replace(/\s+/g, '');
+}
+
+function validarRfc13(rfc) {
+    const cleaned = normalizarRfc(rfc);
+    if (cleaned.length !== 13) return { ok: false, value: cleaned, message: 'El RFC debe tener exactamente 13 caracteres' };
+    if (!/^[A-Z0-9&Ñ]{13}$/.test(cleaned)) return { ok: false, value: cleaned, message: 'El RFC contiene caracteres inválidos' };
+    return { ok: true, value: cleaned };
+}
+
+// Obtener datos fiscales de un cliente
+app.get('/api/clientes/:id/datos-fiscales', async (req, res) => {
+    const { id } = req.params;
+    const clienteId = parseInt(id, 10);
+    if (!Number.isFinite(clienteId)) {
+        return res.status(400).json({ message: 'ID de cliente inválido' });
+    }
+
+    try {
+        const result = await pool.query(
+            `SELECT cliente_id, rfc, nombre_fiscal, fecha_actualizacion
+             FROM public.datos_fiscales_clientes
+             WHERE cliente_id = $1
+             LIMIT 1`,
+            [clienteId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Datos fiscales no encontrados' });
+        }
+
+        return res.json({ success: true, data: result.rows[0] });
+    } catch (error) {
+        console.error('Error obteniendo datos fiscales:', error);
+        return res.status(500).json({ message: 'Error al obtener datos fiscales' });
+    }
+});
+
+// Guardar/actualizar datos fiscales de un cliente
+app.put('/api/clientes/:id/datos-fiscales', async (req, res) => {
+    const { id } = req.params;
+    const clienteId = parseInt(id, 10);
+    if (!Number.isFinite(clienteId)) {
+        return res.status(400).json({ message: 'ID de cliente inválido' });
+    }
+
+    const { rfc, nombre_fiscal, nombreFiscal } = req.body || {};
+    const nombre = (typeof nombre_fiscal === 'string' ? nombre_fiscal : nombreFiscal) || '';
+
+    const v = validarRfc13(rfc);
+    if (!v.ok) {
+        return res.status(400).json({ message: v.message, rfc: v.value });
+    }
+
+    const nombreTrim = String(nombre || '').trim();
+    if (!nombreTrim || nombreTrim.length < 5) {
+        return res.status(400).json({ message: 'El nombre para facturar es obligatorio' });
+    }
+
+    try {
+        // Verificar que el cliente exista
+        const clienteExiste = await pool.query('SELECT 1 FROM public.clientes WHERE id = $1 LIMIT 1', [clienteId]);
+        if (clienteExiste.rows.length === 0) {
+            return res.status(404).json({ message: 'Cliente no encontrado' });
+        }
+
+        const upsert = await pool.query(
+            `INSERT INTO public.datos_fiscales_clientes (cliente_id, rfc, nombre_fiscal)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (cliente_id)
+             DO UPDATE SET rfc = EXCLUDED.rfc, nombre_fiscal = EXCLUDED.nombre_fiscal, fecha_actualizacion = CURRENT_TIMESTAMP
+             RETURNING cliente_id, rfc, nombre_fiscal, fecha_actualizacion`,
+            [clienteId, v.value, nombreTrim]
+        );
+
+        return res.json({ success: true, data: upsert.rows[0] });
+    } catch (error) {
+        console.error('Error guardando datos fiscales:', error);
+        return res.status(500).json({ message: 'Error al guardar datos fiscales' });
+    }
+});
 
 app.use(express.static(path.join(__dirname, 'PerfumesYAromas', 'Scaffold')));
 
@@ -3189,34 +3298,24 @@ app.post('/api/comprar', async (req, res) => {
             resultados.push({ id: prodId, nombre: producto.nombre, stock_anterior: producto.stock, stock_nuevo: stockNuevo });
             itemsResumen.push({ nombre: producto.nombre, cantidad: cant });
 
-            // Si es push y llegó al stock mínimo → auto-restock
+            // Si es push y llegó al stock mínimo → generar alerta (NO reponer stock automáticamente)
             if (producto.restock === 'push' && stockNuevo <= (producto.stock_minimo || 10)) {
-                const minimo = producto.stock_minimo || 10;
-                const autoRestock = minimo - stockNuevo;
-                const stockFinal = minimo;
-
-                await client.query(
-                    'UPDATE public.productos SET stock = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
-                    [stockFinal, prodId]
-                );
-
-                await client.query(
-                    `INSERT INTO public.movimientos_inventario (producto_id, tipo, cantidad, motivo)
-                     VALUES ($1, 'entrada', $2, 'Restock automático (push) - stock mínimo alcanzado')`,
-                    [prodId, autoRestock]
-                );
-
-                const idx = resultados.findIndex(r => r.id === prodId);
-                if (idx >= 0) resultados[idx].stock_nuevo = stockFinal;
-
                 alertasPush.push({
                     ...producto,
-                    stock_nuevo: stockFinal,
-                    stock_antes_restock: stockNuevo,
+                    stock_nuevo: stockNuevo,
                     stock_anterior: producto.stock,
-                    auto_restock: autoRestock
+                    stock_minimo: producto.stock_minimo || 10
                 });
             }
+        }
+
+        // Evitar compras “exitosas” sin afectar inventario/pedidos
+        if (resultados.length === 0 || pedidos_creados.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                error: 'No se pudo procesar la compra: no se recibieron items válidos.'
+            });
         }
 
         // ✅ Si hay cupón, incrementar usos_actuales

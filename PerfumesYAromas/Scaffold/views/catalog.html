@@ -844,6 +844,11 @@
                 if (e.key === 'Enter') filtrarProductos();
             });
         });
+
+        // Si el usuario vuelve con "atrás" (bfcache), recargar para reflejar stock actualizado
+        window.addEventListener('pageshow', function () {
+            cargarProductos();
+        });
     </script>
 </body>
 </html>

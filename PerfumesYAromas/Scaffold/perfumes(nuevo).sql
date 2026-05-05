@@ -199,6 +199,27 @@ CREATE TABLE public.clientes (
 ALTER TABLE public.clientes OWNER TO postgres;
 
 --
+-- TOC entry (custom)
+-- Name: datos_fiscales_clientes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.datos_fiscales_clientes (
+    cliente_id integer NOT NULL,
+    rfc character varying(13) NOT NULL,
+    nombre_fiscal character varying(200) NOT NULL,
+    fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT datos_fiscales_clientes_pkey PRIMARY KEY (cliente_id),
+    CONSTRAINT datos_fiscales_clientes_cliente_id_fkey FOREIGN KEY (cliente_id) REFERENCES public.clientes(id) ON DELETE CASCADE,
+    CONSTRAINT datos_fiscales_clientes_rfc_len CHECK ((char_length((rfc)::text) = 13))
+);
+
+
+ALTER TABLE public.datos_fiscales_clientes OWNER TO postgres;
+
+CREATE INDEX idx_datos_fiscales_clientes_rfc ON public.datos_fiscales_clientes USING btree (rfc);
+
+--
 -- TOC entry 222 (class 1259 OID 33219)
 -- Name: clientes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --

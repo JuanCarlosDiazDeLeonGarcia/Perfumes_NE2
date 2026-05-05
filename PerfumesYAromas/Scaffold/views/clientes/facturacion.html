@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facturación - Perfumes & Aromas</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <style>
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .title {
+            margin-bottom: 10px;
+        }
+
+        .hint {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 18px;
+            line-height: 1.4;
+        }
+
+        label {
+            display: block;
+            margin: 14px 0 6px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #7e57c2;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .btn {
+            background: linear-gradient(90deg, #7e57c2, #5c6bc0);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .btn-secondary {
+            background: #f3f3f3;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn:hover {
+            opacity: 0.95;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0 0;
+            text-align: center;
+            display: none;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .order-pill {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #f6f0ff;
+            color: #5c6bc0;
+            border: 1px solid #e6dcff;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin: 8px 0 0;
+        }
+
+        @media (max-width: 800px) {
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menú lateral del usuario -->
+    <aside class="sidebar">
+        <h2>🌸 PerfumeShop</h2>
+        <nav>
+            <a href="../catalog.html">🢀 Volver</a>
+            <a href="usuariomenu.html">🏠 Inicio</a>
+            <a href="miscompras.html">🛍️ Mis Compras</a>
+            <a href="metodopago.html">💳 Métodos de Pago</a>
+            <a href="facturacion.html" class="active">🧾 Facturación</a>
+            <a href="seguimiento.html">📦 Seguimiento</a>
+            <a href="mistickets.html">📩 Contacto</a>
+            <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="box">
+            <h1 class="title">🧾 Datos de Facturación</h1>
+            <p class="hint">
+                Captura tu <strong>RFC (13 caracteres)</strong> y tu <strong>nombre completo</strong>.
+                Estos datos se usarán para llenar la factura de tu última compra.
+            </p>
+
+            <div id="orderInfo" class="order-pill" style="display:none;"></div>
+
+            <form id="facturacionForm">
+                <label for="rfc">RFC *</label>
+                <input id="rfc" name="rfc" maxlength="13" minlength="13" placeholder="Ej: ABCD001231XXX" autocomplete="off" required>
+
+                <label for="nombreFiscal">Nombre completo (para facturar) *</label>
+                <input id="nombreFiscal" name="nombreFiscal" placeholder="Ej: Juan Carlos Díaz de León García" autocomplete="name" required>
+
+                <div id="msgSuccess" class="message success"></div>
+                <div id="msgError" class="message error"></div>
+
+                <div class="row">
+                    <button type="submit" class="btn">💾 Guardar datos</button>
+                    <button type="button" class="btn btn-secondary" id="btnGenerar">📄 Generar factura</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+        const API_FACTURA_URL = '../factura.html';
+
+        function safeJsonParse(value) {
+            if (!value) return null;
+            try {
+                return JSON.parse(value);
+            } catch {
+                return null;
+            }
+        }
+
+        function showMessage(type, text) {
+            const ok = document.getElementById('msgSuccess');
+            const err = document.getElementById('msgError');
+            ok.style.display = 'none';
+            err.style.display = 'none';
+
+            if (type === 'success') {
+                ok.textContent = text;
+                ok.style.display = 'block';
+            } else {
+                err.textContent = text;
+                err.style.display = 'block';
+            }
+        }
+
+        function normalizarRfc(raw) {
+            return String(raw || '')
+                .trim()
+                .toUpperCase()
+                .replace(/\s+/g, '');
+        }
+
+        function validarRfc13(rfc) {
+            const cleaned = normalizarRfc(rfc);
+            if (cleaned.length !== 13) return { ok: false, value: cleaned, message: 'El RFC debe tener exactamente 13 caracteres.' };
+            // Acepta letras, números y & Ñ (RFC en MX).
+            if (!/^[A-Z0-9&Ñ]{13}$/.test(cleaned)) {
+                return { ok: false, value: cleaned, message: 'El RFC solo debe contener letras y números (y opcionalmente &/Ñ).' };
+            }
+            return { ok: true, value: cleaned };
+        }
+
+        function getOrderNumber() {
+            const invoiceData = safeJsonParse(localStorage.getItem('invoiceData')) || {};
+            const lastOrder = safeJsonParse(localStorage.getItem('lastOrder')) || {};
+            const orderFromQuery = new URLSearchParams(window.location.search).get('order');
+            return (
+                orderFromQuery ||
+                invoiceData.orderNumber ||
+                lastOrder.orderId ||
+                lastOrder.orderNumber ||
+                localStorage.getItem('orderNumber') ||
+                ''
+            );
+        }
+
+        function verificarSesion() {
+            const cliente = localStorage.getItem('cliente');
+            const userType = localStorage.getItem('userType');
+            if (!cliente || userType !== 'cliente') {
+                window.location.href = '../clientelogin.html';
+                return false;
+            }
+            return true;
+        }
+
+        function getClienteIdFromStorage() {
+            const cliente = safeJsonParse(localStorage.getItem('cliente')) || {};
+            if (cliente && cliente.id) return cliente.id;
+            if (cliente && cliente.cliente_id) return cliente.cliente_id;
+            return null;
+        }
+
+        function precargarFormulario() {
+            const facturacionData = safeJsonParse(localStorage.getItem('facturacionData')) || {};
+            if (facturacionData.rfc) document.getElementById('rfc').value = facturacionData.rfc;
+            if (facturacionData.nombreFiscal) document.getElementById('nombreFiscal').value = facturacionData.nombreFiscal;
+
+            const orderNumber = getOrderNumber();
+            const pill = document.getElementById('orderInfo');
+            if (orderNumber) {
+                pill.textContent = `Orden: ${orderNumber}`;
+                pill.style.display = 'inline-block';
+            }
+        }
+
+        async function cargarDatosDesdeBackend() {
+            const clienteId = getClienteIdFromStorage();
+            if (!clienteId) return;
+
+            try {
+                const resp = await fetch(`${API_BASE_URL}/api/clientes/${encodeURIComponent(clienteId)}/datos-fiscales`);
+                const data = await resp.json().catch(() => ({}));
+
+                if (!resp.ok) {
+                    // 404 = aún no guardó datos fiscales
+                    return;
+                }
+
+                const row = data && data.data ? data.data : null;
+                if (!row) return;
+
+                if (row.rfc) document.getElementById('rfc').value = row.rfc;
+                if (row.nombre_fiscal) document.getElementById('nombreFiscal').value = row.nombre_fiscal;
+
+                // Cache local para UX
+                localStorage.setItem('facturacionData', JSON.stringify({
+                    rfc: row.rfc,
+                    nombreFiscal: row.nombre_fiscal,
+                    updatedAt: row.fecha_actualizacion || new Date().toISOString()
+                }));
+            } catch (error) {
+                console.error('Error cargando datos fiscales:', error);
+            }
+        }
+
+        async function guardarDatos() {
+            const rfcRaw = document.getElementById('rfc').value;
+            const nombreFiscal = String(document.getElementById('nombreFiscal').value || '').trim();
+
+            const v = validarRfc13(rfcRaw);
+            if (!v.ok) {
+                showMessage('error', v.message);
+                document.getElementById('rfc').value = v.value;
+                document.getElementById('rfc').focus();
+                return null;
+            }
+
+            if (!nombreFiscal || nombreFiscal.length < 5) {
+                showMessage('error', 'Ingresa tu nombre completo para facturar.');
+                document.getElementById('nombreFiscal').focus();
+                return null;
+            }
+
+            const facturacionData = {
+                rfc: v.value,
+                nombreFiscal,
+                updatedAt: new Date().toISOString()
+            };
+
+            const clienteId = getClienteIdFromStorage();
+            if (!clienteId) {
+                showMessage('error', 'No se pudo identificar al cliente (sesión inválida).');
+                return null;
+            }
+
+            try {
+                const resp = await fetch(`${API_BASE_URL}/api/clientes/${encodeURIComponent(clienteId)}/datos-fiscales`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rfc: facturacionData.rfc, nombre_fiscal: facturacionData.nombreFiscal })
+                });
+
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || !data.success) {
+                    const msg = (data && data.message) ? data.message : 'No se pudieron guardar los datos fiscales.';
+                    showMessage('error', msg);
+                    return null;
+                }
+
+                // Cache local para UX
+                localStorage.setItem('facturacionData', JSON.stringify(facturacionData));
+
+                // También lo anexamos a invoiceData (si existe) para que factura.html lo tome
+                const invoiceData = safeJsonParse(localStorage.getItem('invoiceData')) || {};
+                invoiceData.customerData = invoiceData.customerData || {};
+                invoiceData.customerData.rfc = facturacionData.rfc;
+                invoiceData.customerData.nombreFiscal = facturacionData.nombreFiscal;
+                localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
+
+                showMessage('success', '✅ Datos de facturación guardados.');
+                return facturacionData;
+            } catch (error) {
+                console.error('Error guardando datos fiscales:', error);
+                showMessage('error', 'Error de conexión al guardar datos fiscales.');
+                return null;
+            }
+        }
+
+        function irAFactura() {
+            const orderNumber = getOrderNumber();
+            const url = orderNumber ? `${API_FACTURA_URL}?order=${encodeURIComponent(orderNumber)}` : API_FACTURA_URL;
+            window.location.href = url;
+        }
+
+        function cerrarSesion() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                localStorage.removeItem('cliente');
+                localStorage.removeItem('token');
+                localStorage.removeItem('userType');
+                window.location.href = '../catalog.html';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            if (!verificarSesion()) return;
+            precargarFormulario();
+            cargarDatosDesdeBackend();
+
+            document.getElementById('facturacionForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                (async () => {
+                    await guardarDatos();
+                })();
+            });
+
+            document.getElementById('btnGenerar').addEventListener('click', function () {
+                (async () => {
+                    const saved = await guardarDatos();
+                    if (!saved) return;
+                    irAFactura();
+                })();
+            });
+        });
+    </script>
+</body>
+</html>

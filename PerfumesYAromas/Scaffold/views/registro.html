@@ -289,7 +289,7 @@
                 <div id="errorMessage" class="error-message"></div>
                 <div id="successMessage" class="success-message"></div>
             </form>
-            <p>¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a></p>
+            <p>¿Ya tienes cuenta? <a href="clientelogin.html">Inicia sesión aquí</a></p>
         </div>
     </div>
 
@@ -442,7 +442,7 @@
 
                     // Redirigir después de 2 segundos
                     setTimeout(() => {
-                        window.location.href = 'usuariomenu.html';
+                        window.location.href = 'clientes/usuariomenu.html';
                     }, 2000);
 
                 } else {
@@ -523,7 +523,7 @@
 
             if (cliente && userType === 'cliente') {
                 // Si ya hay sesión, redirigir al menú
-                window.location.href = 'usuariomenu.html';
+                window.location.href = 'clientes/usuariomenu.html';
             }
         }
 
