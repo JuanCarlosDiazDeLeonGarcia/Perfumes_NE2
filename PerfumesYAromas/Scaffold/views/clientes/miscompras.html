@@ -657,9 +657,59 @@
             modal.style.display = 'block';
         }
 
-        function verFactura(numeroOrden) {
+        function getClienteIdFromStorage() {
+            try {
+                const cliente = JSON.parse(localStorage.getItem('cliente') || 'null') || {};
+                return cliente.id || cliente.cliente_id || null;
+            } catch {
+                return null;
+            }
+        }
+
+        function tieneDatosFiscalesEnCache(clienteId) {
+            if (!clienteId) return false;
+            try {
+                const cached = JSON.parse(localStorage.getItem(`facturacionData:${clienteId}`) || 'null');
+                return Boolean(cached && cached.rfc && cached.nombreFiscal);
+            } catch {
+                return false;
+            }
+        }
+
+        async function tieneDatosFiscalesEnBackend(clienteId) {
+            if (!clienteId) return false;
+            try {
+                const resp = await fetch(`${API_BASE_URL}/api/clientes/${encodeURIComponent(clienteId)}/datos-fiscales`);
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || !data.success || !data.data) return false;
+                return Boolean(data.data.rfc && data.data.nombre_fiscal);
+            } catch {
+                return false;
+            }
+        }
+
+        async function verFactura(numeroOrden) {
             if (!numeroOrden) return;
-            window.location.href = `../factura.html?order=${encodeURIComponent(String(numeroOrden))}`;
+
+            const clienteId = getClienteIdFromStorage();
+            if (!clienteId) {
+                showMessage('error', 'No hay sesión activa. Redirigiendo al login...');
+                setTimeout(() => window.location.href = '../clientelogin.html', 1500);
+                return;
+            }
+
+            const orderParam = encodeURIComponent(String(numeroOrden));
+
+            // Si faltan datos fiscales, pedirlos antes de mostrar factura
+            if (!tieneDatosFiscalesEnCache(clienteId)) {
+                const okBackend = await tieneDatosFiscalesEnBackend(clienteId);
+                if (!okBackend) {
+                    window.location.href = `facturacion.html?order=${orderParam}`;
+                    return;
+                }
+            }
+
+            window.location.href = `../factura.html?order=${orderParam}`;
         }
 
         function cerrarModal() {

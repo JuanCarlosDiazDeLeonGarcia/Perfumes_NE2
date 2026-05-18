@@ -357,14 +357,37 @@
                 const facturacionData = {
                     rfc: row.rfc,
                     nombreFiscal: row.nombre_fiscal,
-                    updatedAt: row.fecha_actualizacion || new Date().toISOString()
+                    updatedAt: row.fecha_actualizacion || new Date().toISOString(),
+                    clienteId
                 };
-                localStorage.setItem('facturacionData', JSON.stringify(facturacionData));
+                localStorage.setItem(`facturacionData:${clienteId}`, JSON.stringify(facturacionData));
+                localStorage.removeItem('facturacionData');
                 return facturacionData;
             } catch (error) {
                 console.error('Error cargando datos fiscales del cliente:', error);
                 return null;
             }
+        }
+
+        function getFacturacionDataFromCache(clienteId) {
+            if (clienteId) {
+                const scoped = safeJsonParse(localStorage.getItem(`facturacionData:${clienteId}`));
+                if (scoped && (scoped.rfc || scoped.nombreFiscal)) return scoped;
+            }
+
+            // Migración (legacy)
+            const legacy = safeJsonParse(localStorage.getItem('facturacionData'));
+            if (legacy && clienteId && (legacy.rfc || legacy.nombreFiscal)) {
+                if (legacy.clienteId && String(legacy.clienteId) === String(clienteId)) {
+                    localStorage.setItem(`facturacionData:${clienteId}`, JSON.stringify(legacy));
+                    localStorage.removeItem('facturacionData');
+                    return legacy;
+                }
+
+                localStorage.removeItem('facturacionData');
+            }
+
+            return {};
         }
 
         function getClienteIdFromStorage() {
@@ -416,7 +439,8 @@
             const customerData = invoiceData.customerData || {};
 
             // Datos fiscales capturados por el cliente (RFC + nombre completo)
-            const facturacionData = safeJsonParse(localStorage.getItem('facturacionData')) || {};
+            const clienteId = getClienteIdFromStorage();
+            const facturacionData = getFacturacionDataFromCache(clienteId);
             const rfcFiscal = facturacionData.rfc || customerData.rfc || '—';
             const nombreFiscal = facturacionData.nombreFiscal || customerData.nombreFiscal || '';
 

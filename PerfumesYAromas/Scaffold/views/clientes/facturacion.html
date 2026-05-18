@@ -177,6 +177,42 @@
             }
         }
 
+        function getFacturacionStorageKey(clienteId) {
+            return clienteId ? `facturacionData:${clienteId}` : 'facturacionData';
+        }
+
+        function getFacturacionDataFromCache(clienteId) {
+            const scopedKey = getFacturacionStorageKey(clienteId);
+            const scoped = safeJsonParse(localStorage.getItem(scopedKey));
+            if (scoped && (scoped.rfc || scoped.nombreFiscal)) return scoped;
+
+            // Migración (legacy): llave global antigua
+            const legacy = safeJsonParse(localStorage.getItem('facturacionData'));
+            if (legacy && clienteId && (legacy.rfc || legacy.nombreFiscal)) {
+                // Solo migrar si el legacy ya trae clienteId (si no, puede estar “contaminado” por otro usuario)
+                if (legacy.clienteId && String(legacy.clienteId) === String(clienteId)) {
+                    localStorage.setItem(scopedKey, JSON.stringify(legacy));
+                    localStorage.removeItem('facturacionData');
+                    return legacy;
+                }
+
+                // Legacy sin identidad: descartarlo para evitar compartir datos
+                localStorage.removeItem('facturacionData');
+            }
+
+            return {};
+        }
+
+        function setFacturacionDataToCache(clienteId, facturacionData) {
+            const scopedKey = getFacturacionStorageKey(clienteId);
+            localStorage.setItem(scopedKey, JSON.stringify({
+                ...facturacionData,
+                clienteId
+            }));
+            // Evitar que se “comparta” por una llave global
+            localStorage.removeItem('facturacionData');
+        }
+
         function showMessage(type, text) {
             const ok = document.getElementById('msgSuccess');
             const err = document.getElementById('msgError');
@@ -241,7 +277,8 @@
         }
 
         function precargarFormulario() {
-            const facturacionData = safeJsonParse(localStorage.getItem('facturacionData')) || {};
+            const clienteId = getClienteIdFromStorage();
+            const facturacionData = getFacturacionDataFromCache(clienteId);
             if (facturacionData.rfc) document.getElementById('rfc').value = facturacionData.rfc;
             if (facturacionData.nombreFiscal) document.getElementById('nombreFiscal').value = facturacionData.nombreFiscal;
 
@@ -273,11 +310,11 @@
                 if (row.nombre_fiscal) document.getElementById('nombreFiscal').value = row.nombre_fiscal;
 
                 // Cache local para UX
-                localStorage.setItem('facturacionData', JSON.stringify({
+                setFacturacionDataToCache(clienteId, {
                     rfc: row.rfc,
                     nombreFiscal: row.nombre_fiscal,
                     updatedAt: row.fecha_actualizacion || new Date().toISOString()
-                }));
+                });
             } catch (error) {
                 console.error('Error cargando datos fiscales:', error);
             }
@@ -304,7 +341,8 @@
             const facturacionData = {
                 rfc: v.value,
                 nombreFiscal,
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
+                clienteId
             };
 
             const clienteId = getClienteIdFromStorage();
@@ -328,7 +366,7 @@
                 }
 
                 // Cache local para UX
-                localStorage.setItem('facturacionData', JSON.stringify(facturacionData));
+                setFacturacionDataToCache(clienteId, facturacionData);
 
                 // También lo anexamos a invoiceData (si existe) para que factura.html lo tome
                 const invoiceData = safeJsonParse(localStorage.getItem('invoiceData')) || {};

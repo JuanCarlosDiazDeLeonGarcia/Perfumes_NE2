@@ -396,8 +396,25 @@
             }
 
             function tieneDatosFiscalesEnCache() {
-                const facturacionData = safeJsonParse(localStorage.getItem('facturacionData')) || {};
-                return Boolean(facturacionData.rfc && facturacionData.nombreFiscal);
+                const clienteId = getClienteIdFromStorage();
+                const scoped = clienteId ? safeJsonParse(localStorage.getItem(`facturacionData:${clienteId}`)) : null;
+                if (scoped && scoped.rfc && scoped.nombreFiscal) return true;
+
+                // Migración (legacy)
+                const legacy = safeJsonParse(localStorage.getItem('facturacionData')) || {};
+                if (legacy.rfc && legacy.nombreFiscal && clienteId) {
+                    if (legacy.clienteId && String(legacy.clienteId) === String(clienteId)) {
+                        localStorage.setItem(`facturacionData:${clienteId}`, JSON.stringify(legacy));
+                        localStorage.removeItem('facturacionData');
+                        return true;
+                    }
+
+                    // Legacy sin identidad: descartarlo para evitar compartir datos
+                    localStorage.removeItem('facturacionData');
+                    return false;
+                }
+
+                return false;
             }
 
             async function tieneDatosFiscalesEnBackend(clienteId) {

@@ -38,6 +38,22 @@
                            autocomplete="current-password">
                 </div>
 
+                <div class="form-group captcha-group">
+                    <label for="captchaInput">🧩 Captcha</label>
+                    <div class="captcha-row" aria-label="Verificación humana">
+                        <canvas id="captchaCanvas" class="captcha-canvas" width="240" height="80" aria-label="Imagen de captcha"></canvas>
+                        <button type="button" id="captchaRefresh" class="captcha-refresh" aria-label="Recargar captcha">🔄</button>
+                    </div>
+                    <input type="text"
+                           id="captchaInput"
+                           name="captcha"
+                           placeholder="Confirmar Captcha"
+                           inputmode="text"
+                           autocomplete="off"
+                           maxlength="6"
+                           required>
+                </div>
+
                 <div class="checkbox-group">
                     <input type="checkbox" id="recordar" name="recordar">
                     <label for="recordar">Recordarme en este dispositivo</label>

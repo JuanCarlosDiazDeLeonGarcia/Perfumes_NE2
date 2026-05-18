@@ -1,5 +1,109 @@
 const API_URL = 'http://localhost:3000/api';
 
+let captchaTextoActual = '';
+
+function generarCaptchaTexto(longitud = 5) {
+    // Evitar caracteres ambiguos: 0 O o 1 I l
+    const caracteres = '23456789abcdefghjkmnpqrstuvwxyz';
+    let resultado = '';
+    for (let i = 0; i < longitud; i++) {
+        resultado += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    return resultado;
+}
+
+function dibujarCaptchaEnCanvas(texto) {
+    const canvas = document.getElementById('captchaCanvas');
+    if (!canvas || !canvas.getContext) {
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Fondo
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+
+    // Ruido (puntos)
+    for (let i = 0; i < 120; i++) {
+        ctx.fillStyle = `rgba(${Math.floor(Math.random() * 120)}, ${Math.floor(Math.random() * 120)}, ${Math.floor(Math.random() * 120)}, 0.35)`;
+        ctx.beginPath();
+        ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Líneas
+    for (let i = 0; i < 4; i++) {
+        ctx.strokeStyle = `rgba(${Math.floor(Math.random() * 80)}, ${Math.floor(Math.random() * 80)}, ${Math.floor(Math.random() * 80)}, 0.35)`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, Math.random() * h);
+        ctx.bezierCurveTo(w * 0.25, Math.random() * h, w * 0.75, Math.random() * h, w, Math.random() * h);
+        ctx.stroke();
+    }
+
+    // Texto con ligera rotación por caracter
+    const fontSize = 44;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    ctx.font = `bold ${fontSize}px Arial`;
+
+    const paddingX = 18;
+    const step = (w - paddingX * 2) / texto.length;
+    for (let i = 0; i < texto.length; i++) {
+        const ch = texto[i];
+        const x = paddingX + step * (i + 0.5);
+        const y = h / 2 + (Math.random() * 10 - 5);
+        const angle = (Math.random() * 0.45 - 0.225);
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.fillStyle = `rgb(${Math.floor(Math.random() * 150)}, ${Math.floor(Math.random() * 150)}, ${Math.floor(Math.random() * 150)})`;
+        ctx.shadowColor = 'rgba(0,0,0,0.15)';
+        ctx.shadowBlur = 2;
+        ctx.fillText(ch, 0, 0);
+        ctx.restore();
+    }
+}
+
+function generarCaptcha() {
+    captchaTextoActual = generarCaptchaTexto(5);
+    dibujarCaptchaEnCanvas(captchaTextoActual);
+
+    const captchaInput = document.getElementById('captchaInput');
+    if (captchaInput) {
+        captchaInput.value = '';
+    }
+}
+
+function validarCaptcha() {
+    const captchaInput = document.getElementById('captchaInput');
+    if (!captchaInput) {
+        return true; // Si falta el input, no bloquear el login
+    }
+
+    const valor = (captchaInput.value || '').trim().toLowerCase();
+    const esperado = (captchaTextoActual || '').trim().toLowerCase();
+
+    if (!valor) {
+        mostrarError('Por favor confirma el captcha.');
+        return false;
+    }
+
+    if (!esperado || valor !== esperado) {
+        mostrarError('Captcha incorrecto. Inténtalo de nuevo.');
+        generarCaptcha();
+        captchaInput.focus();
+        return false;
+    }
+
+    return true;
+}
+
 // Verificar sesión al cargar la página
 document.addEventListener('DOMContentLoaded', function () {
     const usuario = JSON.parse(localStorage.getItem('usuarioActual'));
@@ -25,6 +129,13 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('email').value = emailRecordado;
         document.getElementById('recordar').checked = true;
     }
+
+    // Inicializar captcha
+    generarCaptcha();
+    const btnRefresh = document.getElementById('captchaRefresh');
+    if (btnRefresh) {
+        btnRefresh.addEventListener('click', generarCaptcha);
+    }
 });
 
 async function iniciarSesion(event) {
@@ -37,6 +148,11 @@ async function iniciarSesion(event) {
     // Validar campos vacíos
     if (!email || !password) {
         mostrarError('Por favor completa todos los campos');
+        return;
+    }
+
+    // Validar captcha antes de continuar
+    if (!validarCaptcha()) {
         return;
     }
 
