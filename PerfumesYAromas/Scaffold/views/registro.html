@@ -206,7 +206,7 @@
                     </div>
                     <div class="form-group">
                         <label for="telefono">Teléfono</label>
-                        <input type="tel" id="telefono" placeholder="449-123-4567">
+                        <input type="tel" id="telefono" placeholder="4491234567" inputmode="numeric" pattern="[0-9]*" autocomplete="tel">
                     </div>
                 </div>
 
@@ -249,7 +249,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="codigoPostal">Código Postal</label>
-                        <input type="text" id="codigoPostal" placeholder="Código Postal">
+                        <input type="text" id="codigoPostal" placeholder="Código Postal" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="postal-code">
                     </div>
                     <div class="form-group">
                         <label for="genero">Género (opcional)</label>
@@ -352,6 +352,8 @@
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             const acceptTerms = document.getElementById('acceptTerms').checked;
+            const telefono = document.getElementById('telefono').value.trim();
+            const codigoPostal = document.getElementById('codigoPostal').value.trim();
 
             // Validaciones básicas
             if (!nombre) {
@@ -379,21 +381,49 @@
                 return false;
             }
 
+            // Solo números en teléfono (opcional)
+            if (telefono && !/^[0-9]+$/.test(telefono)) {
+                showError('El teléfono solo debe contener números.');
+                document.getElementById('telefono').focus();
+                return false;
+            }
+
+            // Solo números en código postal (opcional)
+            if (codigoPostal && !/^[0-9]+$/.test(codigoPostal)) {
+                showError('El código postal solo debe contener números.');
+                document.getElementById('codigoPostal').focus();
+                return false;
+            }
+
+            // Longitud típica de CP en MX (5 dígitos) si se captura
+            if (codigoPostal && codigoPostal.length !== 5) {
+                showError('El código postal debe tener 5 dígitos.');
+                document.getElementById('codigoPostal').focus();
+                return false;
+            }
+
             return true;
         }
 
         // Formatear datos para enviar
         function obtenerDatosRegistro() {
+            const telefonoRaw = document.getElementById('telefono').value;
+            const codigoPostalRaw = document.getElementById('codigoPostal').value;
+            const onlyDigits = (value) => String(value || '').replace(/\D+/g, '');
+
+            const telefonoDigits = onlyDigits(telefonoRaw);
+            const codigoPostalDigits = onlyDigits(codigoPostalRaw);
+
             return {
                 nombre: document.getElementById('nombre').value.trim(),
                 correo: document.getElementById('correo').value.trim(),
                 password: document.getElementById('password').value,
-                telefono: document.getElementById('telefono').value.trim() || null,
+                telefono: telefonoDigits || null,
                 empresa: document.getElementById('empresa').value.trim() || null,
                 direccion: document.getElementById('direccion').value.trim() || null,
                 ciudad: document.getElementById('ciudad').value.trim() || null,
                 estado: document.getElementById('estado').value.trim() || null,
-                codigo_postal: document.getElementById('codigoPostal').value.trim() || null,
+                codigo_postal: codigoPostalDigits || null,
                 genero: document.getElementById('genero').value || null,
                 fecha_nacimiento: document.getElementById('fechaNacimiento').value || null,
                 newsletter: document.getElementById('newsletter').checked
@@ -534,6 +564,21 @@
 
             // Asignar evento al formulario
             document.getElementById('registerForm').addEventListener('submit', handleRegister);
+
+            // Evitar letras en teléfono y código postal (limpieza en vivo)
+            const telefonoInput = document.getElementById('telefono');
+            const cpInput = document.getElementById('codigoPostal');
+
+            const sanitizeDigitsOnly = (inputEl) => {
+                if (!inputEl) return;
+                inputEl.addEventListener('input', function () {
+                    const cleaned = String(this.value || '').replace(/\D+/g, '');
+                    if (this.value !== cleaned) this.value = cleaned;
+                });
+            };
+
+            sanitizeDigitsOnly(telefonoInput);
+            sanitizeDigitsOnly(cpInput);
 
             // Permitir enviar con Enter
             const inputs = document.querySelectorAll('#registerForm input');

@@ -338,18 +338,18 @@
                 return null;
             }
 
+            const clienteId = getClienteIdFromStorage();
+            if (!clienteId) {
+                showMessage('error', 'No se pudo identificar al cliente (sesión inválida).');
+                return null;
+            }
+
             const facturacionData = {
                 rfc: v.value,
                 nombreFiscal,
                 updatedAt: new Date().toISOString(),
                 clienteId
             };
-
-            const clienteId = getClienteIdFromStorage();
-            if (!clienteId) {
-                showMessage('error', 'No se pudo identificar al cliente (sesión inválida).');
-                return null;
-            }
 
             try {
                 const resp = await fetch(`${API_BASE_URL}/api/clientes/${encodeURIComponent(clienteId)}/datos-fiscales`, {
