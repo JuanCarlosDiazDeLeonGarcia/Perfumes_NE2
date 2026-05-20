@@ -523,8 +523,248 @@
                 text-decoration: underline;
             }
 
-        /* Responsive */
+        /* ===== BANNER PROMOCIONAL ===== */
+        .promo-banner {
+            background: linear-gradient(135deg, #ff6b6b, #f15bb5, #9b5de5);
+            border-radius: 20px;
+            margin: 20px auto 0;
+            max-width: 1200px;
+            overflow: hidden;
+            position: relative;
+            animation: promoGlow 2s ease-in-out infinite;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes promoGlow {
+            0%, 100% {
+                box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 10px 40px rgba(241, 91, 181, 0.5);
+            }
+        }
+
+        .promo-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 25px 35px;
+            flex-wrap: wrap;
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+            .promo-container::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+                animation: promoShine 8s ease-in-out infinite;
+                z-index: 0;
+            }
+
+        @keyframes promoShine {
+            0%, 100% {
+                transform: translate(-20%, -20%) rotate(0deg);
+            }
+
+            50% {
+                transform: translate(20%, 20%) rotate(180deg);
+            }
+        }
+
+        .promo-content {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .promo-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+
+        .promo-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .promo-description {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .promo-code-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .promo-code {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 1.3rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffd700;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .copy-btn:hover {
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+            }
+
+            .copy-btn.copied {
+                background: #25D366;
+                border-color: #25D366;
+            }
+
+        .promo-timer {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 180px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .timer-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .timer-digits {
+            font-size: 1.5rem;
+            font-weight: bold;
+            font-family: monospace;
+            color: #ffd700;
+        }
+
+        .close-promo {
+            background: rgba(0, 0, 0, 0.3);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px 10px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+            .close-promo:hover {
+                background: rgba(255, 255, 255, 0.3);
+                transform: scale(1.1);
+            }
+
+        /* Tooltip para copiado */
+        .tooltip {
+            position: fixed;
+            background: #25D366;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            z-index: 10000;
+            animation: tooltipFade 2s ease;
+            pointer-events: none;
+        }
+
+        @keyframes tooltipFade {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            20% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            80% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Banner Responsive */
         @media (max-width: 768px) {
+            .promo-container {
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+            }
+
+            .promo-timer {
+                width: 100%;
+                max-width: 250px;
+            }
+
+            .promo-code-container {
+                justify-content: center;
+            }
+
+            .close-promo {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+
             .services-grid {
                 grid-template-columns: 1fr;
                 padding: 0 15px;
@@ -597,6 +837,34 @@
             <span class="pill">🔄 Servicio de recargas eco-friendly</span>
         </div>
     </section>
+
+    <!-- BANNER PROMOCIONAL - 20% DESCUENTO -->
+    <!-- BANNER PROMOCIONAL - 20% DESCUENTO (SIN BOTÓN DE CERRAR) -->
+    <div id="promoBanner" class="promo-banner" style="display: none;">
+        <div class="promo-container">
+            <div class="promo-content">
+                <div class="promo-badge">🎁 OFERTA ESPECIAL</div>
+                <h2 class="promo-title">¡20% de descuento!</h2>
+                <p class="promo-description">
+                    Aprovecha nuestro cupón exclusivo para tu próxima compra.<br>
+                    Mínimo de compra $100 pesos.
+                </p>
+                <div class="promo-code-container">
+                    <div class="promo-code" id="promoCode">PROMO20</div>
+                    <button class="copy-btn" id="copyPromoCode" onclick="copyPromoCode()">
+                        📋 Copiar código
+                    </button>
+                </div>
+                <p style="font-size: 0.85rem; margin-top: 12px; color: rgba(255,255,255,0.7);">
+                    ⚡ Válido hasta agotar existencias. No acumulable.
+                </p>
+            </div>
+            <div class="promo-timer">
+                <div class="timer-label">⏰ OFERTA VÁLIDA POR</div>
+                <div class="timer-digits" id="promoTimer">--:--:--</div>
+            </div>
+        </div>
+    </div>
 
     <!-- SERVICIOS -->
     <section id="servicios" class="services-grid">
@@ -795,10 +1063,10 @@
                     card.classList.add("product-card");
 
                     card.innerHTML = `
-                                <img src="${producto.imagen}" alt="${producto.nombre}" class="product-image">
-                                <h3>${producto.nombre}</h3>
-                                <p class="description">${producto.descripcion}</p>
-                            `;
+                                        <img src="${producto.imagen}" alt="${producto.nombre}" class="product-image">
+                                        <h3>${producto.nombre}</h3>
+                                        <p class="description">${producto.descripcion}</p>
+                                    `;
                     destacados.appendChild(card);
                 });
             })
@@ -923,30 +1191,30 @@
                 toast.textContent = message;
                 toast.id = 'cookieToast';
                 toast.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        background: linear-gradient(135deg, var(--accent), #1da851);
-                        color: white;
-                        padding: 12px 24px;
-                        border-radius: 10px;
-                        z-index: 10000;
-                        animation: fadeInOut 3s ease;
-                        font-weight: bold;
-                        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-                        border: 1px solid rgba(255,255,255,0.2);
-                    `;
+                                position: fixed;
+                                top: 20px;
+                                right: 20px;
+                                background: linear-gradient(135deg, var(--accent), #1da851);
+                                color: white;
+                                padding: 12px 24px;
+                                border-radius: 10px;
+                                z-index: 10000;
+                                animation: fadeInOut 3s ease;
+                                font-weight: bold;
+                                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                                border: 1px solid rgba(255,255,255,0.2);
+                            `;
 
                 // Agregar estilos de animación
                 const style = document.createElement('style');
                 style.textContent = `
-                        @keyframes fadeInOut {
-                            0% { opacity: 0; transform: translateY(-20px); }
-                            10% { opacity: 1; transform: translateY(0); }
-                            90% { opacity: 1; transform: translateY(0); }
-                            100% { opacity: 0; transform: translateY(-20px); }
-                        }
-                    `;
+                                @keyframes fadeInOut {
+                                    0% { opacity: 0; transform: translateY(-20px); }
+                                    10% { opacity: 1; transform: translateY(0); }
+                                    90% { opacity: 1; transform: translateY(0); }
+                                    100% { opacity: 0; transform: translateY(-20px); }
+                                }
+                            `;
                 document.head.appendChild(style);
 
                 document.body.appendChild(toast);
@@ -1000,6 +1268,142 @@
                     cookiesPopup.style.display = 'none';
                 }
             });
+        });
+
+        // ===== PROMO BANNER LOGIC =====
+        // ===== PROMO BANNER LOGIC (SIN CIERRE) =====
+        let countdownInterval;
+
+        // Configuración de la promoción
+        const PROMO_CONFIG = {
+            code: 'PROMO20',
+            discount: 20,
+            minPurchase: 100,
+            endDate: new Date(new Date().setDate(new Date().getDate() + 7)), // 7 días desde ahora
+        };
+
+        // Función para mostrar el banner (siempre visible)
+        function showPromoBanner() {
+            const banner = document.getElementById('promoBanner');
+            if (!banner) return;
+
+            // Siempre mostrar el banner, sin verificar cierres
+            banner.style.display = 'block';
+        }
+
+        // Función para copiar código promocional
+        function copyPromoCode() {
+            const codeElement = document.getElementById('promoCode');
+            const code = codeElement ? codeElement.textContent : PROMO_CONFIG.code;
+
+            navigator.clipboard.writeText(code).then(() => {
+                const copyBtn = document.getElementById('copyPromoCode');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '✅ ¡Copiado!';
+                copyBtn.classList.add('copied');
+
+                showTooltip('¡Código copiado! Usa PROMO20 al pagar');
+
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+
+                localStorage.setItem('promoCodeViewed', 'true');
+                localStorage.setItem('promoCodeLastView', new Date().toISOString());
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+                showTooltip('No se pudo copiar manualmente', 'error');
+            });
+        }
+
+        // Mostrar tooltip flotante
+        function showTooltip(message, type = 'success') {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.textContent = message;
+            if (type === 'error') {
+                tooltip.style.background = '#ff4757';
+            }
+            document.body.appendChild(tooltip);
+
+            const copyBtn = document.getElementById('copyPromoCode');
+            if (copyBtn) {
+                const rect = copyBtn.getBoundingClientRect();
+                tooltip.style.top = `${rect.top - 40 + window.scrollY}px`;
+                tooltip.style.left = `${rect.left + (rect.width / 2) - 50}px`;
+            }
+
+            setTimeout(() => {
+                if (tooltip.parentNode) {
+                    tooltip.parentNode.removeChild(tooltip);
+                }
+            }, 2000);
+        }
+
+        // Actualizar temporizador
+        function updatePromoTimer() {
+            const timerElement = document.getElementById('promoTimer');
+            if (!timerElement) return;
+
+            const now = new Date();
+            const timeLeft = PROMO_CONFIG.endDate - now;
+
+            if (timeLeft <= 0) {
+                timerElement.textContent = '¡EXPIRÓ!';
+                // Cambiar mensaje del banner cuando expira
+                const promoContent = document.querySelector('.promo-content');
+                if (promoContent) {
+                    promoContent.innerHTML = `
+                <div class="promo-badge">⏰ OFERTA FINALIZADA</div>
+                <h2 class="promo-title">¡Promoción terminada!</h2>
+                <p class="promo-description">
+                    Nuestro cupón PROMO20 ha expirado.<br>
+                    Síguenos en redes para futuras promociones.
+                </p>
+                <div class="promo-code-container">
+                    <a href="https://wa.me/524494389825?text=Hola,%20¿tendrán%20nuevas%20promociones?" 
+                       class="copy-btn" style="text-decoration: none;">
+                        📞 Preguntar por nuevas promos
+                    </a>
+                </div>
+            `;
+                    // Ocultar timer
+                    const promoTimeDiv = document.querySelector('.promo-timer');
+                    if (promoTimeDiv) promoTimeDiv.style.display = 'none';
+                }
+                if (countdownInterval) clearInterval(countdownInterval);
+                return;
+            }
+
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+            if (days > 0) {
+                timerElement.textContent = `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        // Iniciar temporizador
+        function startPromoTimer() {
+            updatePromoTimer();
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = setInterval(updatePromoTimer, 1000);
+        }
+
+        // Inicializar promociones (sin lógica de cierre)
+        function initPromotions() {
+            showPromoBanner();  // Siempre muestra el banner
+            startPromoTimer();
+        }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initPromotions, 500);
         });
     </script>
 </body>

@@ -593,7 +593,7 @@
         // Ver detalles de seguimiento de un pedido
         async function verDetalleSeguimiento(pedidoId) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/seguimiento-detalle/${pedidoId}`);
+                const response = await fetch(`${API_BASE_URL}/api/pedido-detalle/${pedidoId}`);
 
                 if (response.ok) {
                     const seguimiento = await response.json();
@@ -675,163 +675,184 @@
             else if (seguimiento.estado === 'procesando') estadoHTML = `<span class="estado-procesando">⚙️ ${seguimiento.estado}</span>`;
             else if (seguimiento.estado === 'cancelado') estadoHTML = `<span class="estado-cancelado">❌ ${seguimiento.estado}</span>`;
 
+            // Función auxiliar para formatear números de forma segura
+            function formatMoney(value) {
+                if (value === null || value === undefined) return '0.00';
+                const num = parseFloat(value);
+                return isNaN(num) ? '0.00' : num.toFixed(2);
+            }
+
+            // Función auxiliar para obtener fecha formateada
+            function formatDate(dateValue) {
+                if (!dateValue) return '-';
+                try {
+                    const date = new Date(dateValue);
+                    if (isNaN(date.getTime())) return '-';
+                    return date.toLocaleString();
+                } catch (e) {
+                    return '-';
+                }
+            }
+
             // Construir timeline
             let timelineHTML = '<div class="timeline">';
 
             // Estado 1: Pedido recibido (siempre presente)
-            const fechaPedido = new Date(seguimiento.fecha_pedido).toLocaleString();
+            const fechaPedido = formatDate(seguimiento.fecha_pedido);
             timelineHTML += `
-            <div class="timeline-item">
-              <div class="timeline-dot active"></div>
-              <div class="timeline-content">
+        <div class="timeline-item">
+            <div class="timeline-dot active"></div>
+            <div class="timeline-content">
                 <strong>Pedido recibido</strong>
                 <div class="timeline-date">${fechaPedido}</div>
                 <p>Tu pedido ha sido registrado en nuestro sistema.</p>
-              </div>
             </div>
-          `;
+        </div>
+    `;
 
             // Estado 2: Confirmación (si existe)
             if (seguimiento.fecha_confirmacion) {
-                const fechaConfirmacion = new Date(seguimiento.fecha_confirmacion).toLocaleString();
+                const fechaConfirmacion = formatDate(seguimiento.fecha_confirmacion);
                 timelineHTML += `
-              <div class="timeline-item">
+            <div class="timeline-item">
                 <div class="timeline-dot active"></div>
                 <div class="timeline-content">
-                  <strong>Pedido confirmado</strong>
-                  <div class="timeline-date">${fechaConfirmacion}</div>
-                  <p>Hemos confirmado tu pedido y está en preparación.</p>
+                    <strong>Pedido confirmado</strong>
+                    <div class="timeline-date">${fechaConfirmacion}</div>
+                    <p>Hemos confirmado tu pedido y está en preparación.</p>
                 </div>
-              </div>
-            `;
+            </div>
+        `;
             }
 
             // Estado 3: Envío (si existe)
             if (seguimiento.fecha_envio) {
-                const fechaEnvio = new Date(seguimiento.fecha_envio).toLocaleString();
+                const fechaEnvio = formatDate(seguimiento.fecha_envio);
                 timelineHTML += `
-              <div class="timeline-item">
+            <div class="timeline-item">
                 <div class="timeline-dot ${seguimiento.estado === 'enviado' ? 'active' : ''}"></div>
                 <div class="timeline-content">
-                  <strong>Pedido enviado</strong>
-                  <div class="timeline-date">${fechaEnvio}</div>
-                  <p>Tu pedido ha sido enviado. Guía: <strong>${seguimiento.numero_guia || 'Por asignar'}</strong></p>
-                  <p>Transportista: ${seguimiento.transportista || 'Por definir'}</p>
+                    <strong>Pedido enviado</strong>
+                    <div class="timeline-date">${fechaEnvio}</div>
+                    <p>Tu pedido ha sido enviado. Guía: <strong>${seguimiento.numero_guia || 'Por asignar'}</strong></p>
+                    <p>Transportista: ${seguimiento.transportista || 'Por definir'}</p>
                 </div>
-              </div>
-            `;
+            </div>
+        `;
             }
 
             // Estado 4: Entrega (si existe)
             if (seguimiento.fecha_entrega) {
-                const fechaEntrega = new Date(seguimiento.fecha_entrega).toLocaleString();
+                const fechaEntrega = formatDate(seguimiento.fecha_entrega);
                 timelineHTML += `
-              <div class="timeline-item">
+            <div class="timeline-item">
                 <div class="timeline-dot active"></div>
                 <div class="timeline-content">
-                  <strong>Pedido entregado</strong>
-                  <div class="timeline-date">${fechaEntrega}</div>
-                  <p>Tu pedido ha sido entregado exitosamente.</p>
+                    <strong>Pedido entregado</strong>
+                    <div class="timeline-date">${fechaEntrega}</div>
+                    <p>Tu pedido ha sido entregado exitosamente.</p>
                 </div>
-              </div>
-            `;
+            </div>
+        `;
             }
 
-            // Estado actual (si no es entregado)
+            // Estado actual (si no es entregado ni cancelado)
             if (seguimiento.estado !== 'entregado' && seguimiento.estado !== 'cancelado') {
                 timelineHTML += `
-              <div class="timeline-item">
+            <div class="timeline-item">
                 <div class="timeline-dot pending"></div>
                 <div class="timeline-content">
-                  <strong>${seguimiento.estado || 'Pendiente'}</strong>
-                  <div class="timeline-date">En progreso</div>
-                  <p>${obtenerMensajeEstado(seguimiento.estado)}</p>
+                    <strong>${seguimiento.estado || 'Pendiente'}</strong>
+                    <div class="timeline-date">En progreso</div>
+                    <p>${obtenerMensajeEstado(seguimiento.estado)}</p>
                 </div>
-              </div>
-            `;
+            </div>
+        `;
             }
 
             timelineHTML += '</div>';
 
-            // Construir HTML completo
+            // Construir HTML completo (con valores seguros)
             let detallesHTML = `
-            <div style="margin-bottom: 30px;">
-              <h3>Información del Pedido</h3>
-              <p><strong>Número de orden:</strong> ${seguimiento.numero_orden || `#${seguimiento.id}`}</p>
-              <p><strong>Estado actual:</strong> ${estadoHTML}</p>
-              <p><strong>Fecha del pedido:</strong> ${fechaPedido}</p>
-              <p><strong>Dirección de envío:</strong> ${seguimiento.direccion_envio || 'No especificada'}</p>
-              <p><strong>Método de pago:</strong> ${seguimiento.metodo_pago || 'No especificado'}</p>
-              ${seguimiento.numero_guia ? `<p><strong>Número de guía:</strong> ${seguimiento.numero_guia}</p>` : ''}
-              ${seguimiento.transportista ? `<p><strong>Transportista:</strong> ${seguimiento.transportista}</p>` : ''}
-            </div>
+        <div style="margin-bottom: 30px;">
+            <h3>Información del Pedido</h3>
+            <p><strong>Número de orden:</strong> ${seguimiento.numero_orden || `#${seguimiento.id}`}</p>
+            <p><strong>Estado actual:</strong> ${estadoHTML}</p>
+            <p><strong>Fecha del pedido:</strong> ${fechaPedido}</p>
+            <p><strong>Dirección de envío:</strong> ${seguimiento.direccion_envio || 'No especificada'}</p>
+            <p><strong>Método de pago:</strong> ${seguimiento.metodo_pago || 'No especificado'}</p>
+            ${seguimiento.numero_guia ? `<p><strong>Número de guía:</strong> ${seguimiento.numero_guia}</p>` : ''}
+            ${seguimiento.transportista ? `<p><strong>Transportista:</strong> ${seguimiento.transportista}</p>` : ''}
+        </div>
 
-            <div style="margin-bottom: 30px;">
-              <h3>📦 Productos</h3>
-              <table style="width:100%; margin-top:10px;">
+        <div style="margin-bottom: 30px;">
+            <h3>📦 Productos</h3>
+            <table style="width:100%; margin-top:10px;">
                 <thead>
-                  <tr>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Precio</th>
-                  </tr>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio</th>
+                    </tr>
                 </thead>
                 <tbody>
-          `;
+    `;
 
             // Agregar productos si existen
             if (seguimiento.productos_detalle && seguimiento.productos_detalle.length > 0) {
                 seguimiento.productos_detalle.forEach(producto => {
                     detallesHTML += `
                 <tr>
-                  <td>${producto.nombre}</td>
-                  <td>${producto.cantidad}</td>
-                  <td>$${producto.precio_unitario?.toFixed(2)}</td>
+                    <td>${escapeHtml(producto.nombre)}</td>
+                    <td>${producto.cantidad || 1}</td>
+                    <td>$${formatMoney(producto.precio_unitario)}</td>
                 </tr>
-              `;
+            `;
                 });
             } else if (seguimiento.productos) {
                 detallesHTML += `
-              <tr>
-                <td colspan="3">${seguimiento.productos}</td>
-              </tr>
-            `;
+            <tr>
+                <td colspan="3">${escapeHtml(seguimiento.productos)}</td>
+            </tr>
+        `;
             } else {
                 detallesHTML += `
-              <tr>
+            <tr>
                 <td colspan="3" style="text-align:center;">No hay detalles de productos disponibles</td>
-              </tr>
-            `;
+            </tr>
+        `;
             }
 
-            // Resumen
+            // Resumen con valores seguros
             detallesHTML += `
                 </tbody>
-              </table>
-            </div>
+            </table>
+        </div>
 
-            <div style="background:#f9f9f9; padding:15px; border-radius:6px; margin-bottom:30px;">
-              <h3>💰 Resumen del Pedido</h3>
-              <p><strong>Subtotal:</strong> $${seguimiento.subtotal?.toFixed(2) || '0.00'}</p>
-              <p><strong>Impuestos:</strong> $${seguimiento.impuestos?.toFixed(2) || '0.00'}</p>
-              <p><strong>Descuento:</strong> $${seguimiento.descuento?.toFixed(2) || '0.00'}</p>
-              <p><strong>Total:</strong> <span style="font-size:18px; font-weight:bold;">$${seguimiento.total?.toFixed(2) || '0.00'}</span></p>
-            </div>
+        <div style="background:#f9f9f9; padding:15px; border-radius:6px; margin-bottom:30px;">
+            <h3>💰 Resumen del Pedido</h3>
+            <p><strong>Subtotal:</strong> $${formatMoney(seguimiento.subtotal)}</p>
+            <p><strong>Impuestos:</strong> $${formatMoney(seguimiento.impuestos)}</p>
+            <p><strong>Descuento:</strong> $${formatMoney(seguimiento.descuento)}</p>
+            <p><strong>Total:</strong> <span style="font-size:18px; font-weight:bold;">$${formatMoney(seguimiento.total)}</span></p>
+        </div>
 
-            <div>
-              <h3>📋 Historial del Seguimiento</h3>
-              ${timelineHTML}
-            </div>
-
-            ${seguimiento.estado !== 'entregado' && seguimiento.estado !== 'cancelado' ? `
-              <div style="text-align:center; margin-top:30px;">
-                <button class="btn-agregar" onclick="actualizarSeguimiento(${seguimiento.id})">🔄 Actualizar Estado</button>
-              </div>
-            ` : ''}
-          `;
+        <div>
+            <h3>📋 Historial del Seguimiento</h3>
+            ${timelineHTML}
+        </div>
+    `;
 
             modalBody.innerHTML = detallesHTML;
             modal.style.display = 'block';
+        }
+
+        // Función auxiliar para escape HTML (si no existe)
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function obtenerMensajeEstado(estado) {

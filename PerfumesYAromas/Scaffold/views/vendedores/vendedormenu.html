@@ -1,4 +1,4 @@
-<!DOCTYPe html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -478,7 +478,7 @@
             <a href="vendedormenu.html" class="active">📊 Dashboard</a>
             <a href="vendedorproductos.html">📦 Productos</a>
             <a href="vendedorordenes.html">🚚 Ordenes</a>
-            <a href="vendedortickets.html" class="active">🎫 Tickets</a>
+            <a href="vendedortickets.html">🎫 Tickets</a>
             <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
         </nav>
     </aside>
@@ -523,7 +523,7 @@
 
         <!-- Pestañas -->
         <div class="tabs">
-            <div class="tab active" onclick="cambiarTab('clientes')">👥 Mis Clientes</div>
+            <div class="tab active" onclick="cambiarTab('clientes', event)">👥 Mis Clientes</div>
         </div>
 
         <!-- Contenido: Clientes -->
@@ -531,7 +531,6 @@
             <section class="tabla-admin">
                 <div class="titulo-tabla">
                     <h2>👥 Mis Clientes</h2>
-                    <button class="btn-agregar" onclick="nuevoCliente()">➕ Nuevo Cliente</button>
                 </div>
 
                 <!-- Buscador -->
@@ -547,10 +546,41 @@
                             <th>Última compra</th>
                             <th>Total compras</th>
                             <th>Estado</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="clientesTableBody">
-                        <tr><td colspan="7" style="text-align:center;">Cargando clientes...</td></tr>
+                        <tr><td colspan="8" style="text-align:center;">Cargando clientes...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+
+        <!-- Contenido: Mis Pedidos -->
+        <div id="tab-pedidos" class="tab-content">
+            <section class="tabla-admin">
+                <div class="titulo-tabla">
+                    <h2>📋 Mis Pedidos</h2>
+                    <button class="btn-agregar" onclick="abrirModalPedido()">➕ Nuevo Pedido</button>
+                </div>
+
+                <!-- Buscador de pedidos -->
+                <input type="text" class="buscador" id="buscadorPedidos" placeholder="🔍 Buscar pedido por ID, cliente o estado..." onkeyup="filtrarPedidos()">
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Pedido</th>
+                            <th>Cliente</th>
+                            <th>Productos</th>
+                            <th>Total</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pedidosTableBody">
+                        <tr><td colspan="7" style="text-align:center;">Cargando pedidos...</td></tr>
                     </tbody>
                 </table>
             </section>
@@ -688,14 +718,23 @@
     </main>
 
     <script>
-        // ==================== FUNCIONES PARA MODALES DE PEDIDOS ====================
+        // ==================== FUNCIÓN AUXILIAR PARA FORMATEAR NÚMEROS ====================
+        function formatMoney(value) {
+            if (value === null || value === undefined) return '0.00';
+            const num = parseFloat(value);
+            return isNaN(num) ? '0.00' : num.toFixed(2);
+        }
+
+        // URL base del servidor
+        const API_BASE_URL = 'http://localhost:3000';
 
         // Variables globales
         let productosCatalogo = [];
         let clientesLista = [];
         let pedidoActual = null;
 
-        // Función para mostrar toast
+        // ==================== FUNCIONES DE TOAST Y MENSAJES ====================
+
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -705,416 +744,6 @@
             }, 3000);
         }
 
-        // Cargar clientes para el select
-        async function cargarClientesSelect() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/clientes/activos`);
-                if (response.ok) {
-                    clientesLista = await response.json();
-                    const select = document.getElementById('pedidoClienteId');
-                    if (select) {
-                        select.innerHTML = '<option value="">Seleccionar cliente...</option>';
-                        clientesLista.forEach(cliente => {
-                            select.innerHTML += `<option value="${cliente.id}">${cliente.nombre} - ${cliente.correo}</option>`;
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('Error cargando clientes:', error);
-                showToast('Error al cargar clientes', 'error');
-            }
-        }
-
-        // Cargar productos del vendedor
-        async function cargarProductosVendedorSelect() {
-            try {
-                const userData = JSON.parse(localStorage.getItem('usuarioActual'));
-                const vendedorId = userData.id;
-
-                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/productos`);
-                if (response.ok) {
-                    productosCatalogo = await response.json();
-                    const select = document.getElementById('pedidoProductoId');
-                    if (select) {
-                        select.innerHTML = '<option value="">Seleccionar producto...</option>';
-                        productosCatalogo
-                            .filter(p => p.activo && p.stock > 0)
-                            .forEach(producto => {
-                                select.innerHTML += `<option value="${producto.id}" data-precio="${producto.precio}" data-stock="${producto.stock}">${producto.nombre} - $${producto.precio} (Stock: ${producto.stock})</option>`;
-                            });
-                    }
-                }
-            } catch (error) {
-                console.error('Error cargando productos:', error);
-                showToast('Error al cargar productos', 'error');
-            }
-        }
-
-        // Actualizar precio del producto seleccionado
-        function actualizarPrecioProducto() {
-            const select = document.getElementById('pedidoProductoId');
-            const option = select.options[select.selectedIndex];
-            const precio = option.dataset.precio;
-
-            if (precio) {
-                document.getElementById('pedidoPrecioUnitario').value = `$${parseFloat(precio).toFixed(2)}`;
-                calcularTotalPedido();
-            } else {
-                document.getElementById('pedidoPrecioUnitario').value = '';
-            }
-        }
-
-        // Calcular total del pedido
-        function calcularTotalPedido() {
-            const select = document.getElementById('pedidoProductoId');
-            const option = select.options[select.selectedIndex];
-            const precio = parseFloat(option.dataset.precio) || 0;
-            const cantidad = parseInt(document.getElementById('pedidoCantidad').value) || 1;
-
-            const subtotal = precio * cantidad;
-            const impuestos = subtotal * 0.16; // 16% IVA
-            const descuento = 0; // Por ahora sin descuento
-            const total = subtotal + impuestos - descuento;
-
-            document.getElementById('pedidoSubtotal').textContent = `$${subtotal.toFixed(2)}`;
-            document.getElementById('pedidoImpuestos').textContent = `$${impuestos.toFixed(2)}`;
-            document.getElementById('pedidoDescuento').textContent = `$${descuento.toFixed(2)}`;
-            document.getElementById('pedidoTotal').textContent = `$${total.toFixed(2)}`;
-
-            return total;
-        }
-
-        // Abrir modal para nuevo pedido
-        async function abrirModalPedido() {
-            document.getElementById('modalPedidoTitulo').textContent = '➕ Nuevo Pedido';
-            document.getElementById('formPedido').reset();
-            document.getElementById('pedidoId').value = '';
-            document.getElementById('infoAdicionalPedido').style.display = 'none';
-
-            await cargarClientesSelect();
-            await cargarProductosVendedorSelect();
-
-            // Configurar eventos
-            document.getElementById('pedidoCantidad').addEventListener('input', calcularTotalPedido);
-
-            document.getElementById('modalPedidoOverlay').classList.add('active');
-        }
-
-        // Abrir modal para editar pedido
-        async function abrirModalEditarPedido(pedidoId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/pedido/${pedidoId}/detalle`);
-                if (!response.ok) throw new Error('Error al cargar pedido');
-
-                const pedido = await response.json();
-                pedidoActual = pedido;
-
-                document.getElementById('modalPedidoTitulo').textContent = `✏️ Editar Pedido #${pedido.numero_orden || pedido.id}`;
-                document.getElementById('pedidoId').value = pedido.id;
-
-                // Cargar selects si no están cargados
-                if (clientesLista.length === 0) await cargarClientesSelect();
-                if (productosCatalogo.length === 0) await cargarProductosVendedorSelect();
-
-                // Llenar formulario
-                document.getElementById('pedidoClienteId').value = pedido.cliente_id || '';
-                document.getElementById('pedidoProductoId').value = pedido.producto_id || '';
-                document.getElementById('pedidoCantidad').value = pedido.cantidad || 1;
-                document.getElementById('pedidoMetodoPago').value = pedido.metodo_pago || 'efectivo';
-                document.getElementById('pedidoEstado').value = pedido.estado || 'pendiente';
-                document.getElementById('pedidoDireccion').value = pedido.direccion_envio || '';
-                document.getElementById('pedidoNotas').value = pedido.notas || '';
-
-                // Actualizar precio y calcular total
-                actualizarPrecioProducto();
-
-                // Mostrar información adicional
-                const infoCliente = document.getElementById('infoClientePedido');
-                infoCliente.innerHTML = `
-            <p><strong>Cliente:</strong> ${pedido.cliente_nombre || 'N/A'}</p>
-            <p><strong>Email:</strong> ${pedido.cliente_email || 'N/A'}</p>
-            <p><strong>Teléfono:</strong> ${pedido.cliente_telefono || 'N/A'}</p>
-            <p><strong>Fecha Pedido:</strong> ${new Date(pedido.fecha_pedido).toLocaleDateString()}</p>
-            ${pedido.fecha_envio ? `<p><strong>Fecha Envío:</strong> ${new Date(pedido.fecha_envio).toLocaleDateString()}</p>` : ''}
-            ${pedido.fecha_entrega ? `<p><strong>Fecha Entrega:</strong> ${new Date(pedido.fecha_entrega).toLocaleDateString()}</p>` : ''}
-        `;
-                document.getElementById('infoAdicionalPedido').style.display = 'block';
-
-                document.getElementById('modalPedidoOverlay').classList.add('active');
-
-            } catch (error) {
-                console.error('Error cargando pedido:', error);
-                showToast('Error al cargar datos del pedido', 'error');
-            }
-        }
-
-        // Cerrar modal de pedido
-        function cerrarModalPedido() {
-            document.getElementById('modalPedidoOverlay').classList.remove('active');
-            document.getElementById('formPedido').reset();
-            pedidoActual = null;
-        }
-
-        // Guardar pedido (nuevo o editado)
-        document.getElementById('formPedido').addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const pedidoId = document.getElementById('pedidoId').value;
-            const userData = JSON.parse(localStorage.getItem('usuarioActual'));
-            const vendedorId = userData.id;
-
-            // Obtener precio del producto seleccionado
-            const selectProducto = document.getElementById('pedidoProductoId');
-            const option = selectProducto.options[selectProducto.selectedIndex];
-            const precio = parseFloat(option.dataset.precio) || 0;
-            const cantidad = parseInt(document.getElementById('pedidoCantidad').value) || 1;
-
-            const subtotal = precio * cantidad;
-            const impuestos = subtotal * 0.16;
-            const total = subtotal + impuestos;
-
-            const datosPedido = {
-                cliente_id: parseInt(document.getElementById('pedidoClienteId').value),
-                producto_id: parseInt(document.getElementById('pedidoProductoId').value),
-                cantidad: cantidad,
-                subtotal: subtotal,
-                impuestos: impuestos,
-                total: total,
-                metodo_pago: document.getElementById('pedidoMetodoPago').value,
-                direccion_envio: document.getElementById('pedidoDireccion').value,
-                notas: document.getElementById('pedidoNotas').value
-            };
-
-            // Si es edición, agregar estado
-            if (pedidoId) {
-                datosPedido.estado = document.getElementById('pedidoEstado').value;
-            }
-
-            try {
-                let response;
-                let url;
-
-                if (pedidoId) {
-                    // Actualizar pedido existente
-                    url = `${API_BASE_URL}/api/pedidos/${pedidoId}`;
-                    response = await fetch(url, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(datosPedido)
-                    });
-                } else {
-                    // Crear nuevo pedido
-                    url = `${API_BASE_URL}/api/vendedor/${vendedorId}/pedidos`;
-                    response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(datosPedido)
-                    });
-                }
-
-                if (response.ok) {
-                    showToast(pedidoId ? '✅ Pedido actualizado' : '✅ Pedido creado exitosamente');
-                    cerrarModalPedido();
-                    cargarPedidosVendedor(vendedorId);
-                } else {
-                    const error = await response.json();
-                    showToast(error.message || 'Error al guardar pedido', 'error');
-                }
-            } catch (error) {
-                console.error('Error guardando pedido:', error);
-                showToast('Error de conexión', 'error');
-            }
-        });
-
-        // Función para ver detalle de pedido
-        async function verPedido(pedidoId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/pedido/${pedidoId}/detalle`);
-                if (!response.ok) throw new Error('Error al cargar pedido');
-
-                const pedido = await response.json();
-
-                const contenido = document.getElementById('detallePedidoContenido');
-                contenido.innerHTML = `
-            <div class="info-cliente">
-                <h3>👤 Información del Cliente</h3>
-                <p><strong>Nombre:</strong> ${pedido.cliente_nombre || 'N/A'}</p>
-                <p><strong>Email:</strong> ${pedido.cliente_email || 'N/A'}</p>
-                <p><strong>Teléfono:</strong> ${pedido.cliente_telefono || 'N/A'}</p>
-            </div>
-            
-            <div class="resumen-pedido">
-                <h3>📦 Detalles del Pedido #${pedido.numero_orden || pedido.id}</h3>
-                <p><strong>Producto:</strong> ${pedido.producto_nombre || 'N/A'}</p>
-                <p><strong>Cantidad:</strong> ${pedido.cantidad || 1}</p>
-                <p><strong>Precio Unitario:</strong> $${((pedido.total || 0) / (pedido.cantidad || 1)).toFixed(2)}</p>
-                <p><strong>Subtotal:</strong> $${(pedido.subtotal || 0).toFixed(2)}</p>
-                <p><strong>IVA (16%):</strong> $${(pedido.impuestos || 0).toFixed(2)}</p>
-                <p class="total-text"><strong>Total:</strong> $${(pedido.total || 0).toFixed(2)}</p>
-            </div>
-            
-            <div style="margin:15px 0;">
-                <p><strong>📅 Fecha Pedido:</strong> ${new Date(pedido.fecha_pedido).toLocaleString()}</p>
-                <p><strong>🚚 Estado:</strong> <span class="${getEstadoClass(pedido.estado)}">${getEstadoIcon(pedido.estado)} ${pedido.estado || 'Pendiente'}</span></p>
-                <p><strong>💳 Método de Pago:</strong> ${pedido.metodo_pago || 'No especificado'}</p>
-            </div>
-            
-            ${pedido.direccion_envio ? `
-            <div style="margin:15px 0; padding:15px; background:#f5f5f5; border-radius:8px;">
-                <p><strong>📍 Dirección de Envío:</strong></p>
-                <p>${pedido.direccion_envio}</p>
-            </div>
-            ` : ''}
-            
-            ${pedido.notas ? `
-            <div style="margin:15px 0;">
-                <p><strong>📝 Notas:</strong></p>
-                <p>${pedido.notas}</p>
-            </div>
-            ` : ''}
-            
-            ${pedido.fecha_envio ? `
-            <p><small>📤 Enviado: ${new Date(pedido.fecha_envio).toLocaleString()}</small></p>
-            ` : ''}
-            ${pedido.fecha_entrega ? `
-            <p><small>✅ Entregado: ${new Date(pedido.fecha_entrega).toLocaleString()}</small></p>
-            ` : ''}
-        `;
-
-                // Guardar ID para editar desde detalle
-                document.getElementById('modalVerPedidoOverlay').dataset.pedidoId = pedidoId;
-                document.getElementById('modalVerPedidoOverlay').classList.add('active');
-
-            } catch (error) {
-                console.error('Error cargando detalle:', error);
-                showToast('Error al cargar detalle del pedido', 'error');
-            }
-        }
-
-        // Cerrar modal de ver pedido
-        function cerrarModalVerPedido() {
-            document.getElementById('modalVerPedidoOverlay').classList.remove('active');
-        }
-
-        // Editar desde el modal de detalle
-        function editarDesdeDetalle() {
-            const pedidoId = document.getElementById('modalVerPedidoOverlay').dataset.pedidoId;
-            cerrarModalVerPedido();
-            abrirModalEditarPedido(pedidoId);
-        }
-
-        // Función para obtener clase de estado
-        function getEstadoClass(estado) {
-            const clases = {
-                'pendiente': 'estado-pendiente',
-                'confirmado': 'estado-confirmado',
-                'procesando': 'estado-procesando',
-                'enviado': 'estado-enviado',
-                'entregado': 'estado-entregado',
-                'cancelado': 'estado-cancelado'
-            };
-            return clases[estado?.toLowerCase()] || 'estado-pendiente';
-        }
-
-        // Función para confirmar eliminación
-        function confirmarEliminarPedido(pedidoId, numeroOrden) {
-            if (confirm(`¿Estás seguro de eliminar el pedido #${numeroOrden}?\n\nEsta acción no se puede deshacer.`)) {
-                eliminarPedido(pedidoId);
-            }
-        }
-
-        // Función para eliminar pedido
-        async function eliminarPedido(pedidoId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    showToast('✅ Pedido eliminado correctamente');
-                    const userData = JSON.parse(localStorage.getItem('usuarioActual'));
-                    cargarPedidosVendedor(userData.id);
-                } else {
-                    const error = await response.json();
-                    showToast(error.message || 'Error al eliminar pedido', 'error');
-                }
-            } catch (error) {
-                console.error('Error eliminando pedido:', error);
-                showToast('Error de conexión', 'error');
-            }
-        }
-
-        // Actualizar tabla de pedidos (versión corregida)
-        function actualizarTablaPedidos(pedidos) {
-            const tbody = document.getElementById('pedidosTableBody');
-            tbody.innerHTML = '';
-
-            if (!pedidos || pedidos.length === 0) {
-                mostrarSinPedidos();
-                return;
-            }
-
-            pedidos.forEach(pedido => {
-                const estadoClass = `estado-${pedido.estado}`;
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-            <td><strong>#${pedido.numero_orden || pedido.id}</strong></td>
-            <td>${pedido.cliente_nombre || '—'}</td>
-            <td>${pedido.productos || ('Pedido #' + (pedido.numero_orden || pedido.id))}</td>
-            <td>$${parseFloat(pedido.total || 0).toFixed(2)}</td>
-            <td>${pedido.fecha_pedido ? new Date(pedido.fecha_pedido).toLocaleDateString() : ''}</td>
-            <td class="${estadoClass}">${getEstadoIcon(pedido.estado || '')} ${pedido.estado || ''}</td>
-            <td>
-                <button class="btn-accion" onclick="verPedido(${pedido.id})" title="Ver detalles">👁️</button>
-                <button class="btn-accion editar" onclick="abrirModalEditarPedido(${pedido.id})" title="Editar pedido">✏️</button>
-                <button class="btn-accion eliminar" onclick="confirmarEliminarPedido(${pedido.id}, '${(pedido.numero_orden || pedido.id)}')" title="Eliminar pedido">🗑️</button>
-            </td>
-        `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Actualizar función cargarPedidosVendedor para usar el endpoint correcto
-        async function cargarPedidosVendedor(vendedorId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/pedidos`);
-
-                if (response.ok) {
-                    const pedidos = await response.json();
-                    actualizarTablaPedidos(pedidos);
-
-                    // Calcular métricas del mes
-                    const ventasMes = calcularVentasMes(pedidos);
-                    const pendientes = pedidos.filter(p =>
-                        p.estado === 'pendiente' || p.estado === 'procesando' || p.estado === 'confirmado'
-                    ).length;
-
-                    document.getElementById('ventasMes').textContent = `$${ventasMes.toFixed(2)}`;
-                    document.getElementById('pedidosPendientes').textContent = pendientes;
-                } else {
-                    console.error('Error al cargar pedidos');
-                    mostrarSinPedidos();
-                }
-            } catch (error) {
-                console.error('Error cargando pedidos:', error);
-                mostrarSinPedidos();
-            }
-        }
-
-        // Cerrar modales al hacer clic fuera
-        document.getElementById('modalPedidoOverlay').addEventListener('click', function (e) {
-            if (e.target === this) cerrarModalPedido();
-        });
-
-        document.getElementById('modalVerPedidoOverlay').addEventListener('click', function (e) {
-            if (e.target === this) cerrarModalVerPedido();
-        });
-
-        // URL base del servidor
-        const API_BASE_URL = 'http://localhost:3000';
-
-        // Mostrar mensajes
         function showMessage(type, text) {
             const successDiv = document.getElementById('successMessage');
             const errorDiv = document.getElementById('errorMessage');
@@ -1135,55 +764,97 @@
             }, 5000);
         }
 
-        // Cambiar entre pestañas
-        function cambiarTab(tabName) {
+        // ==================== CAMBIO DE PESTAÑAS ====================
+
+        function cambiarTab(tabName, event) {
             // Actualizar clases de las pestañas
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
+            if (event && event.target) event.target.classList.add('active');
 
             // Mostrar contenido correspondiente
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
         }
 
-        // Cargar todos los datos del vendedor
-        async function cargarDatosVendedor() {
-            try {
-                const userData = localStorage.getItem('usuarioActual');
-                if (!userData) {
-                    showMessage('error', 'No hay sesión activa. Redirigiendo al login...');
-                    setTimeout(() => window.location.href = '../adminlogin.html', 2000);
-                    return;
-                }
+        // ==================== FUNCIONES DE MONTOS SEGUROS ====================
 
-                const vendedor = JSON.parse(userData);
-                const vendedorId = vendedor.id;
+        function actualizarPrecioProducto() {
+            const select = document.getElementById('pedidoProductoId');
+            const option = select.options[select.selectedIndex];
+            const precio = option.dataset.precio;
 
-                // Actualizar información del vendedor
-                document.getElementById('vendedorNombre').textContent = vendedor.nombre || 'Vendedor';
-                document.getElementById('vendedorEmail').textContent = vendedor.email || vendedor.correo || 'No especificado';
-                document.getElementById('vendedorTelefono').textContent = vendedor.telefono || 'No especificado';
-                document.getElementById('vendedorZona').textContent = vendedor.zona_asignada || 'Centro';
-
-                // Cargar estadísticas
-                await cargarEstadisticasVendedor(vendedorId);
-
-                // Cargar clientes que han comprado
-                await cargarClientesVendedor(vendedorId);
-
-                // Cargar pedidos
-                await cargarPedidosVendedor(vendedorId);
-
-                // Cargar seguimiento activo
-                await cargarSeguimientoActivo(vendedorId);
-
-            } catch (error) {
-                console.error('Error cargando datos:', error);
-                showMessage('error', 'Error al cargar los datos del vendedor');
+            if (precio) {
+                document.getElementById('pedidoPrecioUnitario').value = `$${parseFloat(precio).toFixed(2)}`;
+                calcularTotalPedido();
+            } else {
+                document.getElementById('pedidoPrecioUnitario').value = '';
             }
         }
 
-        // Cargar estadísticas del vendedor
+        function calcularTotalPedido() {
+            const select = document.getElementById('pedidoProductoId');
+            const option = select.options[select.selectedIndex];
+            const precio = parseFloat(option.dataset.precio) || 0;
+            const cantidad = parseInt(document.getElementById('pedidoCantidad').value) || 1;
+
+            const subtotal = precio * cantidad;
+            const impuestos = subtotal * 0.16;
+            const descuento = 0;
+            const total = subtotal + impuestos - descuento;
+
+            document.getElementById('pedidoSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('pedidoImpuestos').textContent = `$${impuestos.toFixed(2)}`;
+            document.getElementById('pedidoDescuento').textContent = `$${descuento.toFixed(2)}`;
+            document.getElementById('pedidoTotal').textContent = `$${total.toFixed(2)}`;
+
+            return total;
+        }
+
+        // ==================== FUNCIONES DE CARGA DE DATOS ====================
+
+        async function cargarClientesSelect() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/clientes/activos`);
+                if (response.ok) {
+                    clientesLista = await response.json();
+                    const select = document.getElementById('pedidoClienteId');
+                    if (select) {
+                        select.innerHTML = '<option value="">Seleccionar cliente...</option>';
+                        clientesLista.forEach(cliente => {
+                            select.innerHTML += `<option value="${cliente.id}">${cliente.nombre} - ${cliente.correo}</option>`;
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando clientes:', error);
+                showToast('Error al cargar clientes', 'error');
+            }
+        }
+
+        async function cargarProductosVendedorSelect() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('usuarioActual'));
+                const vendedorId = userData.id;
+
+                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/productos`);
+                if (response.ok) {
+                    productosCatalogo = await response.json();
+                    const select = document.getElementById('pedidoProductoId');
+                    if (select) {
+                        select.innerHTML = '<option value="">Seleccionar producto...</option>';
+                        productosCatalogo
+                            .filter(p => p.activo && p.stock > 0)
+                            .forEach(producto => {
+                                select.innerHTML += `<option value="${producto.id}" data-precio="${producto.precio}" data-stock="${producto.stock}">${producto.nombre} - $${formatMoney(producto.precio)} (Stock: ${producto.stock})</option>`;
+                            });
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando productos:', error);
+                showToast('Error al cargar productos', 'error');
+            }
+        }
+
         async function cargarEstadisticasVendedor(vendedorId) {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/estadisticas`);
@@ -1192,14 +863,11 @@
                     const stats = await response.json();
 
                     document.getElementById('totalClientes').textContent = stats.total_clientes || 0;
-                    document.getElementById('ventasMes').textContent = `$${(stats.ventas_totales || 0).toFixed(2)}`;
+                    document.getElementById('ventasMes').textContent = `$${formatMoney(stats.ventas_totales)}`;
                     document.getElementById('pedidosPendientes').textContent = stats.pedidos_pendientes || 0;
 
-                    // Calcular comisiones (asumiendo 10% de comisión)
                     const comisiones = (stats.ventas_totales || 0) * 0.10;
-                    document.getElementById('comisionesMes').textContent = `$${comisiones.toFixed(2)}`;
-
-                    // Meta mensual (ejemplo)
+                    document.getElementById('comisionesMes').textContent = `$${formatMoney(comisiones)}`;
                     document.getElementById('metaMes').textContent = '$60,000';
                 }
             } catch (error) {
@@ -1207,9 +875,6 @@
             }
         }
 
-        // ==================== FUNCIONES MEJORADAS PARA EL DASHBOARD ====================
-
-        // Cargar clientes que han comprado con este vendedor
         async function cargarClientesVendedor(vendedorId) {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/clientes`);
@@ -1217,13 +882,10 @@
                 if (response.ok) {
                     const clientes = await response.json();
                     actualizarTablaClientes(clientes);
-
-                    // Actualizar contador de clientes en tarjetas
                     document.getElementById('totalClientes').textContent = clientes.length;
                     const activos = clientes.filter(c => c.estado_cliente === 'activo').length;
                     document.getElementById('clientesActivos').textContent = activos;
                 } else {
-                    console.error('Error al cargar clientes');
                     mostrarSinClientes();
                 }
             } catch (error) {
@@ -1232,7 +894,6 @@
             }
         }
 
-        // Cargar pedidos del vendedor (versión corregida sin detalle_pedidos)
         async function cargarPedidosVendedor(vendedorId) {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/pedidos`);
@@ -1241,16 +902,14 @@
                     const pedidos = await response.json();
                     actualizarTablaPedidos(pedidos);
 
-                    // Calcular métricas del mes
                     const ventasMes = calcularVentasMes(pedidos);
                     const pendientes = pedidos.filter(p =>
-                        p.estado === 'pendiente' || p.estado === 'procesando'
+                        p.estado === 'pendiente' || p.estado === 'procesando' || p.estado === 'confirmado'
                     ).length;
 
-                    document.getElementById('ventasMes').textContent = `$${ventasMes.toFixed(2)}`;
+                    document.getElementById('ventasMes').textContent = `$${formatMoney(ventasMes)}`;
                     document.getElementById('pedidosPendientes').textContent = pendientes;
                 } else {
-                    console.error('Error al cargar pedidos');
                     mostrarSinPedidos();
                 }
             } catch (error) {
@@ -1259,19 +918,14 @@
             }
         }
 
-
-
-        // Cargar seguimiento activo (versión corregida)
         async function cargarSeguimientoActivo(vendedorId) {
             try {
-                // Usar endpoint que no depende de la tabla seguimiento_pedidos
-                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/seguimiento-activo-simple`);
+                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/seguimiento-activo`);
 
                 if (response.ok) {
                     const seguimiento = await response.json();
                     actualizarTablaSeguimiento(seguimiento);
                 } else {
-                    console.error('Error al cargar seguimiento');
                     mostrarSinSeguimiento();
                 }
             } catch (error) {
@@ -1280,7 +934,119 @@
             }
         }
 
-        // Función auxiliar para calcular ventas del mes
+        // ==================== ACTUALIZACIÓN DE TABLAS ====================
+
+        function actualizarTablaClientes(clientes) {
+            const tbody = document.getElementById('clientesTableBody');
+            if (!tbody) return;
+
+            if (!clientes || clientes.length === 0) {
+                mostrarSinClientes();
+                return;
+            }
+
+            tbody.innerHTML = '';
+            clientes.forEach(cliente => {
+                const ultimaCompra = cliente.ultima_compra ?
+                    new Date(cliente.ultima_compra).toLocaleDateString() :
+                    'Sin compras';
+
+                const totalCompras = cliente.total_compras || 0;
+                const totalGastado = parseFloat(cliente.total_gastado || 0);
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                        <td><strong>${escapeHtml(cliente.nombre)}</strong></td>
+                        <td>${escapeHtml(cliente.correo)}</td>
+                        <td>${cliente.telefono || '—'}</td>
+                        <td>${cliente.ciudad || '—'}</td>
+                        <td>${ultimaCompra}</td>
+                        <td>${totalCompras} / $${formatMoney(totalGastado)}</td>
+                        <td>${cliente.estado_cliente || '—'}</td>
+                        <td>
+                            <button class="btn-accion" onclick="verCliente(${cliente.id})" title="Ver detalles">👁️</button>
+                            <button class="btn-accion" onclick="contactarCliente('${escapeHtml(cliente.correo)}')" title="Contactar">📞</button>
+                            <button class="btn-accion verde" onclick="nuevoPedidoParaCliente(${cliente.id})" title="Nuevo pedido">➕</button>
+                        </td>
+                    `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function actualizarTablaPedidos(pedidos) {
+            const tbody = document.getElementById('pedidosTableBody');
+            if (!tbody) return;
+
+            if (!pedidos || pedidos.length === 0) {
+                mostrarSinPedidos();
+                return;
+            }
+
+            tbody.innerHTML = '';
+            pedidos.forEach(pedido => {
+                const estadoClass = `estado-${pedido.estado}`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                        <td><strong>#${pedido.numero_orden || pedido.id}</strong></td>
+                        <td>${pedido.cliente_nombre || '—'}</td>
+                        <td>${pedido.productos || ('Pedido #' + (pedido.numero_orden || pedido.id))}</td>
+                        <td>$${formatMoney(pedido.total)}</td>
+                        <td>${pedido.fecha_pedido ? new Date(pedido.fecha_pedido).toLocaleDateString() : ''}</td>
+                        <td class="${estadoClass}">${getEstadoIcon(pedido.estado || '')} ${pedido.estado || ''}</td>
+                        <td>
+                            <button class="btn-accion" onclick="verPedidoDetalle(${pedido.id})" title="Ver detalles">👁️</button>
+                            <button class="btn-accion" onclick="abrirModalEditarPedido(${pedido.id})" title="Editar pedido">✏️</button>
+                            <button class="btn-accion rojo" onclick="confirmarEliminarPedido(${pedido.id}, '${pedido.numero_orden || pedido.id}')" title="Eliminar pedido">🗑️</button>
+                        </td>
+                    `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function actualizarTablaSeguimiento(seguimiento) {
+            const tbody = document.getElementById('seguimientoTableBody');
+            if (!tbody) return;
+
+            if (!seguimiento || seguimiento.length === 0) {
+                mostrarSinSeguimiento();
+                return;
+            }
+
+            tbody.innerHTML = '';
+            seguimiento.forEach(item => {
+                const fechaEstimada = item.fecha_estimada_entrega ?
+                    new Date(item.fecha_estimada_entrega).toLocaleDateString() :
+                    'Por definir';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                        <td><strong>#${item.pedido_numero || item.id}</strong></td>
+                        <td>${item.cliente_nombre || '—'}</td>
+                        <td>${item.productos || 'Pedido #' + (item.pedido_numero || item.id)}</td>
+                        <td>
+                            <select id="estado-${item.id}" style="padding:8px; border-radius:6px; border:1px solid #ddd; background:white;">
+                                <option value="pendiente" ${item.estado === 'pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
+                                <option value="confirmado" ${item.estado === 'confirmado' ? 'selected' : ''}>📋 Confirmado</option>
+                                <option value="procesando" ${item.estado === 'procesando' ? 'selected' : ''}>⚙️ Procesando</option>
+                                <option value="enviado" ${item.estado === 'enviado' ? 'selected' : ''}>🚚 Enviado</option>
+                                <option value="entregado" ${item.estado === 'entregado' ? 'selected' : ''}>✅ Entregado</option>
+                                <option value="cancelado" ${item.estado === 'cancelado' ? 'selected' : ''}>❌ Cancelado</option>
+                            </select>
+                        </td>
+                        <td><input type="text" id="ubicacion-${item.id}" value="${item.ubicacion_actual || ''}" placeholder="Ubicación actual" style="padding:5px; border:1px solid #ddd; border-radius:4px; width:100%;"></td>
+                        <td><input type="date" id="fecha-${item.id}" value="${item.fecha_entrega_estimada || ''}" style="padding:5px; border:1px solid #ddd; border-radius:4px;"></td>
+                        <td>
+                            <button class="btn-accion verde" onclick="actualizarUbicacion(${item.id})" title="Guardar cambios">💾 Guardar</button>
+                            <button class="btn-accion" onclick="marcarEntregado(${item.id})" title="Marcar como entregado">✅</button>
+                         </td>
+                    `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ==================== FUNCIONES DE UTILIDAD ====================
+
         function calcularVentasMes(pedidos) {
             const fechaActual = new Date();
             const mesActual = fechaActual.getMonth();
@@ -1296,284 +1062,6 @@
                 .reduce((total, p) => total + parseFloat(p.total || 0), 0);
         }
 
-        // Mostrar mensaje cuando no hay clientes
-        function mostrarSinClientes() {
-            const tbody = document.getElementById('clientesTableBody');
-            tbody.innerHTML = `
-        <tr>
-            <td colspan="8" style="text-align:center; padding:30px;">
-                <p style="color:#666; font-size:16px;">No tienes clientes aún</p>
-                <button class="btn-agregar" onclick="nuevoCliente()" style="margin-top:10px;">
-                    ➕ Agregar primer cliente
-                </button>
-            </td>
-        </tr>
-    `;
-        }
-
-        // Mostrar mensaje cuando no hay pedidos
-        function mostrarSinPedidos() {
-            const tbody = document.getElementById('pedidosTableBody');
-            tbody.innerHTML = `
-        <tr>
-            <td colspan="7" style="text-align:center; padding:30px;">
-                <p style="color:#666; font-size:16px;">No hay pedidos registrados</p>
-            </td>
-        </tr>
-    `;
-        }
-
-        // Mostrar mensaje cuando no hay seguimiento activo
-        function mostrarSinSeguimiento() {
-            const tbody = document.getElementById('seguimientoTableBody');
-            tbody.innerHTML = `
-        <tr>
-            <td colspan="7" style="text-align:center; padding:30px;">
-                <p style="color:#666; font-size:16px;">✅ No hay envíos pendientes</p>
-                <p style="color:#999; font-size:14px;">Todos tus pedidos han sido entregados</p>
-            </td>
-        </tr>
-    `;
-        }
-
-        // Actualizar tabla de clientes (versión mejorada)
-        function actualizarTablaClientes(clientes) {
-            const tbody = document.getElementById('clientesTableBody');
-            tbody.innerHTML = '';
-
-            if (!clientes || clientes.length === 0) {
-                mostrarSinClientes();
-                return;
-            }
-
-            clientes.forEach(cliente => {
-                const ultimaCompra = cliente.ultima_compra ?
-                    new Date(cliente.ultima_compra).toLocaleDateString() :
-                    'Sin compras';
-
-                const totalCompras = cliente.total_compras || 0;
-                const totalGastado = parseFloat(cliente.total_gastado || 0);
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-            <td><strong>${cliente.nombre}</strong></td>
-            <td>${cliente.correo}</td>
-            <td>${cliente.telefono || '—'}</td>
-            <td>${cliente.ciudad || '—'}</td>
-            <td>${ultimaCompra}</td>
-            <td>${totalCompras} / $${totalGastado.toFixed(2)}</td>
-            <td>${cliente.estado_cliente || '—'}</td>
-            <td>
-                <button class="btn-accion" onclick="verCliente(${cliente.id})" title="Ver detalles">
-                    👁️
-                </button>
-                <button class="btn-accion" onclick="contactarCliente('${cliente.correo}')" title="Contactar">
-                    📞
-                </button>
-                <button class="btn-accion verde" onclick="nuevoPedido(${cliente.id})" title="Nuevo pedido">
-                    ➕
-                </button>
-            </td>
-        `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Actualizar tabla de pedidos (versión corregida)
-        function actualizarTablaPedidos(pedidos) {
-            const tbody = document.getElementById('pedidosTableBody');
-            tbody.innerHTML = '';
-
-            if (!pedidos || pedidos.length === 0) {
-                mostrarSinPedidos();
-                return;
-            }
-
-            pedidos.forEach(pedido => {
-                const estadoClass = `estado-${pedido.estado}`;
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-            <td><strong>#${pedido.numero_orden || pedido.id}</strong></td>
-            <td>${pedido.cliente_nombre || '—'}</td>
-            <td>${pedido.productos || ('Pedido #' + (pedido.numero_orden || pedido.id))}</td>
-            <td>$${parseFloat(pedido.total || 0).toFixed(2)}</td>
-            <td>${pedido.fecha_pedido ? new Date(pedido.fecha_pedido).toLocaleDateString() : ''}</td>
-            <td class="${estadoClass}">${getEstadoIcon(pedido.estado || '')} ${pedido.estado || ''}</td>
-            <td>
-                <button class="btn-accion editar" onclick="abrirModalEditarPedido(${pedido.id})" title="Editar pedido">✏️</button>
-                <button class="btn-accion eliminar" onclick="confirmarEliminarPedido(${pedido.id}, '${(pedido.numero_orden||pedido.id)}')" title="Eliminar pedido">🗑️</button>
-            </td>
-        `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Actualizar tabla de seguimiento (solo pedidos no completados)
-        function actualizarTablaSeguimiento(seguimiento) {
-            const tbody = document.getElementById('seguimientoTableBody');
-            tbody.innerHTML = '';
-
-            if (!seguimiento || seguimiento.length === 0) {
-                mostrarSinSeguimiento();
-                return;
-            }
-
-            seguimiento.forEach(item => {
-                const fechaEstimada = item.seguimiento_fecha_entrega_estimada ?
-                    new Date(item.seguimiento_fecha_entrega_estimada).toLocaleDateString() :
-                    'Por definir';
-
-                const estadoVal = item.seguimiento_estado || '';
-                const estadoTexto = estadoVal.replace('_', ' ');
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-            <td><strong>#${item.pedido_numero || item.pedido_id}</strong></td>
-            <td>${item.cliente_nombre}</td>
-            <td>${item.productos || 'Pedido #' + (item.pedido_numero || item.pedido_id)}</td>
-            <td>
-                <select id="estado-${item.pedido_id}" style="padding:8px; border-radius:6px; border:1px solid #ddd; background:white;">
-                    <option value="en_proceso" ${estadoVal === 'en_proceso' ? 'selected' : ''}>En proceso</option>
-                    <option value="en_transito" ${estadoVal === 'en_transito' ? 'selected' : ''}>En tránsito</option>
-                    <option value="en_reparto" ${estadoVal === 'en_reparto' ? 'selected' : ''}>En reparto</option>
-                    <option value="entregado" ${estadoVal === 'entregado' ? 'selected' : ''}>Entregado</option>
-                    <option value="cancelado" ${estadoVal === 'cancelado' ? 'selected' : ''}>Cancelado</option>
-                </select>
-            </td>
-            <td>
-                <input type="text" id="ubicacion-${item.pedido_id}" 
-                       value="${item.seguimiento_ubicacion || ''}" 
-                       placeholder="Ubicación actual"
-                       style="padding:5px; border:1px solid #ddd; border-radius:4px; width:100%;">
-            </td>
-            <td>
-                <input type="date" id="fecha-${item.pedido_id}" 
-                       value="${item.seguimiento_fecha_entrega_estimada || ''}"
-                       style="padding:5px; border:1px solid #ddd; border-radius:4px;">
-            </td>
-            <td>
-                <button class="btn-accion verde" onclick="actualizarUbicacion(${item.pedido_id})" title="Guardar cambios">
-                    💾 Guardar
-                </button>
-                <button class="btn-accion" onclick="marcarEntregado(${item.pedido_id})" title="Marcar como entregado">
-                    ✅
-                </button>
-            </td>
-        `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Función para marcar pedido como entregado
-        async function marcarEntregado(seguimientoId) {
-            if (!confirm('¿Confirmas que este pedido ha sido entregado?')) return;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/seguimiento/${seguimientoId}/entregar`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                if (response.ok) {
-                    showMessage('success', '✅ Pedido marcado como entregado');
-                    // Recargar datos
-                    const user = JSON.parse(localStorage.getItem('usuarioActual'));
-                    cargarSeguimientoActivo(user.id);
-                    cargarPedidosVendedor(user.id);
-                } else {
-                    showMessage('error', 'Error al marcar como entregado');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showMessage('error', 'Error de conexión');
-            }
-        }
-
-        // Función para actualizar ubicación
-        async function actualizarUbicacion(seguimientoId) {
-            const ubicacionInput = document.getElementById(`ubicacion-${seguimientoId}`);
-            const fechaInput = document.getElementById(`fecha-${seguimientoId}`);
-            const estadoSelect = document.getElementById(`estado-${seguimientoId}`);
-
-            const datos = {
-                ubicacion_actual: ubicacionInput ? ubicacionInput.value : null,
-                fecha_estimada_entrega: fechaInput ? fechaInput.value || null : null,
-                estado_paquete: estadoSelect ? estadoSelect.value : null
-            };
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/seguimiento/${seguimientoId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datos)
-                });
-
-                if (response.ok) {
-                    showMessage('success', '📍 Seguimiento actualizado');
-                } else {
-                    showMessage('error', 'Error al actualizar');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showMessage('error', 'Error de conexión');
-            }
-        }
-
-        // Filtrar clientes
-        function filtrarClientes() {
-            const texto = document.getElementById('buscadorClientes').value.toLowerCase();
-            const filas = document.querySelectorAll('#clientesTableBody tr');
-
-            filas.forEach(fila => {
-                const textoFila = fila.textContent.toLowerCase();
-                fila.style.display = textoFila.includes(texto) ? '' : 'none';
-            });
-        }
-
-        // Filtrar pedidos
-        function filtrarPedidos() {
-            const texto = document.getElementById('buscadorPedidos').value.toLowerCase();
-            const filas = document.querySelectorAll('#pedidosTableBody tr');
-
-            filas.forEach(fila => {
-                const textoFila = fila.textContent.toLowerCase();
-                fila.style.display = textoFila.includes(texto) ? '' : 'none';
-            });
-        }
-
-        // Funciones de acción
-        function nuevoCliente() {
-            showMessage('success', 'Funcionalidad: Crear nuevo cliente (en desarrollo)');
-        }
-
-        function verCliente(clienteId) {
-            showMessage('success', `Ver detalles de cliente (ID): ${clienteId}`);
-            // Aquí podrías abrir un modal o redirigir a una página de detalles
-        }
-
-        function contactarCliente(email) {
-            showMessage('success', `Contactando a: ${email}`);
-        }
-
-        function nuevoPedido(clienteId) {
-            showMessage('success', `Crear nuevo pedido para cliente ID: ${clienteId}`);
-            // Redirigir o abrir modal para crear pedido
-        }
-
-        function verPedido(id) {
-            showMessage('success', `Ver detalles del pedido: ${id}`);
-        }
-
-        function actualizarEstado(id) {
-            showMessage('success', `Actualizar estado del pedido: ${id}`);
-        }
-
-        // Nota: la función real "actualizarUbicacion" (que hace la llamada al API)
-        // está definida más arriba como "async function actualizarUbicacion(seguimientoId)"
-        // Evitamos redefinirla aquí para no sobreescribir la implementación que llama al servidor.
-
-        // Obtener icono de estado
         function getEstadoIcon(estado) {
             const icons = {
                 'entregado': '✅',
@@ -1583,12 +1071,332 @@
                 'pendiente': '⏳',
                 'cancelado': '❌'
             };
-            return icons[estado.toLowerCase()] || '📄';
+            return icons[estado?.toLowerCase()] || '📄';
         }
 
-        // Cerrar sesión
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== FUNCIONES DE MOSTRAR SIN DATOS ====================
+
+        function mostrarSinClientes() {
+            const tbody = document.getElementById('clientesTableBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px;">No tienes clientes aún</td></tr>';
+            }
+        }
+
+        function mostrarSinPedidos() {
+            const tbody = document.getElementById('pedidosTableBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;">No hay pedidos registrados</td></tr>';
+            }
+        }
+
+        function mostrarSinSeguimiento() {
+            const tbody = document.getElementById('seguimientoTableBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;">✅ No hay envíos pendientes</td></tr>';
+            }
+        }
+
+        // ==================== FILTRADO ====================
+
+        function filtrarClientes() {
+            const texto = document.getElementById('buscadorClientes')?.value.toLowerCase() || '';
+            const filas = document.querySelectorAll('#clientesTableBody tr');
+            filas.forEach(fila => {
+                const textoFila = fila.textContent.toLowerCase();
+                fila.style.display = textoFila.includes(texto) ? '' : 'none';
+            });
+        }
+
+        function filtrarPedidos() {
+            const texto = document.getElementById('buscadorPedidos')?.value.toLowerCase() || '';
+            const filas = document.querySelectorAll('#pedidosTableBody tr');
+            filas.forEach(fila => {
+                const textoFila = fila.textContent.toLowerCase();
+                fila.style.display = textoFila.includes(texto) ? '' : 'none';
+            });
+        }
+
+        // ==================== FUNCIONES DE ACCIONES ====================
+
+        function nuevoCliente() {
+            showMessage('success', 'Funcionalidad: Crear nuevo cliente (en desarrollo)');
+        }
+
+        function verCliente(clienteId) {
+            showMessage('success', `Ver detalles de cliente ID: ${clienteId}`);
+        }
+
+        function contactarCliente(email) {
+            window.location.href = `mailto:${email}`;
+        }
+
+        function nuevoPedidoParaCliente(clienteId) {
+            abrirModalPedido();
+            setTimeout(() => {
+                const selectCliente = document.getElementById('pedidoClienteId');
+                if (selectCliente) selectCliente.value = clienteId;
+            }, 500);
+        }
+
+        async function verPedidoDetalle(pedidoId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedido/${pedidoId}/detalle`);
+                if (!response.ok) throw new Error('Error al cargar pedido');
+
+                const pedido = await response.json();
+                const contenido = document.getElementById('detallePedidoContenido');
+                contenido.innerHTML = `
+                        <div class="info-cliente">
+                            <h3>👤 Información del Cliente</h3>
+                            <p><strong>Nombre:</strong> ${pedido.cliente_nombre || 'N/A'}</p>
+                            <p><strong>Email:</strong> ${pedido.cliente_email || 'N/A'}</p>
+                            <p><strong>Teléfono:</strong> ${pedido.cliente_telefono || 'N/A'}</p>
+                        </div>
+                        <div class="resumen-pedido">
+                            <h3>📦 Detalles del Pedido</h3>
+                            <p><strong>Producto:</strong> ${pedido.producto_nombre || 'N/A'}</p>
+                            <p><strong>Cantidad:</strong> ${pedido.cantidad || 1}</p>
+                            <p><strong>Subtotal:</strong> $${formatMoney(pedido.subtotal)}</p>
+                            <p><strong>IVA (16%):</strong> $${formatMoney(pedido.impuestos)}</p>
+                            <p class="total-text"><strong>Total:</strong> $${formatMoney(pedido.total)}</p>
+                        </div>
+                        <div><p><strong>📅 Fecha:</strong> ${new Date(pedido.fecha_pedido).toLocaleString()}</p></div>
+                        ${pedido.direccion_envio ? `<div><p><strong>📍 Dirección:</strong> ${escapeHtml(pedido.direccion_envio)}</p></div>` : ''}
+                        ${pedido.notas ? `<div><p><strong>📝 Notas:</strong> ${escapeHtml(pedido.notas)}</p></div>` : ''}
+                    `;
+                document.getElementById('modalVerPedidoOverlay').dataset.pedidoId = pedidoId;
+                document.getElementById('modalVerPedidoOverlay').classList.add('active');
+            } catch (error) {
+                showToast('Error al cargar detalle del pedido', 'error');
+            }
+        }
+
+        function cerrarModalVerPedido() {
+            document.getElementById('modalVerPedidoOverlay').classList.remove('active');
+        }
+
+        function editarDesdeDetalle() {
+            const pedidoId = document.getElementById('modalVerPedidoOverlay').dataset.pedidoId;
+            cerrarModalVerPedido();
+            abrirModalEditarPedido(pedidoId);
+        }
+
+        // ==================== FUNCIONES DE MODALES DE PEDIDOS ====================
+
+        async function abrirModalPedido() {
+            document.getElementById('modalPedidoTitulo').textContent = '➕ Nuevo Pedido';
+            document.getElementById('formPedido').reset();
+            document.getElementById('pedidoId').value = '';
+            document.getElementById('infoAdicionalPedido').style.display = 'none';
+
+            await cargarClientesSelect();
+            await cargarProductosVendedorSelect();
+
+            document.getElementById('modalPedidoOverlay').classList.add('active');
+        }
+
+        async function abrirModalEditarPedido(pedidoId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedido/${pedidoId}/detalle`);
+                if (!response.ok) throw new Error('Error al cargar pedido');
+
+                const pedido = await response.json();
+                pedidoActual = pedido;
+
+                document.getElementById('modalPedidoTitulo').textContent = `✏️ Editar Pedido #${pedido.numero_orden || pedido.id}`;
+                document.getElementById('pedidoId').value = pedido.id;
+
+                if (clientesLista.length === 0) await cargarClientesSelect();
+                if (productosCatalogo.length === 0) await cargarProductosVendedorSelect();
+
+                document.getElementById('pedidoClienteId').value = pedido.cliente_id || '';
+                document.getElementById('pedidoProductoId').value = pedido.producto_id || '';
+                document.getElementById('pedidoCantidad').value = pedido.cantidad || 1;
+                document.getElementById('pedidoMetodoPago').value = pedido.metodo_pago || 'efectivo';
+                document.getElementById('pedidoEstado').value = pedido.estado || 'pendiente';
+                document.getElementById('pedidoDireccion').value = pedido.direccion_envio || '';
+                document.getElementById('pedidoNotas').value = pedido.notas || '';
+
+                actualizarPrecioProducto();
+
+                const infoCliente = document.getElementById('infoClientePedido');
+                infoCliente.innerHTML = `
+                        <p><strong>Cliente:</strong> ${pedido.cliente_nombre || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${pedido.cliente_email || 'N/A'}</p>
+                        <p><strong>Teléfono:</strong> ${pedido.cliente_telefono || 'N/A'}</p>
+                        <p><strong>Fecha Pedido:</strong> ${new Date(pedido.fecha_pedido).toLocaleDateString()}</p>
+                    `;
+                document.getElementById('infoAdicionalPedido').style.display = 'block';
+                document.getElementById('modalPedidoOverlay').classList.add('active');
+            } catch (error) {
+                showToast('Error al cargar datos del pedido', 'error');
+            }
+        }
+
+        function cerrarModalPedido() {
+            document.getElementById('modalPedidoOverlay').classList.remove('active');
+            document.getElementById('formPedido').reset();
+            pedidoActual = null;
+        }
+
+        document.getElementById('formPedido').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const pedidoId = document.getElementById('pedidoId').value;
+            const userData = JSON.parse(localStorage.getItem('usuarioActual'));
+            const vendedorId = userData.id;
+
+            const selectProducto = document.getElementById('pedidoProductoId');
+            const option = selectProducto.options[selectProducto.selectedIndex];
+            const precio = parseFloat(option.dataset.precio) || 0;
+            const cantidad = parseInt(document.getElementById('pedidoCantidad').value) || 1;
+
+            const subtotal = precio * cantidad;
+            const impuestos = subtotal * 0.16;
+            const total = subtotal + impuestos;
+
+            const datosPedido = {
+                cliente_id: parseInt(document.getElementById('pedidoClienteId').value),
+                producto_id: parseInt(document.getElementById('pedidoProductoId').value),
+                cantidad: cantidad,
+                metodo_pago: document.getElementById('pedidoMetodoPago').value,
+                direccion_envio: document.getElementById('pedidoDireccion').value,
+                notas: document.getElementById('pedidoNotas').value
+            };
+
+            if (pedidoId) datosPedido.estado = document.getElementById('pedidoEstado').value;
+
+            try {
+                let response;
+                if (pedidoId) {
+                    response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(datosPedido)
+                    });
+                } else {
+                    response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/pedidos`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(datosPedido)
+                    });
+                }
+
+                if (response.ok) {
+                    showToast(pedidoId ? '✅ Pedido actualizado' : '✅ Pedido creado exitosamente');
+                    cerrarModalPedido();
+                    cargarPedidosVendedor(vendedorId);
+                } else {
+                    const error = await response.json();
+                    showToast(error.message || 'Error al guardar pedido', 'error');
+                }
+            } catch (error) {
+                showToast('Error de conexión', 'error');
+            }
+        });
+
+        async function marcarEntregado(pedidoId) {
+            if (!confirm('¿Confirmas que este pedido ha sido entregado?')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}/estado`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ estado: 'entregado' })
+                });
+                if (response.ok) {
+                    showToast('✅ Pedido marcado como entregado');
+                    const user = JSON.parse(localStorage.getItem('usuarioActual'));
+                    cargarPedidosVendedor(user.id);
+                }
+            } catch (error) {
+                showToast('Error de conexión', 'error');
+            }
+        }
+
+        async function actualizarUbicacion(pedidoId) {
+            const ubicacionInput = document.getElementById(`ubicacion-${pedidoId}`);
+            const fechaInput = document.getElementById(`fecha-${pedidoId}`);
+            const estadoSelect = document.getElementById(`estado-${pedidoId}`);
+
+            const datos = {
+                ubicacion_actual: ubicacionInput?.value || null,
+                fecha_entrega_estimada: fechaInput?.value || null,
+                estado_paquete: estadoSelect?.value || null
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/seguimiento/${pedidoId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                });
+                if (response.ok) {
+                    showToast('📍 Seguimiento actualizado');
+                }
+            } catch (error) {
+                showToast('Error de conexión', 'error');
+            }
+        }
+
+        function confirmarEliminarPedido(pedidoId, numeroOrden) {
+            if (confirm(`¿Eliminar pedido #${numeroOrden}?`)) {
+                eliminarPedido(pedidoId);
+            }
+        }
+
+        async function eliminarPedido(pedidoId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showToast('✅ Pedido eliminado');
+                    const userData = JSON.parse(localStorage.getItem('usuarioActual'));
+                    cargarPedidosVendedor(userData.id);
+                }
+            } catch (error) {
+                showToast('Error de conexión', 'error');
+            }
+        }
+
+        // ==================== CARGA PRINCIPAL ====================
+
+        async function cargarDatosVendedor() {
+            try {
+                const userData = localStorage.getItem('usuarioActual');
+                if (!userData) {
+                    showMessage('error', 'No hay sesión activa. Redirigiendo...');
+                    setTimeout(() => window.location.href = '../adminlogin.html', 2000);
+                    return;
+                }
+
+                const vendedor = JSON.parse(userData);
+                const vendedorId = vendedor.id;
+
+                document.getElementById('vendedorNombre').textContent = vendedor.nombre || 'Vendedor';
+                document.getElementById('vendedorEmail').textContent = vendedor.email || vendedor.correo || 'No especificado';
+                document.getElementById('vendedorTelefono').textContent = vendedor.telefono || 'No especificado';
+                document.getElementById('vendedorZona').textContent = vendedor.zona_asignada || 'Centro';
+
+                await cargarEstadisticasVendedor(vendedorId);
+                await cargarClientesVendedor(vendedorId);
+                await cargarPedidosVendedor(vendedorId);
+                await cargarSeguimientoActivo(vendedorId);
+
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+                showMessage('error', 'Error al cargar los datos del vendedor');
+            }
+        }
+
         function cerrarSesion() {
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+            if (confirm('¿Cerrar sesión?')) {
                 localStorage.removeItem('usuarioActual');
                 localStorage.removeItem('token');
                 localStorage.removeItem('userType');
@@ -1596,11 +1404,9 @@
             }
         }
 
-        // Verificar sesión
         function verificarSesion() {
             const user = localStorage.getItem('usuarioActual');
             const userType = localStorage.getItem('userType');
-
             if (!user || userType !== 'vendedor') {
                 window.location.href = '../adminlogin.html';
                 return false;
@@ -1608,273 +1414,20 @@
             return true;
         }
 
-        // Inicializar
+        // Cerrar modales al hacer clic fuera
+        document.getElementById('modalPedidoOverlay').addEventListener('click', function (e) {
+            if (e.target === this) cerrarModalPedido();
+        });
+
+        document.getElementById('modalVerPedidoOverlay').addEventListener('click', function (e) {
+            if (e.target === this) cerrarModalVerPedido();
+        });
+
         document.addEventListener('DOMContentLoaded', function () {
             if (verificarSesion()) {
                 cargarDatosVendedor();
             }
         });
-
-        // Cargar clientes en el select del modal
-        async function cargarClientesSelect() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/clientes/activos`);
-                if (response.ok) {
-                    const clientes = await response.json();
-                    const select = document.getElementById('pedidoClienteId');
-                    if (select) {
-                        select.innerHTML = '<option value="">Seleccionar cliente...</option>';
-                        clientes.forEach(cliente => {
-                            select.innerHTML += `<option value="${cliente.id}">${cliente.nombre} (${cliente.correo})</option>`;
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('Error cargando clientes:', error);
-            }
-        }
-
-        // Cargar productos en el select del modal
-        async function cargarProductosSelect() {
-            try {
-                const userData = JSON.parse(localStorage.getItem('usuarioActual'));
-                const vendedorId = userData.id;
-
-                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/productos`);
-                if (response.ok) {
-                    const productos = await response.json();
-                    const select = document.getElementById('pedidoProductoId');
-                    if (select) {
-                        select.innerHTML = '<option value="">Seleccionar producto...</option>';
-                        productos
-                            .filter(p => p.activo && p.stock > 0)
-                            .forEach(producto => {
-                                select.innerHTML += `<option value="${producto.id}" data-precio="${producto.precio}">${producto.nombre} - $${producto.precio} (Stock: ${producto.stock})</option>`;
-                            });
-                    }
-                }
-            } catch (error) {
-                console.error('Error cargando productos:', error);
-            }
-        }
-
-        // Guardar nuevo pedido
-        async function guardarNuevoPedido() {
-            const clienteId = document.getElementById('pedidoClienteId').value;
-            const productoId = document.getElementById('pedidoProductoId').value;
-            const cantidad = document.getElementById('pedidoCantidad').value;
-            const metodoPago = document.getElementById('pedidoMetodoPago').value;
-            const direccion = document.getElementById('pedidoDireccion').value;
-            const notas = document.getElementById('pedidoNotas').value;
-
-            if (!clienteId || !productoId) {
-                showMessage('error', 'Debes seleccionar un cliente y un producto');
-                return;
-            }
-
-            try {
-                const userData = JSON.parse(localStorage.getItem('usuarioActual'));
-                const vendedorId = userData.id;
-
-                const response = await fetch(`${API_BASE_URL}/api/vendedor/${vendedorId}/pedidos`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        cliente_id: parseInt(clienteId),
-                        producto_id: parseInt(productoId),
-                        cantidad: parseInt(cantidad),
-                        metodo_pago: metodoPago,
-                        direccion_envio: direccion,
-                        notas: notas
-                    })
-                });
-
-                if (response.ok) {
-                    showMessage('success', '✅ Pedido creado exitosamente');
-                    cerrarModalPedido();
-                    // Recargar pedidos
-                    cargarPedidosVendedor(vendedorId);
-                } else {
-                    const error = await response.json();
-                    showMessage('error', error.message || 'Error al crear pedido');
-                }
-            } catch (error) {
-                console.error('Error creando pedido:', error);
-                showMessage('error', 'Error de conexión al crear pedido');
-            }
-        }
-
-        // Editar pedido (abre modal con datos existentes)
-        async function editarPedido(pedidoId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/pedido/${pedidoId}/detalle`);
-                if (!response.ok) {
-                    showMessage('error', 'No se pudo cargar el pedido');
-                    return;
-                }
-
-                const pedido = await response.json();
-
-                // Crear modal de edición
-                const modalHtml = `
-            <div id="modalEditarPedido" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000;">
-                <div style="background:white; padding:30px; border-radius:15px; width:500px; max-width:90%;">
-                    <h2 style="margin-bottom:20px; color:#333;">✏️ Editar Pedido #${pedido.numero_orden || pedido.id}</h2>
-                    
-                    <div style="margin-bottom:15px;">
-                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Cliente</label>
-                        <input type="text" value="${pedido.cliente_nombre}" disabled style="width:100%; padding:10px; background:#f5f5f5; border:1px solid #ddd; border-radius:5px;">
-                    </div>
-
-                    <div style="margin-bottom:15px;">
-                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Estado</label>
-                        <select id="editEstado" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
-                            <option value="pendiente" ${pedido.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
-                            <option value="procesando" ${pedido.estado === 'procesando' ? 'selected' : ''}>Procesando</option>
-                            <option value="confirmado" ${pedido.estado === 'confirmado' ? 'selected' : ''}>Confirmado</option>
-                            <option value="enviado" ${pedido.estado === 'enviado' ? 'selected' : ''}>Enviado</option>
-                            <option value="entregado" ${pedido.estado === 'entregado' ? 'selected' : ''}>Entregado</option>
-                            <option value="cancelado" ${pedido.estado === 'cancelado' ? 'selected' : ''}>Cancelado</option>
-                        </select>
-                    </div>
-
-                    <div style="margin-bottom:15px;">
-                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Dirección de Envío</label>
-                        <textarea id="editDireccion" rows="2" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">${pedido.direccion_envio || ''}</textarea>
-                    </div>
-
-                    <div style="margin-bottom:15px;">
-                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Notas</label>
-                        <textarea id="editNotas" rows="2" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">${pedido.notas || ''}</textarea>
-                    </div>
-
-                    <div style="display:flex; gap:10px; justify-content:flex-end;">
-                        <button onclick="cerrarModalEditar()" style="padding:10px 20px; border:1px solid #ddd; background:white; border-radius:5px; cursor:pointer;">Cancelar</button>
-                        <button onclick="guardarEdicionPedido(${pedidoId})" style="padding:10px 20px; background:#7e57c2; color:white; border:none; border-radius:5px; cursor:pointer;">Guardar Cambios</button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-                const modalContainer = document.createElement('div');
-                modalContainer.innerHTML = modalHtml;
-                document.body.appendChild(modalContainer.firstChild);
-
-            } catch (error) {
-                console.error('Error cargando pedido para editar:', error);
-                showMessage('error', 'Error al cargar datos del pedido');
-            }
-        }
-
-        // Cerrar modal de edición
-        function cerrarModalEditar() {
-            const modal = document.getElementById('modalEditarPedido');
-            if (modal) modal.remove();
-        }
-
-        // Guardar cambios en pedido editado
-        async function guardarEdicionPedido(pedidoId) {
-            const estado = document.getElementById('editEstado').value;
-            const direccion = document.getElementById('editDireccion').value;
-            const notas = document.getElementById('editNotas').value;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        estado,
-                        direccion_envio: direccion,
-                        notas
-                    })
-                });
-
-                if (response.ok) {
-                    showMessage('success', '✅ Pedido actualizado');
-                    cerrarModalEditar();
-                    const userData = JSON.parse(localStorage.getItem('usuarioActual'));
-                    cargarPedidosVendedor(userData.id);
-                } else {
-                    const error = await response.json();
-                    showMessage('error', error.message || 'Error al actualizar');
-                }
-            } catch (error) {
-                console.error('Error actualizando pedido:', error);
-                showMessage('error', 'Error de conexión');
-            }
-        }
-
-        // Confirmar y eliminar pedido
-        function confirmarEliminarPedido(pedidoId, numeroOrden) {
-            if (confirm(`¿Estás seguro de eliminar el pedido #${numeroOrden}?`)) {
-                eliminarPedido(pedidoId);
-            }
-        }
-
-        // Eliminar pedido
-        async function eliminarPedido(pedidoId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    showMessage('success', '✅ Pedido eliminado');
-                    const userData = JSON.parse(localStorage.getItem('usuarioActual'));
-                    cargarPedidosVendedor(userData.id);
-                } else {
-                    const error = await response.json();
-                    showMessage('error', error.message || 'Error al eliminar');
-                }
-            } catch (error) {
-                console.error('Error eliminando pedido:', error);
-                showMessage('error', 'Error de conexión');
-            }
-        }
-
-        // ==================== FUNCIONES AUXILIARES ====================
-
-        // Función para nuevo cliente (desde el botón)
-        function nuevoCliente() {
-            showMessage('success', 'Funcionalidad: Crear nuevo cliente (en desarrollo)');
-            // Aquí puedes implementar un modal similar al de pedidos
-        }
-
-        // Función para ver detalle de cliente
-        function verCliente(clienteId) {
-            showMessage('success', `Ver detalles de cliente (ID): ${clienteId}`);
-            // Implementar redirección a página de detalle o modal
-        }
-
-        // Función para contactar cliente
-        function contactarCliente(email) {
-            window.location.href = `mailto:${email}`;
-        }
-
-        // Función para nuevo pedido desde cliente específico
-        function nuevoPedido(clienteId) {
-            abrirModalPedido();
-            // Preseleccionar el cliente si es posible
-            setTimeout(() => {
-                const selectCliente = document.getElementById('pedidoClienteId');
-                if (selectCliente) {
-                    selectCliente.value = clienteId;
-                }
-            }, 500);
-        }
-
-        // Función para ver detalle de pedido (puedes implementar)
-        function verPedido(pedidoId) {
-            showMessage('success', `Ver detalles del pedido: ${pedidoId}`);
-        }
-
-        // Función para actualizar estado rápido (opcional)
-        function actualizarEstado(pedidoId) {
-            showMessage('success', `Actualizar estado del pedido: ${pedidoId}`);
-            editarPedido(pedidoId); // Reutilizamos el modal de edición
-        }
-
-
     </script>
 </body>
 </html>

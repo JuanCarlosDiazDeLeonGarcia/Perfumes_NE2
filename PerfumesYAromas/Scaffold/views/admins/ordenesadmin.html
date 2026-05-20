@@ -424,7 +424,7 @@
             background: white;
             border-radius: 15px;
             padding: 30px;
-            max-width: 500px;
+            max-width: 550px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
@@ -460,13 +460,18 @@
                 box-sizing: border-box;
             }
 
-            .form-group input:focus,
-            .form-group select:focus,
-            .form-group textarea:focus {
-                outline: none;
-                border-color: #8e44ad;
-                box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.1);
-            }
+                .form-group input:focus,
+                .form-group select:focus,
+                .form-group textarea:focus {
+                    outline: none;
+                    border-color: #8e44ad;
+                    box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.1);
+                }
+
+                .form-group input[readonly] {
+                    background: #f5f5f5;
+                    cursor: not-allowed;
+                }
 
         .modal-actions {
             display: flex;
@@ -504,6 +509,31 @@
             .btn-cancelar:hover {
                 background: #7f8c8d;
             }
+
+        /* Campo de información de producto seleccionado */
+        .info-producto {
+            background: #f0f4f8;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 5px;
+            font-size: 0.85rem;
+            color: #2c3e50;
+        }
+
+            .info-producto span {
+                font-weight: bold;
+                color: #8e44ad;
+            }
+
+        .campo-automatico {
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 5px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -511,15 +541,15 @@
     <aside class="sidebar">
         <h2>🌸 PerfumeShop</h2>
         <nav>
-            <a href="paneladmin.html" class="active">📊 Dashboard</a>
+            <a href="../catalog.html">🢀 Volver</a>
+            <a href="paneladmin.html">📊 Dashboard</a>
             <a href="perfumesadmin.html">🧴 Perfumes</a>
-            <a href="ventasadmin.html">🛍️ Ventas</a>
             <a href="clientesadmin.html">👥 Clientes</a>
-            <a href="ordenesadmin.html">🚚 Ordenes</a>
+            <a href="ordenesadmin.html" class="active">🚚 Ordenes</a>
             <a href="metricasadmin.html">📊 Métricas</a>
             <a href="proveedores.html">🚚 Proveedores</a>
             <a href="movimientos_inventario.html">📊 Movimientos</a>
-            <a href="recursos.html" class="active">📋 Recursos ERP </a>
+            <a href="recursos.html">📋 Recursos ERP</a>
             <a href="operaciones.html">⚙️ Operaciones</a>
             <a href="estadoerp_admin.html">🖥️ Estado ERP</a>
             <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
@@ -606,9 +636,9 @@
                         <tr>
                             <th>ID</th>
                             <th>N° Orden</th>
-                            <th>Cliente ID</th>
-                            <th>Vendedor ID</th>
-                            <th>Producto ID</th>
+                            <th>Cliente</th>
+                            <th>Vendedor</th>
+                            <th>Producto</th>
                             <th>Cantidad</th>
                             <th>Subtotal</th>
                             <th>Impuestos</th>
@@ -616,13 +646,11 @@
                             <th>Estado</th>
                             <th>Método Pago</th>
                             <th>Fecha Pedido</th>
-                            <th>Fecha Envío</th>
-                            <th>Fecha Entrega</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="pedidosTableBody">
-                        <tr><td colspan="15" class="loading">Cargando ordenes...</td></tr>
+                        <tr><td colspan="13" class="loading">Cargando ordenes...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -638,74 +666,106 @@
             </div>
         </div>
 
-        <!-- Modal para crear nueva orden -->
+        <!-- Modal para crear nueva orden (MEJORADO) -->
         <div class="modal-overlay" id="modalNuevaOrden" style="display: none;">
-            <div class="modal" style="width: 550px;">
-                <h2>+ Nueva Orden</h2>
+            <div class="modal" style="width: 600px;">
+                <h2>➕ Nueva Orden</h2>
                 <form id="formNuevaOrden" onsubmit="guardarNuevaOrden(event)">
                     <div class="form-group">
-                        <label for="nuevoNumeroOrden">N° Orden</label>
-                        <input type="text" id="nuevoNumeroOrden" required placeholder="ORD-XXX">
+                        <label for="nuevoNumeroOrden">N° Orden *</label>
+                        <input type="text" id="nuevoNumeroOrden" required placeholder="Ej: ORD-001">
                     </div>
+
                     <div class="form-group">
-                        <label for="nuevoClienteId">Cliente ID</label>
-                        <input type="number" id="nuevoClienteId" placeholder="ID del cliente">
+                        <label for="nuevoClienteSelect">Cliente *</label>
+                        <select id="nuevoClienteSelect" required onchange="actualizarClienteId()">
+                            <option value="">-- Seleccionar cliente --</option>
+                        </select>
+                        <input type="hidden" id="nuevoClienteId">
                     </div>
+
                     <div class="form-group">
-                        <label for="nuevoVendedorId">Vendedor ID</label>
-                        <input type="number" id="nuevoVendedorId" placeholder="ID del vendedor">
+                        <label>Vendedor (Automático)</label>
+                        <div class="campo-automatico" id="vendedorInfo">
+                            <span>📌 El vendedor se asigna automáticamente según el producto seleccionado</span>
+                        </div>
+                        <input type="hidden" id="nuevoVendedorId">
                     </div>
+
                     <div class="form-group">
-                        <label for="nuevoProductoId">Producto ID</label>
-                        <input type="number" id="nuevoProductoId" placeholder="ID del producto">
+                        <label for="nuevoProductoSelect">Producto *</label>
+                        <select id="nuevoProductoSelect" required onchange="actualizarPrecioYVendedor()">
+                            <option value="">-- Seleccionar producto --</option>
+                        </select>
+                        <div id="infoProducto" class="info-producto" style="display: none;">
+                            📊 <span id="productoPrecioInfo">0</span> | 📦 Stock: <span id="productoStockInfo">0</span>
+                        </div>
+                        <input type="hidden" id="nuevoProductoId">
                     </div>
+
                     <div class="form-group">
-                        <label for="nuevoCantidad">Cantidad</label>
-                        <input type="number" id="nuevoCantidad" required min="1" value="1">
+                        <label for="nuevoCantidad">Cantidad *</label>
+                        <input type="number" id="nuevoCantidad" required min="1" value="1" onchange="calcularTotales()">
                     </div>
+
                     <div class="form-group">
-                        <label for="nuevoSubtotal">Subtotal</label>
-                        <input type="number" id="nuevoSubtotal" step="0.01" min="0" value="0" placeholder="0.00">
+                        <label for="nuevoMetodoPago">Método de Pago *</label>
+                        <select id="nuevoMetodoPago" required>
+                            <option value="efectivo">💵 Efectivo</option>
+                            <option value="tarjeta">💳 Tarjeta</option>
+                            <option value="transferencia">🏦 Transferencia</option>
+                            <option value="monedero">💰 Monedero</option>
+                        </select>
                     </div>
-                    <div class="form-group">
-                        <label for="nuevoImpuestos">Impuestos</label>
-                        <input type="number" id="nuevoImpuestos" step="0.01" min="0" value="0" placeholder="0.00">
+
+                    <!-- Resumen de montos -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <h4 style="margin: 0 0 10px 0; color: #8e44ad;">💰 Resumen de Montos</h4>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Subtotal:</span>
+                            <span id="resumenSubtotal">$0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>IVA (16%):</span>
+                            <span id="resumenIVA">$0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Descuento:</span>
+                            <span id="resumenDescuento">$0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid #dee2e6; margin-top: 5px; padding-top: 8px;">
+                            <span>Total:</span>
+                            <span id="resumenTotal">$0.00</span>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="nuevoDescuento">Descuento</label>
-                        <input type="number" id="nuevoDescuento" step="0.01" min="0" value="0" placeholder="0.00">
-                    </div>
-                    <div class="form-group">
-                        <label for="nuevoTotal">Total</label>
-                        <input type="number" id="nuevoTotal" required step="0.01" min="0" placeholder="0.00">
-                    </div>
+
+                    <input type="hidden" id="nuevoSubtotal" value="0">
+                    <input type="hidden" id="nuevoImpuestos" value="0">
+                    <input type="hidden" id="nuevoDescuento" value="0">
+                    <input type="hidden" id="nuevoTotal" value="0">
+
                     <div class="form-group">
                         <label for="nuevoEstado">Estado</label>
-                        <select id="nuevoEstado" required>
-                            <option value="pendiente">Pendiente</option>
-                            <option value="confirmado">Confirmado</option>
-                            <option value="procesando">Procesando</option>
-                            <option value="enviado">Enviado</option>
-                            <option value="entregado">Entregado</option>
-                            <option value="cancelado">Cancelado</option>
+                        <select id="nuevoEstado">
+                            <option value="pendiente">⏳ Pendiente</option>
+                            <option value="confirmado">📋 Confirmado</option>
+                            <option value="procesando">⚙️ Procesando</option>
+                            <option value="enviado">🚚 Enviado</option>
+                            <option value="entregado">✅ Entregado</option>
+                            <option value="cancelado">❌ Cancelado</option>
                         </select>
                     </div>
+
                     <div class="form-group">
-                        <label for="nuevoMetodoPago">Metodo de Pago</label>
-                        <select id="nuevoMetodoPago" required>
-                            <option value="efectivo">Efectivo</option>
-                            <option value="tarjeta">Tarjeta</option>
-                            <option value="transferencia">Transferencia</option>
-                        </select>
+                        <label for="nuevaDireccion">Dirección de Envío</label>
+                        <textarea id="nuevaDireccion" rows="2" placeholder="Dirección completa"></textarea>
                     </div>
-                    <div class="form-group">
-                        <label for="nuevaDireccion">Direccion de Envio</label>
-                        <textarea id="nuevaDireccion" rows="2" placeholder="Direccion completa"></textarea>
-                    </div>
+
                     <div class="form-group">
                         <label for="nuevasNotas">Notas</label>
                         <textarea id="nuevasNotas" rows="2" placeholder="Notas adicionales"></textarea>
                     </div>
+
                     <div class="modal-actions">
                         <button type="button" class="btn-cancelar" onclick="cerrarModalNuevaOrden()">Cancelar</button>
                         <button type="submit" class="btn-guardar">Guardar Orden</button>
@@ -748,6 +808,9 @@
         const API_BASE_URL = 'http://localhost:3000';
         let pedidosData = [];
         let pedidosFiltrados = [];
+        let clientesData = [];
+        let productosData = [];
+        let vendedoresData = [];
 
         // Variables para paginación
         let paginaActual = 1;
@@ -764,50 +827,164 @@
             }
 
             localStorage.setItem('userType', rol);
-
-            // Mostrar nombre del usuario
             document.getElementById('userName').textContent = usuario.nombre || 'Admin';
 
-            // Cargar datos
+            // Cargar todos los datos
+            cargarClientes();
+            cargarProductos();
+            cargarVendedores();
             cargarPedidos();
         });
 
-        // Cargar pedidos
-        async function cargarPedidos() {
+        // ==================== FUNCIONES DE CARGA DE DATOS ====================
+
+        async function cargarClientes() {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/pedidos/todos`);
-
-                if (!response.ok) {
-                    console.warn('Endpoint no disponible');
-                    document.getElementById('pedidosTableBody').innerHTML =
-                        '<tr><td colspan="15" style="text-align: center; padding: 40px;">No se pudieron cargar las ordenes</td></tr>';
-                    return;
+                const response = await fetch(`${API_BASE_URL}/api/clientes/activos`);
+                if (response.ok) {
+                    clientesData = await response.json();
+                    const selectCliente = document.getElementById('nuevoClienteSelect');
+                    if (selectCliente) {
+                        selectCliente.innerHTML = '<option value="">-- Seleccionar cliente --</option>';
+                        clientesData.forEach(cliente => {
+                            selectCliente.innerHTML += `<option value="${cliente.id}">${cliente.nombre} (${cliente.correo})</option>`;
+                        });
+                    }
                 }
-
-                pedidosData = await response.json();
-                procesarPedidos();
-
             } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('pedidosTableBody').innerHTML =
-                    '<tr><td colspan="15" style="text-align: center; padding: 40px;">Error de conexión</td></tr>';
+                console.error('Error cargando clientes:', error);
             }
         }
 
-        // Procesar pedidos (calcular métricas y renderizar)
-        function procesarPedidos() {
-            // Calcular métricas
-            actualizarMetricas();
+        async function cargarProductos() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/productos`);
+                if (response.ok) {
+                    productosData = await response.json();
+                    const selectProducto = document.getElementById('nuevoProductoSelect');
+                    if (selectProducto) {
+                        selectProducto.innerHTML = '<option value="">-- Seleccionar producto --</option>';
+                        productosData
+                            .filter(p => p.activo === true)
+                            .forEach(producto => {
+                                selectProducto.innerHTML += `<option value="${producto.id}" data-precio="${producto.precio}" data-stock="${producto.stock}" data-vendedor="${producto.vendedor_id || ''}">${producto.nombre} - $${producto.precio} (Stock: ${producto.stock})</option>`;
+                            });
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando productos:', error);
+            }
+        }
 
-            // Inicializar filtrados
+        async function cargarVendedores() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/usuarios`);
+                if (response.ok) {
+                    const usuarios = await response.json();
+                    vendedoresData = usuarios.filter(u => u.rol === 'vendedor' && u.activo === true);
+                    console.log('Vendedores cargados:', vendedoresData);
+                }
+            } catch (error) {
+                console.error('Error cargando vendedores:', error);
+            }
+        }
+
+        function getVendedorNombre(vendedorId) {
+            if (!vendedorId) return 'Sin asignar';
+            const vendedor = vendedoresData.find(v => v.id === vendedorId);
+            return vendedor ? vendedor.nombre : 'Sin asignar';
+        }
+
+        function getClienteNombre(clienteId) {
+            if (!clienteId) return 'N/A';
+            const cliente = clientesData.find(c => c.id === clienteId);
+            return cliente ? cliente.nombre : `ID: ${clienteId}`;
+        }
+
+        function getProductoNombre(productoId) {
+            if (!productoId) return 'N/A';
+            const producto = productosData.find(p => p.id === productoId);
+            return producto ? producto.nombre : `ID: ${productoId}`;
+        }
+
+        // ==================== FUNCIONES DE CÁLCULO ====================
+
+        function actualizarClienteId() {
+            const select = document.getElementById('nuevoClienteSelect');
+            const clienteId = select.value;
+            document.getElementById('nuevoClienteId').value = clienteId;
+        }
+
+        function actualizarPrecioYVendedor() {
+            const select = document.getElementById('nuevoProductoSelect');
+            const option = select.options[select.selectedIndex];
+            const productoId = select.value;
+            const precio = parseFloat(option.dataset.precio) || 0;
+            const stock = parseInt(option.dataset.stock) || 0;
+            const vendedorId = option.dataset.vendedor;
+
+            document.getElementById('nuevoProductoId').value = productoId;
+            document.getElementById('productoPrecioInfo').textContent = `$${precio.toFixed(2)}`;
+            document.getElementById('productoStockInfo').textContent = stock;
+            document.getElementById('infoProducto').style.display = productoId ? 'block' : 'none';
+
+            // Actualizar vendedor automático
+            if (vendedorId) {
+                const vendedorNombre = getVendedorNombre(parseInt(vendedorId));
+                document.getElementById('vendedorInfo').innerHTML = `👤 Vendedor asignado: <strong>${vendedorNombre}</strong>`;
+                document.getElementById('nuevoVendedorId').value = vendedorId;
+            } else {
+                document.getElementById('vendedorInfo').innerHTML = '⚠️ Este producto no tiene vendedor asignado. Por favor, asigna un vendedor al producto.';
+                document.getElementById('nuevoVendedorId').value = '';
+            }
+
+            calcularTotales();
+        }
+
+        function calcularTotales() {
+            const select = document.getElementById('nuevoProductoSelect');
+            const option = select.options[select.selectedIndex];
+            const precio = parseFloat(option.dataset.precio) || 0;
+            const cantidad = parseInt(document.getElementById('nuevoCantidad').value) || 1;
+            const descuento = 0; // Por ahora sin descuento
+
+            const subtotal = precio * cantidad;
+            const iva = subtotal * 0.16;
+            const total = subtotal + iva - descuento;
+
+            document.getElementById('resumenSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('resumenIVA').textContent = `$${iva.toFixed(2)}`;
+            document.getElementById('resumenDescuento').textContent = `$${descuento.toFixed(2)}`;
+            document.getElementById('resumenTotal').textContent = `$${total.toFixed(2)}`;
+
+            document.getElementById('nuevoSubtotal').value = subtotal;
+            document.getElementById('nuevoImpuestos').value = iva;
+            document.getElementById('nuevoDescuento').value = descuento;
+            document.getElementById('nuevoTotal').value = total;
+        }
+
+        // ==================== FUNCIONES DE PEDIDOS ====================
+
+        async function cargarPedidos() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedidos/todos`);
+                if (!response.ok) throw new Error('Error al cargar pedidos');
+
+                pedidosData = await response.json();
+                procesarPedidos();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('pedidosTableBody').innerHTML = '<tr><td colspan="13" style="text-align: center; padding: 40px;">Error de conexión</td></tr>';
+            }
+        }
+
+        function procesarPedidos() {
+            actualizarMetricas();
             pedidosFiltrados = [...pedidosData];
             paginaActual = 1;
-
-            // Renderizar tabla
             renderizarTablaPedidos();
         }
 
-        // Actualizar tarjetas de métricas
         function actualizarMetricas() {
             const total = pedidosData.length;
             const pendientes = pedidosData.filter(p => p.estado === 'pendiente' || p.estado === 'procesando').length;
@@ -820,10 +997,8 @@
             document.getElementById('pedidosEnviados').textContent = enviados;
             document.getElementById('pedidosEntregados').textContent = entregados;
             document.getElementById('ventasTotales').textContent = `$${ventas.toFixed(2)}`;
-            document.getElementById('totalRegistros').textContent = pedidosFiltrados.length;
         }
 
-        // Renderizar tabla de pedidos con paginación
         function renderizarTablaPedidos() {
             const tbody = document.getElementById('pedidosTableBody');
             tbody.innerHTML = '';
@@ -833,50 +1008,28 @@
             const pedidosPagina = pedidosFiltrados.slice(inicio, fin);
 
             if (pedidosPagina.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="15" style="text-align: center; padding: 40px;">No hay ordenes para mostrar</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="13" style="text-align: center; padding: 40px;">No hay ordenes para mostrar</td></tr>';
                 return;
             }
 
             pedidosPagina.forEach(p => {
                 const estadoClass = `estado-badge estado-${p.estado || 'pendiente'}`;
-                const estadoTexto = p.estado || 'pendiente';
-
-                // Formatear fechas
                 const fechaPedido = p.fecha_pedido ? new Date(p.fecha_pedido).toLocaleString('es-MX') : '—';
-                const fechaEnvio = p.fecha_envio ? new Date(p.fecha_envio).toLocaleDateString('es-MX') : '—';
-                const fechaEntrega = p.fecha_entrega ? new Date(p.fecha_entrega).toLocaleDateString('es-MX') : '—';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                        <td>#${p.id}</td>
+                        <td>${p.id}</td>
                         <td><strong>${p.numero_orden || '—'}</strong></td>
-                        <td>
-                            <span class="tooltip">
-                                ${p.cliente_id || '—'}
-                                <span class="tooltip-text">ID Cliente: ${p.cliente_id || 'N/A'}</span>
-                            </span>
-                        </td>
-                        <td>
-                            <span class="tooltip">
-                                ${p.vendedor_id || '—'}
-                                <span class="tooltip-text">ID Vendedor: ${p.vendedor_id || 'N/A'}</span>
-                            </span>
-                        </td>
-                        <td>
-                            <span class="tooltip">
-                                ${p.producto_id || '—'}
-                                <span class="tooltip-text">ID Producto: ${p.producto_id || 'N/A'}</span>
-                            </span>
-                        </td>
-                        <td style="text-align: center;">${p.cantidad || 1}</td>
+                        <td><span class="tooltip">${getClienteNombre(p.cliente_id)}<span class="tooltip-text">ID: ${p.cliente_id || 'N/A'}</span></span></td>
+                        <td><span class="tooltip">${getVendedorNombre(p.vendedor_id)}<span class="tooltip-text">ID: ${p.vendedor_id || 'N/A'}</span></span></td>
+                        <td><span class="tooltip">${getProductoNombre(p.producto_id)}<span class="tooltip-text">ID: ${p.producto_id || 'N/A'}</span></span></td>
+                        <td>${p.cantidad || 1}</td>
                         <td class="monto">$${parseFloat(p.subtotal || 0).toFixed(2)}</td>
                         <td class="monto">$${parseFloat(p.impuestos || 0).toFixed(2)}</td>
                         <td class="monto">$${parseFloat(p.total || 0).toFixed(2)}</td>
-                        <td><span class="${estadoClass}">${estadoTexto}</span></td>
+                        <td><span class="${estadoClass}">${p.estado || 'pendiente'}</span></td>
                         <td><span class="metodo-badge">${p.metodo_pago || '—'}</span></td>
                         <td>${fechaPedido}</td>
-                        <td>${fechaEnvio}</td>
-                        <td>${fechaEntrega}</td>
                         <td>
                             <div class="acciones-btns">
                                 <button class="btn-editar" onclick="abrirModalEditarEstado(${p.id})" title="Editar estado">✏️</button>
@@ -887,43 +1040,30 @@
                 tbody.appendChild(tr);
             });
 
-            // Actualizar contador de registros
             document.getElementById('totalRegistros').textContent = pedidosFiltrados.length;
-
-            // Renderizar paginación
             renderizarPaginacion(Math.ceil(pedidosFiltrados.length / itemsPorPagina));
         }
 
-        // Renderizar paginación
         function renderizarPaginacion(totalPaginas) {
             const container = document.getElementById('paginacionPedidos');
             container.innerHTML = '';
 
             if (totalPaginas <= 1) return;
 
-            // Botón anterior
             if (paginaActual > 1) {
                 const prevBtn = document.createElement('span');
                 prevBtn.className = 'pagina';
                 prevBtn.innerHTML = '←';
-                prevBtn.onclick = () => {
-                    paginaActual--;
-                    renderizarTablaPedidos();
-                };
+                prevBtn.onclick = () => { paginaActual--; renderizarTablaPedidos(); };
                 container.appendChild(prevBtn);
             }
 
-            // Números de página
             for (let i = 1; i <= totalPaginas; i++) {
-                // Mostrar solo páginas cercanas
                 if (i === 1 || i === totalPaginas || (i >= paginaActual - 2 && i <= paginaActual + 2)) {
                     const btn = document.createElement('span');
                     btn.className = `pagina ${paginaActual === i ? 'active' : ''}`;
                     btn.textContent = i;
-                    btn.onclick = () => {
-                        paginaActual = i;
-                        renderizarTablaPedidos();
-                    };
+                    btn.onclick = () => { paginaActual = i; renderizarTablaPedidos(); };
                     container.appendChild(btn);
                 } else if (i === paginaActual - 3 || i === paginaActual + 3) {
                     const btn = document.createElement('span');
@@ -934,45 +1074,34 @@
                 }
             }
 
-            // Botón siguiente
             if (paginaActual < totalPaginas) {
                 const nextBtn = document.createElement('span');
                 nextBtn.className = 'pagina';
                 nextBtn.innerHTML = '→';
-                nextBtn.onclick = () => {
-                    paginaActual++;
-                    renderizarTablaPedidos();
-                };
+                nextBtn.onclick = () => { paginaActual++; renderizarTablaPedidos(); };
                 container.appendChild(nextBtn);
             }
         }
 
-        // Filtrar pedidos
+        // ==================== FUNCIONES DE FILTRADO ====================
+
         function filtrarPedidos() {
             const texto = document.getElementById('buscadorPedidos').value.toLowerCase();
             const estado = document.getElementById('filtroEstado').value;
 
             pedidosFiltrados = pedidosData.filter(p => {
-                // Filtro por texto
                 const cumpleTexto = texto === '' ||
                     (p.numero_orden && p.numero_orden.toLowerCase().includes(texto)) ||
-                    (p.cliente_id && p.cliente_id.toString().includes(texto)) ||
-                    (p.notas && p.notas.toLowerCase().includes(texto));
-
-                // Filtro por estado
+                    (getClienteNombre(p.cliente_id).toLowerCase().includes(texto));
                 const cumpleEstado = estado === 'todos' || p.estado === estado;
-
                 return cumpleTexto && cumpleEstado;
             });
 
-            // Actualizar resumen de filtros
             actualizarResumenFiltros(estado);
-
             paginaActual = 1;
             renderizarTablaPedidos();
         }
 
-        // Actualizar resumen de filtros activos
         function actualizarResumenFiltros(estado) {
             const resumenDiv = document.getElementById('resumenFiltros');
             const filtroEstadoDiv = document.getElementById('filtroEstadoActivo');
@@ -991,38 +1120,18 @@
             resumenDiv.style.display = filtrosActivos ? 'flex' : 'none';
         }
 
-        // Limpiar filtro de estado
         function limpiarFiltroEstado() {
             document.getElementById('filtroEstado').value = 'todos';
             filtrarPedidos();
         }
 
-        // Exportar pedidos a CSV
         function exportarPedidos() {
-            const headers = [
-                'ID', 'N° Orden', 'Cliente ID', 'Vendedor ID', 'Producto ID',
-                'Cantidad', 'Subtotal', 'Impuestos', 'Total', 'Estado',
-                'Método Pago', 'Dirección Envío', 'Notas', 'Fecha Pedido',
-                'Fecha Envío', 'Fecha Entrega'
-            ];
-
+            const headers = ['ID', 'N° Orden', 'Cliente', 'Vendedor', 'Producto', 'Cantidad', 'Subtotal', 'Impuestos', 'Total', 'Estado', 'Método Pago', 'Fecha Pedido'];
             const contenido = pedidosFiltrados.map(p => [
-                p.id,
-                p.numero_orden || '',
-                p.cliente_id || '',
-                p.vendedor_id || '',
-                p.producto_id || '',
-                p.cantidad || 1,
-                p.subtotal || 0,
-                p.impuestos || 0,
-                p.total || 0,
-                p.estado || '',
-                p.metodo_pago || '',
-                p.direccion_envio || '',
-                p.notas || '',
-                p.fecha_pedido ? new Date(p.fecha_pedido).toLocaleString('es-MX') : '',
-                p.fecha_envio ? new Date(p.fecha_envio).toLocaleString('es-MX') : '',
-                p.fecha_entrega ? new Date(p.fecha_entrega).toLocaleString('es-MX') : ''
+                p.id, p.numero_orden || '', getClienteNombre(p.cliente_id), getVendedorNombre(p.vendedor_id),
+                getProductoNombre(p.producto_id), p.cantidad || 1, p.subtotal || 0, p.impuestos || 0,
+                p.total || 0, p.estado || '', p.metodo_pago || '',
+                p.fecha_pedido ? new Date(p.fecha_pedido).toLocaleString('es-MX') : ''
             ]);
 
             let csv = headers.join(',') + '\n';
@@ -1035,30 +1144,22 @@
             link.click();
         }
 
-        // Función para cerrar sesión
-        function cerrarSesion() {
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                localStorage.removeItem('usuarioActual');
-                localStorage.removeItem('token');
-                localStorage.removeItem('userType');
-                window.location.href = '../adminlogin.html';
-            }
-        }
+        // ==================== FUNCIONES DE MODALES ====================
 
-        // ==================== FUNCIONES PARA MODALES ====================
-
-        // Abrir modal para crear nueva orden
         function abrirModalNuevaOrden() {
             document.getElementById('formNuevaOrden').reset();
+            document.getElementById('nuevoProductoId').value = '';
+            document.getElementById('nuevoClienteId').value = '';
+            document.getElementById('nuevoVendedorId').value = '';
+            document.getElementById('infoProducto').style.display = 'none';
+            document.getElementById('vendedorInfo').innerHTML = '📌 El vendedor se asigna automáticamente según el producto seleccionado';
             document.getElementById('modalNuevaOrden').style.display = 'flex';
         }
 
-        // Cerrar modal de nueva orden
         function cerrarModalNuevaOrden() {
             document.getElementById('modalNuevaOrden').style.display = 'none';
         }
 
-        // Guardar nueva orden
         async function guardarNuevaOrden(event) {
             event.preventDefault();
 
@@ -1081,28 +1182,25 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/api/pedidos`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(nuevaOrden)
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    alert('Orden creada exitosamente');
+                    alert('✅ Orden creada exitosamente');
                     cerrarModalNuevaOrden();
                     cargarPedidos();
                 } else {
-                    alert('Error: ' + (data.message || 'No se pudo crear la orden'));
+                    alert('❌ Error: ' + (data.message || 'No se pudo crear la orden'));
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error de conexión al servidor');
+                alert('❌ Error de conexión al servidor');
             }
         }
 
-        // Abrir modal para editar estado
         function abrirModalEditarEstado(ordenId) {
             const orden = pedidosData.find(p => p.id === ordenId);
             if (!orden) {
@@ -1116,61 +1214,46 @@
             document.getElementById('modalEditarEstado').style.display = 'flex';
         }
 
-        // Cerrar modal de editar estado
         function cerrarModalEditarEstado() {
             document.getElementById('modalEditarEstado').style.display = 'none';
         }
 
-        // Guardar estado editado
         async function guardarEstado(event) {
             event.preventDefault();
 
             const ordenId = parseInt(document.getElementById('editarOrdenId').value);
             const nuevoEstado = document.getElementById('editarEstado').value;
-
-            // Preparar datos con fechas según el estado
             const datos = { estado: nuevoEstado };
 
-            // Si el estado es "enviado", establecer fecha_envio
-            if (nuevoEstado === 'enviado') {
-                datos.fecha_envio = new Date().toISOString();
-            }
-
-            // Si el estado es "entregado", establecer fecha_entrega
+            if (nuevoEstado === 'enviado') datos.fecha_envio = new Date().toISOString();
             if (nuevoEstado === 'entregado') {
                 datos.fecha_entrega = new Date().toISOString();
-                // Si no tiene fecha de envío, también establecerla
                 const orden = pedidosData.find(p => p.id === ordenId);
-                if (orden && !orden.fecha_envio) {
-                    datos.fecha_envio = new Date().toISOString();
-                }
+                if (orden && !orden.fecha_envio) datos.fecha_envio = new Date().toISOString();
             }
 
             try {
                 const response = await fetch(`${API_BASE_URL}/api/pedidos/${ordenId}/estado`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datos)
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    alert('Estado actualizado exitosamente');
+                    alert('✅ Estado actualizado exitosamente');
                     cerrarModalEditarEstado();
                     cargarPedidos();
                 } else {
-                    alert('Error: ' + (data.message || 'No se pudo actualizar el estado'));
+                    alert('❌ Error: ' + (data.message || 'No se pudo actualizar el estado'));
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error de conexión al servidor');
+                alert('❌ Error de conexión al servidor');
             }
         }
 
-        // Eliminar orden
         async function eliminarOrden(ordenId) {
             const orden = pedidosData.find(p => p.id === ordenId);
             if (!orden) {
@@ -1178,31 +1261,34 @@
                 return;
             }
 
-            if (!confirm(`¿Estas seguro de que deseas eliminar la orden ${orden.numero_orden || '#' + orden.id}?`)) {
-                return;
-            }
+            if (!confirm(`¿Estás seguro de que deseas eliminar la orden ${orden.numero_orden || '#' + orden.id}?`)) return;
 
             try {
-                const response = await fetch(`${API_BASE_URL}/api/pedidos/${ordenId}`, {
-                    method: 'DELETE'
-                });
-
+                const response = await fetch(`${API_BASE_URL}/api/pedidos/${ordenId}`, { method: 'DELETE' });
                 const data = await response.json();
 
                 if (response.ok) {
-                    alert('Orden eliminada exitosamente');
+                    alert('✅ Orden eliminada exitosamente');
                     cargarPedidos();
                 } else {
-                    alert('Error: ' + (data.message || 'No se pudo eliminar la orden'));
+                    alert('❌ Error: ' + (data.message || 'No se pudo eliminar la orden'));
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error de conexión al servidor');
+                alert('❌ Error de conexión al servidor');
             }
         }
 
-        // Cerrar modales al hacer clic fuera
-        window.onclick = function(event) {
+        function cerrarSesion() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                localStorage.removeItem('usuarioActual');
+                localStorage.removeItem('token');
+                localStorage.removeItem('userType');
+                window.location.href = '../adminlogin.html';
+            }
+        }
+
+        window.onclick = function (event) {
             if (event.target.classList.contains('modal-overlay')) {
                 event.target.style.display = 'none';
             }

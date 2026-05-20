@@ -2571,7 +2571,7 @@ app.get('/api/admin/productos', async (req, res) => {
             SELECT 
                 id, nombre, descripcion, precio, stock, stock_minimo,
                 marca, genero, tamanio_ml, notas_olfativas, imagen_url,
-                proveedor_id, activo, restock, fecha_creacion
+                proveedor_id, activo, restock, vendedor_id, fecha_creacion
             FROM productos
             ORDER BY id ASC
         `;
@@ -2588,7 +2588,7 @@ app.post('/api/admin/productos', async (req, res) => {
     const {
         nombre, descripcion, precio, stock, stock_minimo,
         marca, genero, tamanio_ml, notas_olfativas, imagen_url,
-        proveedor_id, activo, restock
+        proveedor_id, activo, restock, vendedor_id
     } = req.body;
 
     if (!nombre || !precio || precio < 0) {
@@ -2600,15 +2600,16 @@ app.post('/api/admin/productos', async (req, res) => {
             INSERT INTO productos (
                 nombre, descripcion, precio, stock, stock_minimo,
                 marca, genero, tamanio_ml, notas_olfativas, imagen_url,
-                proveedor_id, activo, restock
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+                proveedor_id, activo, restock, vendedor_id
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
             RETURNING *
         `;
         const result = await pool.query(query, [
             nombre, descripcion || '', precio, stock || 0, stock_minimo || 10,
             marca || '', genero || null, tamanio_ml || null, notas_olfativas || '',
             imagen_url || '', proveedor_id || 2,
-            activo !== undefined ? activo : true, restock || null
+            activo !== undefined ? activo : true, restock || null,
+            vendedor_id || null  // <-- AGREGAR vendedor_id
         ]);
         res.status(201).json({ message: 'Producto creado', producto: result.rows[0] });
     } catch (error) {
@@ -2743,11 +2744,12 @@ app.put('/api/productos/:productoId', async (req, res) => {
         imagen_url,
         proveedor_id,
         activo,
-        restock
+        restock,
+        vendedor_id  // <-- AGREGAR vendedor_id
     } = req.body;
 
     try {
-        // Verificar que el producto existe y pertenece al vendedor
+        // Verificar que el producto existe
         const productoExistente = await pool.query(
             'SELECT * FROM productos WHERE id = $1',
             [productoId]
@@ -2773,15 +2775,16 @@ app.put('/api/productos/:productoId', async (req, res) => {
                 proveedor_id = COALESCE($11, proveedor_id),
                 activo = COALESCE($12, activo),
                 restock = COALESCE($13, restock),
+                vendedor_id = COALESCE($14, vendedor_id),  -- <-- AGREGAR vendedor_id
                 fecha_actualizacion = CURRENT_TIMESTAMP
-            WHERE id = $14
+            WHERE id = $15
             RETURNING *
         `;
 
         const result = await pool.query(query, [
             nombre, descripcion, precio, stock, stock_minimo,
             marca, genero, tamanio_ml, notas_olfativas, imagen_url,
-            proveedor_id, activo, restock, productoId
+            proveedor_id, activo, restock, vendedor_id, productoId
         ]);
 
         res.json({

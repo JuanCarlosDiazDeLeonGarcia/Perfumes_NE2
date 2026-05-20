@@ -197,6 +197,17 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge-vendedor {
+            background: #e8eaf6;
+            color: #3949ab;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
         }
     </style>
 </head>
@@ -205,15 +216,15 @@
     <aside class="sidebar">
         <h2>🌸 PerfumeShop</h2>
         <nav>
-            <a href="paneladmin.html" class="active">📊 Dashboard</a>
-            <a href="perfumesadmin.html">🧴 Perfumes</a>
-            <a href="ventasadmin.html">🛍️ Ventas</a>
+            <a href="../catalog.html">🢀 Volver</a>
+            <a href="paneladmin.html">📊 Dashboard</a>
+            <a href="perfumesadmin.html" class="active">🧴 Perfumes</a>
             <a href="clientesadmin.html">👥 Clientes</a>
             <a href="ordenesadmin.html">🚚 Ordenes</a>
             <a href="metricasadmin.html">📊 Métricas</a>
             <a href="proveedores.html">🚚 Proveedores</a>
             <a href="movimientos_inventario.html">📊 Movimientos</a>
-            <a href="recursos.html" class="active">📋 Recursos ERP </a>
+            <a href="recursos.html">📋 Recursos ERP</a>
             <a href="operaciones.html">⚙️ Operaciones</a>
             <a href="estadoerp_admin.html">🖥️ Estado ERP</a>
             <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
@@ -242,20 +253,23 @@
                     IVA actual: <span id="ivaValorDisplay">Cargando...</span>%
                 </div>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Marca</th>
-                        <th>Precio</th>
-                        <th>Stock</th>
-                        <th>Restock</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-productos"></tbody>
-            </table>
+            <div style="overflow-x: auto;">
+                <table style="min-width: 800px;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Marca</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Restock</th>
+                            <th>Vendedor</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-productos"></tbody>
+                </table>
+            </div>
         </section>
     </main>
 
@@ -296,6 +310,13 @@
                             <option value="pull">Bajo Pedido</option>
                         </select>
                     </div>
+                </div>
+                <!-- Campo para seleccionar vendedor -->
+                <div>
+                    <label>Vendedor Asignado *</label>
+                    <select id="vendedor_id" required>
+                        <option value="">-- Cargando vendedores... --</option>
+                    </select>
                 </div>
                 <label>Notas Olfativas</label><input type="text" id="notas_olfativas" placeholder="Ej: Sándalo, vainilla, cedro">
                 <label>URL de Imagen</label><input type="text" id="imagen_url" placeholder="https://...">
@@ -353,6 +374,7 @@
     <script>
         const API_BASE = 'http://localhost:3000/api';
         let productosData = [];
+        let vendedoresData = [];
 
         function showToast(msg, type = 'success') {
             const t = document.getElementById('toast');
@@ -365,6 +387,38 @@
             if (val === 'push') return '<span class="badge-push">Automático</span>';
             if (val === 'pull') return '<span class="badge-pull">Bajo Pedido</span>';
             return '<span class="badge-na">N/A</span>';
+        }
+
+        // ========== FUNCIONES PARA VENDEDORES ==========
+        async function cargarVendedores() {
+            try {
+                const response = await fetch(`${API_BASE}/usuarios`);
+                if (response.ok) {
+                    const usuarios = await response.json();
+                    // Filtrar solo usuarios con rol 'vendedor' y activos
+                    vendedoresData = usuarios.filter(u => u.rol === 'vendedor' && u.activo === true);
+                    console.log('Vendedores cargados:', vendedoresData);
+
+                    // Llenar el select del formulario
+                    const selectVendedor = document.getElementById('vendedor_id');
+                    if (selectVendedor) {
+                        selectVendedor.innerHTML = '<option value="">-- Seleccionar vendedor --</option>';
+                        vendedoresData.forEach(v => {
+                            selectVendedor.innerHTML += `<option value="${v.id}">${escapeHtml(v.nombre)} (${escapeHtml(v.email)})</option>`;
+                        });
+                    }
+                } else {
+                    console.error('Error al cargar vendedores');
+                }
+            } catch (error) {
+                console.error('Error cargando vendedores:', error);
+            }
+        }
+
+        function getVendedorNombre(vendedorId) {
+            if (!vendedorId) return 'Sin asignar';
+            const vendedor = vendedoresData.find(v => v.id === vendedorId);
+            return vendedor ? vendedor.nombre : 'Sin asignar';
         }
 
         // ========== FUNCIONES PARA IVA ==========
@@ -385,7 +439,6 @@
         }
 
         function abrirModalIVA() {
-            // Cargar valor actual del IVA en el input
             const ivaActual = document.getElementById('ivaValorDisplay').textContent;
             document.getElementById('ivaPorcentaje').value = ivaActual;
             document.getElementById('modalIVAOverlay').classList.add('active');
@@ -405,7 +458,6 @@
                 return;
             }
 
-            // Obtener el usuario actual (admin)
             const usuarioData = localStorage.getItem('usuarioActual');
             let usuarioId = null;
             if (usuarioData) {
@@ -451,6 +503,7 @@
                 const res = await fetch(`${API_BASE}/admin/productos`);
                 if (!res.ok) throw new Error('Error al obtener productos');
                 productosData = await res.json();
+                console.log('Productos cargados:', productosData);
                 renderTabla();
                 actualizarStats();
             } catch (err) {
@@ -460,21 +513,31 @@
 
         function renderTabla() {
             const tbody = document.getElementById('tabla-productos');
-            tbody.innerHTML = productosData.map(p => `
-            <tr>
-              <td>#${String(p.id).padStart(3, '0')}</td>
-              <td>${escapeHtml(p.nombre)}</td>
-              <td>${escapeHtml(p.marca || '-')}</td>
-              <td>$${Number(p.precio).toFixed(2)}</td>
-              <td>${p.stock}</td>
-              <td>${restockBadge(p.restock)}</td>
-              <td>
-                <button class="btn-editar" onclick="abrirEditar(${p.id})">✏️</button>
-                <button class="btn-eliminar" onclick="eliminarProducto(${p.id}, '${escapeHtml(p.nombre).replace(/'/g, "\\'")}')">🗑️</button>
-                ${p.restock !== 'push' ? `<button class="btn-restock" onclick="abrirRestock(${p.id}, '${escapeHtml(p.nombre).replace(/'/g, "\\'")}', ${p.stock})" title="Restock WhatsApp">🔄</button>` : ''}
-              </td>
-            </tr>
-          `).join('');
+            if (!tbody) return;
+
+            tbody.innerHTML = productosData.map(p => {
+                // Asegurarse de que vendedor_id existe y mostrar el nombre correcto
+                const vendedorNombre = getVendedorNombre(p.vendedor_id);
+                return `
+                    <tr>
+                        <td>#${String(p.id).padStart(3, '0')}</td>
+                        <td>${escapeHtml(p.nombre)}</td>
+                        <td>${escapeHtml(p.marca || '-')}</td>
+                        <td>$${Number(p.precio).toFixed(2)}</td>
+                        <td>${p.stock}</td>
+                        <td>${restockBadge(p.restock)}</td>
+                        <td>
+                            <span class="badge-vendedor">
+                                👤 ${escapeHtml(vendedorNombre)}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-editar" onclick="abrirEditar(${p.id})">✏️</button>
+                            <button class="btn-eliminar" onclick="eliminarProducto(${p.id}, '${escapeHtml(p.nombre).replace(/'/g, "\\'")}')">🗑️</button>
+                            ${p.restock !== 'push' ? `<button class="btn-restock" onclick="abrirRestock(${p.id}, '${escapeHtml(p.nombre).replace(/'/g, "\\'")}', ${p.stock})" title="Restock WhatsApp">🔄</button>` : ''}
+                        </td>
+                    </tr>`;
+            }).join('');
         }
 
         function actualizarStats() {
@@ -498,6 +561,7 @@
         function abrirEditar(id) {
             const prod = productosData.find(p => p.id === id);
             if (!prod) return;
+
             document.getElementById('perfumeId').value = prod.id;
             document.getElementById('nombre').value = prod.nombre || '';
             document.getElementById('marca').value = prod.marca || '';
@@ -508,8 +572,10 @@
             document.getElementById('genero').value = prod.genero || '';
             document.getElementById('tamanio_ml').value = prod.tamanio_ml || '';
             document.getElementById('restock').value = prod.restock || '';
+            document.getElementById('vendedor_id').value = prod.vendedor_id || '';
             document.getElementById('notas_olfativas').value = prod.notas_olfativas || '';
             document.getElementById('imagen_url').value = prod.imagen_url || '';
+
             abrirModal('Editar Perfume');
         }
 
@@ -595,11 +661,26 @@
         document.getElementById('btnAjustarIVA').addEventListener('click', abrirModalIVA);
         document.getElementById('btnCancelar').addEventListener('click', cerrarModal);
         document.getElementById('btnCancelarIVA').addEventListener('click', cerrarModalIVA);
-        document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarModal(); });
-        document.getElementById('modalIVAOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarModalIVA(); });
+
+        document.getElementById('modalOverlay').addEventListener('click', e => {
+            if (e.target === e.currentTarget) cerrarModal();
+        });
+
+        document.getElementById('modalIVAOverlay').addEventListener('click', e => {
+            if (e.target === e.currentTarget) cerrarModalIVA();
+        });
+
         document.getElementById('formPerfume').addEventListener('submit', async (e) => {
             e.preventDefault();
+
             const id = document.getElementById('perfumeId').value;
+            const vendedorId = document.getElementById('vendedor_id').value;
+
+            if (!vendedorId) {
+                showToast('Por favor selecciona un vendedor', 'error');
+                return;
+            }
+
             const body = {
                 nombre: document.getElementById('nombre').value.trim(),
                 marca: document.getElementById('marca').value.trim(),
@@ -610,15 +691,27 @@
                 genero: document.getElementById('genero').value || null,
                 tamanio_ml: parseInt(document.getElementById('tamanio_ml').value) || null,
                 restock: document.getElementById('restock').value || null,
+                vendedor_id: parseInt(vendedorId),
                 notas_olfativas: document.getElementById('notas_olfativas').value.trim(),
                 imagen_url: document.getElementById('imagen_url').value.trim(),
             };
+
+            console.log('Enviando producto:', body);
+
             try {
                 let res;
                 if (id) {
-                    res = await fetch(`${API_BASE}/productos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                    res = await fetch(`${API_BASE}/productos/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
                 } else {
-                    res = await fetch(`${API_BASE}/admin/productos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                    res = await fetch(`${API_BASE}/admin/productos`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
                 }
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Error al guardar');
@@ -626,15 +719,21 @@
                 cerrarModal();
                 cargarProductos();
             } catch (err) {
+                console.error('Error guardando producto:', err);
                 showToast(err.message, 'error');
             }
         });
 
         document.getElementById('formIVA').addEventListener('submit', guardarIVA);
 
-        // Inicializar
-        cargarProductos();
-        cargarIVA();
+        // Inicializar - primero cargar vendedores, luego productos
+        async function inicializar() {
+            await cargarVendedores();
+            await cargarProductos();
+            await cargarIVA();
+        }
+
+        inicializar();
     </script>
 
 </body>

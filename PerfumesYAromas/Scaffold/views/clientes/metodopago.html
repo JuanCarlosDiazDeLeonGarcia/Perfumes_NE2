@@ -56,6 +56,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .btn-agregar {
@@ -67,7 +69,12 @@
             cursor: pointer;
             font-size: 14px;
             font-weight: bold;
+            transition: transform 0.2s;
         }
+
+            .btn-agregar:hover {
+                transform: translateY(-2px);
+            }
 
         .btn-eliminar {
             background: #f44336;
@@ -77,10 +84,22 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 12px;
+            margin-left: 5px;
         }
 
         .btn-principal {
             background: #ff9800;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .btn-editar {
+            background: #2196f3;
             color: white;
             border: none;
             padding: 6px 12px;
@@ -142,6 +161,12 @@
             box-sizing: border-box;
         }
 
+            form input:focus, form select:focus {
+                outline: none;
+                border-color: #7e57c2;
+                box-shadow: 0 0 5px rgba(126, 87, 194, 0.3);
+            }
+
         .payment-methods-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -193,6 +218,73 @@
             grid-template-columns: 1fr 1fr;
             gap: 15px;
         }
+
+        .campo-error {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .input-error {
+            border-color: #f44336 !important;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .btn-loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .date-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+            .date-selector select {
+                flex: 1;
+                cursor: pointer;
+                background-color: white;
+            }
+
+                .date-selector select:focus {
+                    border-color: #7e57c2;
+                }
+
+        .expiry-preview {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+            .expiry-preview.valid {
+                color: #4caf50;
+            }
+
+            .expiry-preview.invalid {
+                color: #f44336;
+            }
+
+        .tarjeta-enmascarada {
+            font-family: monospace;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 <body>
@@ -204,7 +296,7 @@
             <a href="usuariomenu.html">🏠 Inicio</a>
             <a href="miscompras.html">🛍️ Mis Compras</a>
             <a href="metodopago.html">💳 Métodos de Pago</a>
-            <a href="facturacion.html" class="active">🧾 Facturación</a>
+            <a href="facturacion.html">🧾 Facturación</a>
             <a href="seguimiento.html">📦 Seguimiento</a>
             <a href="mistickets.html">📩 Contacto</a>
             <a href="#" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
@@ -231,8 +323,8 @@
                 <p id="metodoPrincipal">No configurado</p>
             </div>
             <div class="card">
-                <h3>Saldo Monedero</h3>
-                <p id="saldoMonedero">$0.00</p>
+                <h3>Cliente</h3>
+                <p id="clienteInfo">Cargando...</p>
             </div>
         </section>
 
@@ -265,25 +357,29 @@
             </div>
         </section>
 
-        <!-- Mis Tarjetas Guardadas -->
-        <section class="tabla-admin" id="seccionTarjetas">
+        <!-- Mis Tarjetas Guardadas (consulta intersección clientes-tarjetas) -->
+        <section class="tabla-admin" id="seccionTarjetas" style="display:none;">
             <div class="titulo-tabla">
-                <h2>💳 Mis Tarjetas</h2>
+                <h2>💳 Mis Tarjetas Registradas</h2>
                 <button class="btn-agregar" onclick="mostrarFormularioTarjeta()">+ Agregar Tarjeta</button>
             </div>
             <div style="overflow-x: auto;">
-                <table>
+                <table id="tarjetasTable">
                     <thead>
-                        <tr><th>Tipo</th><th>Titular</th><th>Número</th><th>Expiración</th><th>Principal</th><th>Acciones</th></tr>
+                        <tr><th>Tipo</th><th>Titular</th><th>Número</th><th>Expiración</th><th>Principal</th><th>Fecha Registro</th><th>Acciones</th></tr>
                     </thead>
                     <tbody id="tarjetasTableBody">
-                        <tr><td colspan="6" style="text-align:center; padding:30px;">Cargando tarjetas...</td></tr>
+                        <tr>
+                            <td colspan="7" style="text-align:center; padding:30px;">
+                                <div class="loading-spinner" style="border-top-color: #7e57c2;"></div> Cargando tus tarjetas...
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <!-- Formulario nueva tarjeta -->
+        <!-- Formulario nueva tarjeta (INSERT en tarjetas_credito) -->
         <section class="tabla-admin" id="formularioTarjeta" style="display:none;">
             <div class="titulo-tabla"><h2 id="tarjetaFormTitle">➕ Agregar Nueva Tarjeta</h2></div>
             <form id="formTarjeta" style="max-width:500px; margin:auto;">
@@ -294,22 +390,48 @@
                     <option value="Mastercard">💳 Mastercard</option>
                     <option value="American Express">💳 American Express</option>
                 </select>
+                <span id="tipoError" class="campo-error"></span>
 
                 <label>Nombre del titular *</label>
                 <input type="text" id="titular" required placeholder="Como aparece en la tarjeta">
+                <span id="titularError" class="campo-error"></span>
 
                 <label>Número de tarjeta *</label>
-                <input type="text" id="numero" maxlength="19" required placeholder="1234 5678 9012 3456">
+                <input type="text" id="numero" maxlength="23" required placeholder="1234 5678 9012 3456">
+                <small style="color:#666; display:block; margin-top:5px;">Solo números, 13-19 dígitos</small>
+                <span id="numeroError" class="campo-error"></span>
 
                 <div class="form-row">
                     <div>
                         <label>Fecha expiración *</label>
-                        <input type="month" id="expiracion" required>
+                        <div class="date-selector" id="expirySelector">
+                            <select id="expiryMonth">
+                                <option value="">Mes</option>
+                                <option value="01">Enero (01)</option>
+                                <option value="02">Febrero (02)</option>
+                                <option value="03">Marzo (03)</option>
+                                <option value="04">Abril (04)</option>
+                                <option value="05">Mayo (05)</option>
+                                <option value="06">Junio (06)</option>
+                                <option value="07">Julio (07)</option>
+                                <option value="08">Agosto (08)</option>
+                                <option value="09">Septiembre (09)</option>
+                                <option value="10">Octubre (10)</option>
+                                <option value="11">Noviembre (11)</option>
+                                <option value="12">Diciembre (12)</option>
+                            </select>
+                            <select id="expiryYear">
+                                <option value="">Año</option>
+                            </select>
+                        </div>
+                        <div id="expiryPreview" class="expiry-preview"></div>
+                        <span id="expiracionError" class="campo-error"></span>
                     </div>
                     <div>
                         <label>CVV *</label>
                         <input type="password" id="cvv" maxlength="4" required placeholder="123">
                         <small id="cvvHelp" style="color:#666;">No se almacena, solo para verificación</small>
+                        <span id="cvvError" class="campo-error"></span>
                     </div>
                 </div>
 
@@ -372,6 +494,224 @@
         const API_BASE_URL = 'http://localhost:3000';
         let tarjetasCliente = [];
         let tarjetaEditandoId = null;
+        let clienteActual = null;
+
+        // ==================== FUNCIONES DEL SELECTOR DE FECHA ====================
+
+        function generarOpcionesAños() {
+            const yearSelect = document.getElementById('expiryYear');
+            if (!yearSelect) return;
+
+            const currentYear = new Date().getFullYear();
+            yearSelect.innerHTML = '<option value="">Año</option>';
+
+            for (let i = 0; i <= 10; i++) {
+                const year = currentYear + i;
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            }
+        }
+
+        function obtenerFechaSeleccionada() {
+            const month = document.getElementById('expiryMonth').value;
+            const year = document.getElementById('expiryYear').value;
+
+            if (!month || !year) return null;
+
+            return new Date(parseInt(year), parseInt(month) - 1, 1);
+        }
+
+        function obtenerFechaString() {
+            const month = document.getElementById('expiryMonth').value;
+            const year = document.getElementById('expiryYear').value;
+
+            if (!month || !year) return '';
+
+            return `${year}-${month}-01`;
+        }
+
+        function actualizarPreviewFecha() {
+            const month = document.getElementById('expiryMonth').value;
+            const year = document.getElementById('expiryYear').value;
+            const previewDiv = document.getElementById('expiryPreview');
+            const errorSpan = document.getElementById('expiracionError');
+
+            if (!month || !year) {
+                previewDiv.textContent = '';
+                previewDiv.className = 'expiry-preview';
+                return;
+            }
+
+            const nombreMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+            const mesNum = parseInt(month);
+            const mesNombre = nombreMeses[mesNum - 1];
+
+            previewDiv.textContent = `${mesNombre} ${year}`;
+
+            const fechaSeleccionada = obtenerFechaSeleccionada();
+            const ahora = new Date();
+            ahora.setDate(1);
+
+            if (fechaSeleccionada && fechaSeleccionada > ahora) {
+                previewDiv.className = 'expiry-preview valid';
+                if (errorSpan) errorSpan.textContent = '';
+            } else if (fechaSeleccionada && fechaSeleccionada <= ahora) {
+                previewDiv.className = 'expiry-preview invalid';
+                if (errorSpan) errorSpan.textContent = '⚠️ Esta tarjeta ya expiró';
+            } else {
+                previewDiv.className = 'expiry-preview';
+            }
+        }
+
+        function establecerFechaSeleccionada(fechaStr) {
+            if (!fechaStr) return;
+
+            let año, mes;
+            if (fechaStr.includes('-')) {
+                const partes = fechaStr.split('-');
+                año = partes[0];
+                mes = partes[1];
+            }
+
+            if (año && mes) {
+                const yearSelect = document.getElementById('expiryYear');
+                const monthSelect = document.getElementById('expiryMonth');
+
+                if (yearSelect) yearSelect.value = año;
+                if (monthSelect) monthSelect.value = mes.padStart(2, '0');
+                actualizarPreviewFecha();
+            }
+        }
+
+        function validarFechaExpiracionSelector() {
+            const fechaSeleccionada = obtenerFechaSeleccionada();
+            if (!fechaSeleccionada) return false;
+
+            const ahora = new Date();
+            ahora.setDate(1);
+            ahora.setHours(0, 0, 0, 0);
+
+            return fechaSeleccionada > ahora;
+        }
+
+        // ==================== FUNCIONES DE VALIDACIÓN SIMPLIFICADAS ====================
+
+        function validarTarjeta(numero) {
+            const cleanNumber = numero.replace(/\D/g, '');
+
+            if (cleanNumber.length < 13 || cleanNumber.length > 19) {
+                return false;
+            }
+
+            if (/^0+$/.test(cleanNumber)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        function validarCVV(cvv, tipoTarjeta) {
+            const cleanCVV = cvv.replace(/\D/g, '');
+
+            if (!cleanCVV) return false;
+
+            if (tipoTarjeta === 'American Express') {
+                return cleanCVV.length === 4;
+            }
+            return cleanCVV.length === 3;
+        }
+
+        function formatearNumeroTarjeta(numero) {
+            let cleanNumber = numero.replace(/\D/g, '');
+
+            if (cleanNumber.length > 19) {
+                cleanNumber = cleanNumber.slice(0, 19);
+            }
+
+            return cleanNumber.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+        }
+
+        function limpiarNumeroTarjeta(numero) {
+            return numero.replace(/\s/g, '');
+        }
+
+        function enmascararNumero(numero) {
+            if (!numero) return '****';
+            const cleanNumber = numero.replace(/\s/g, '');
+            if (cleanNumber.length < 4) return '****';
+            return '**** **** **** ' + cleanNumber.slice(-4);
+        }
+
+        function validarFormularioTarjeta() {
+            let esValido = true;
+
+            document.querySelectorAll('.campo-error').forEach(el => el.textContent = '');
+            document.querySelectorAll('input, select').forEach(el => el.classList.remove('input-error'));
+
+            const tipo = document.getElementById('tipoTarjeta').value;
+            if (!tipo) {
+                document.getElementById('tipoError').textContent = 'Selecciona un tipo de tarjeta';
+                document.getElementById('tipoTarjeta').classList.add('input-error');
+                esValido = false;
+            }
+
+            const titular = document.getElementById('titular').value.trim();
+            if (titular.length < 5) {
+                document.getElementById('titularError').textContent = 'Ingresa el nombre completo del titular (mínimo 5 caracteres)';
+                document.getElementById('titular').classList.add('input-error');
+                esValido = false;
+            } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(titular)) {
+                document.getElementById('titularError').textContent = 'El nombre solo debe contener letras';
+                document.getElementById('titular').classList.add('input-error');
+                esValido = false;
+            }
+
+            const numeroRaw = document.getElementById('numero').value;
+            const numeroLimpio = limpiarNumeroTarjeta(numeroRaw);
+
+            if (!validarTarjeta(numeroLimpio)) {
+                const longitud = numeroLimpio.length;
+                if (longitud < 13) {
+                    document.getElementById('numeroError').textContent = 'El número de tarjeta es demasiado corto (mínimo 13 dígitos)';
+                } else if (longitud > 19) {
+                    document.getElementById('numeroError').textContent = 'El número de tarjeta es demasiado largo (máximo 19 dígitos)';
+                } else if (/^0+$/.test(numeroLimpio)) {
+                    document.getElementById('numeroError').textContent = 'Número de tarjeta inválido';
+                } else {
+                    document.getElementById('numeroError').textContent = 'Ingresa un número de tarjeta válido (solo dígitos)';
+                }
+                document.getElementById('numero').classList.add('input-error');
+                esValido = false;
+            }
+
+            if (!validarFechaExpiracionSelector()) {
+                document.getElementById('expiracionError').textContent = 'Selecciona una fecha de expiración válida (futura)';
+                document.getElementById('expiryMonth').classList.add('input-error');
+                document.getElementById('expiryYear').classList.add('input-error');
+                esValido = false;
+            }
+
+            const cvv = document.getElementById('cvv').value;
+            if (tarjetaEditandoId === null && !cvv) {
+                document.getElementById('cvvError').textContent = 'El CVV es requerido';
+                document.getElementById('cvv').classList.add('input-error');
+                esValido = false;
+            } else if (cvv && !validarCVV(cvv, tipo)) {
+                document.getElementById('cvvError').textContent = tipo === 'American Express' ? 'El CVV debe tener 4 dígitos' : 'El CVV debe tener 3 dígitos';
+                document.getElementById('cvv').classList.add('input-error');
+                esValido = false;
+            } else if (cvv && !/^\d+$/.test(cvv)) {
+                document.getElementById('cvvError').textContent = 'El CVV solo debe contener números';
+                document.getElementById('cvv').classList.add('input-error');
+                esValido = false;
+            }
+
+            return esValido;
+        }
 
         function showMessage(type, text) {
             const successDiv = document.getElementById('successMessage');
@@ -393,16 +733,20 @@
 
         function getCurrentUser() {
             const cliente = localStorage.getItem('cliente');
-            return cliente ? JSON.parse(cliente) : null;
+            if (!cliente) return null;
+            try {
+                return JSON.parse(cliente);
+            } catch {
+                return null;
+            }
         }
 
-        // Ocultar todas las secciones
         function ocultarSecciones() {
-            document.getElementById('seccionTarjetas').style.display = 'none';
-            document.getElementById('formularioTarjeta').style.display = 'none';
-            document.getElementById('seccionTransferencia').style.display = 'none';
-            document.getElementById('seccionEfectivo').style.display = 'none';
-            document.getElementById('seccionMonedero').style.display = 'none';
+            const secciones = ['seccionTarjetas', 'formularioTarjeta', 'seccionTransferencia', 'seccionEfectivo', 'seccionMonedero'];
+            secciones.forEach(sec => {
+                const el = document.getElementById(sec);
+                if (el) el.style.display = 'none';
+            });
         }
 
         function mostrarSeccionTarjetas() {
@@ -429,55 +773,85 @@
             cargarInfoMonedero();
         }
 
-        // Cargar tarjetas del cliente
+        // ==================== CRUD DE TARJETAS (Intersección clientes-tarjetas) ====================
+
         async function cargarTarjetasCliente() {
             const user = getCurrentUser();
-            if (!user) return;
+            if (!user || !user.id) {
+                document.getElementById('tarjetasTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;">Debes iniciar sesión</td></tr>';
+                return;
+            }
+
+            clienteActual = user;
+
+            // Mostrar información del cliente
+            const clienteInfo = document.getElementById('clienteInfo');
+            if (clienteInfo) {
+                clienteInfo.innerHTML = `${escapeHtml(user.nombre || user.name || 'Cliente')}`;
+            }
 
             try {
+                // GET /api/tarjetas-cliente/:cliente_id - Obtiene tarjetas del cliente desde la tabla tarjetas_credito
                 const response = await fetch(`${API_BASE_URL}/api/tarjetas-cliente/${user.id}`);
+
                 if (response.ok) {
                     tarjetasCliente = await response.json();
                     actualizarTablaTarjetas();
                     document.getElementById('tarjetasRegistradas').textContent = tarjetasCliente.length;
 
-                    const principal = tarjetasCliente.find(t => t.principal);
+                    const principal = tarjetasCliente.find(t => t.principal === true);
                     if (principal) {
-                        document.getElementById('metodoPrincipal').textContent = `${principal.tipo} terminación ${principal.numero.slice(-4)}`;
+                        const numeroMostrado = principal.numero ? `**** ${principal.numero.slice(-4)}` : '****';
+                        document.getElementById('metodoPrincipal').textContent = `${principal.tipo} terminación ${numeroMostrado}`;
                     } else {
                         document.getElementById('metodoPrincipal').textContent = 'No configurado';
                     }
+                } else {
+                    const error = await response.json();
+                    console.error('Error del servidor:', error);
+                    document.getElementById('tarjetasTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;">Error al cargar tus tarjetas</td></tr>';
                 }
             } catch (error) {
                 console.error('Error cargando tarjetas:', error);
-                document.getElementById('tarjetasTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">Error al cargar tarjetas</td></tr>';
+                document.getElementById('tarjetasTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;">Error de conexión con el servidor</td></tr>';
             }
         }
 
         function actualizarTablaTarjetas() {
             const tbody = document.getElementById('tarjetasTableBody');
-            if (tarjetasCliente.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No tienes tarjetas registradas</td></tr>';
+            if (!tarjetasCliente || tarjetasCliente.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">💳 No tienes tarjetas registradas aún.<br><small>Haz clic en "+ Agregar Tarjeta" para comenzar</small></td></tr>';
                 return;
             }
 
             tbody.innerHTML = '';
             tarjetasCliente.forEach(tarjeta => {
-                const numeroOculto = '**** **** **** ' + tarjeta.numero.slice(-4);
-                const expiracion = new Date(tarjeta.expiracion);
-                const expFormateada = `${(expiracion.getMonth() + 1).toString().padStart(2, '0')}/${expiracion.getFullYear()}`;
+                const numeroEnmascarado = enmascararNumero(tarjeta.numero);
+                let expFormateada = 'N/A';
+                if (tarjeta.expiracion) {
+                    try {
+                        const expiracion = new Date(tarjeta.expiracion);
+                        if (!isNaN(expiracion.getTime())) {
+                            const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                            expFormateada = `${meses[expiracion.getMonth()]} ${expiracion.getFullYear()}`;
+                        }
+                    } catch (e) { }
+                }
+
+                const fechaRegistro = tarjeta.fecha_creacion ? new Date(tarjeta.fecha_creacion).toLocaleDateString() : 'N/A';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                        <td>${tarjeta.tipo}</td>
-                        <td>${tarjeta.titular}</td>
-                        <td>${numeroOculto}</td>
-                        <td>${expFormateada}</td>
+                        <td><span class="tarjeta-enmascarada">${escapeHtml(tarjeta.tipo || 'N/A')}</span></td>
+                        <td>${escapeHtml(tarjeta.titular || 'N/A')}</td>
+                        <td class="tarjeta-enmascarada">${escapeHtml(numeroEnmascarado)}</td>
+                        <td>${escapeHtml(expFormateada)}</td>
                         <td>${tarjeta.principal ? '✅ Sí' : '❌ No'}</td>
+                        <td>${escapeHtml(fechaRegistro)}</td>
                         <td>
                             ${!tarjeta.principal ? `<button class="btn-principal" onclick="establecerPrincipal(${tarjeta.id})">⭐ Principal</button>` : ''}
-                            <button class="btn-principal" onclick="editarTarjeta(${tarjeta.id})">✏️ Editar</button>
-                            <button class="btn-eliminar" onclick="eliminarTarjeta(${tarjeta.id})">🗑️</button>
+                            <button class="btn-editar" onclick="editarTarjeta(${tarjeta.id})">✏️ Editar</button>
+                            <button class="btn-eliminar" onclick="eliminarTarjeta(${tarjeta.id})">🗑️ Eliminar</button>
                         </td>
                     `;
                 tbody.appendChild(tr);
@@ -504,43 +878,74 @@
 
             document.getElementById('tipoTarjeta').value = tarjeta.tipo || '';
             document.getElementById('titular').value = tarjeta.titular || '';
-            document.getElementById('numero').value = (tarjeta.numero || '').toString().replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+            const numeroFormateado = tarjeta.numero ? formatearNumeroTarjeta(tarjeta.numero) : '';
+            document.getElementById('numero').value = numeroFormateado;
 
-            const expStr = (tarjeta.expiracion || '').toString();
-            document.getElementById('expiracion').value = expStr.length >= 7 ? expStr.slice(0, 7) : '';
+            if (tarjeta.expiracion) {
+                establecerFechaSeleccionada(tarjeta.expiracion);
+            } else {
+                document.getElementById('expiryMonth').value = '';
+                document.getElementById('expiryYear').value = '';
+                actualizarPreviewFecha();
+            }
 
             document.getElementById('predeterminada').checked = !!tarjeta.principal;
             document.getElementById('formularioTarjeta').style.display = 'block';
             document.getElementById('seccionTarjetas').style.display = 'block';
+
+            document.querySelectorAll('.campo-error').forEach(el => el.textContent = '');
+            document.querySelectorAll('input, select').forEach(el => el.classList.remove('input-error'));
         }
 
         async function guardarTarjeta(event) {
             event.preventDefault();
-            const user = getCurrentUser();
-            if (!user) return;
 
-            const numeroTarjeta = document.getElementById('numero').value.replace(/\s/g, '');
-
-            // Validación básica
-            if (numeroTarjeta.length < 13 || numeroTarjeta.length > 16) {
-                showMessage('error', 'Número de tarjeta inválido');
+            if (!validarFormularioTarjeta()) {
                 return;
             }
 
+            const user = getCurrentUser();
+            if (!user || !user.id) {
+                showMessage('error', 'Debes iniciar sesión');
+                return;
+            }
+
+            const btn = document.getElementById('btnGuardarTarjeta');
+            const textoOriginal = btn.innerHTML;
+            btn.innerHTML = '<span class="loading-spinner"></span> Guardando...';
+            btn.disabled = true;
+            btn.classList.add('btn-loading');
+
+            const numeroLimpio = limpiarNumeroTarjeta(document.getElementById('numero').value);
+            const cvvValue = document.getElementById('cvv').value;
+            const fechaExpiracion = obtenerFechaString();
+
             const tarjetaData = {
                 tipo: document.getElementById('tipoTarjeta').value,
-                titular: document.getElementById('titular').value,
-                numero: numeroTarjeta,
-                expiracion: document.getElementById('expiracion').value + '-01',
-                cvv: document.getElementById('cvv').value,
+                titular: document.getElementById('titular').value.trim(),
+                numero: numeroLimpio,
+                expiracion: fechaExpiracion,
                 principal: document.getElementById('predeterminada').checked,
                 cliente_id: user.id
             };
 
+            if (cvvValue) {
+                tarjetaData.cvv = cvvValue;
+            }
+
             try {
                 const isEdit = tarjetaEditandoId !== null;
-                const url = isEdit ? `${API_BASE_URL}/api/tarjetas/${tarjetaEditandoId}` : `${API_BASE_URL}/api/tarjetas`;
-                const method = isEdit ? 'PUT' : 'POST';
+                let url, method;
+
+                if (isEdit) {
+                    // PUT /api/tarjetas/:tarjetaId - Actualizar tarjeta existente
+                    url = `${API_BASE_URL}/api/tarjetas/${tarjetaEditandoId}`;
+                    method = 'PUT';
+                } else {
+                    // POST /api/tarjetas - Crear nueva tarjeta (INSERT en tarjetas_credito)
+                    url = `${API_BASE_URL}/api/tarjetas`;
+                    method = 'POST';
+                }
 
                 const response = await fetch(url, {
                     method,
@@ -557,39 +962,54 @@
                     showMessage('error', error.message || error.error || 'Error al guardar tarjeta');
                 }
             } catch (error) {
-                showMessage('error', 'Error de conexión');
+                console.error('Error:', error);
+                showMessage('error', 'Error de conexión con el servidor');
+            } finally {
+                btn.innerHTML = textoOriginal;
+                btn.disabled = false;
+                btn.classList.remove('btn-loading');
             }
         }
 
         async function establecerPrincipal(tarjetaId) {
             try {
+                // PUT /api/tarjetas/:tarjetaId/principal - Establecer tarjeta como principal
                 const response = await fetch(`${API_BASE_URL}/api/tarjetas/${tarjetaId}/principal`, {
                     method: 'PUT'
                 });
                 if (response.ok) {
                     showMessage('success', 'Tarjeta principal actualizada');
                     await cargarTarjetasCliente();
+                } else {
+                    const error = await response.json();
+                    showMessage('error', error.message || 'Error al actualizar tarjeta principal');
                 }
             } catch (error) {
-                showMessage('error', 'Error al actualizar');
+                showMessage('error', 'Error de conexión');
             }
         }
 
         async function eliminarTarjeta(tarjetaId) {
-            if (!confirm('¿Eliminar esta tarjeta?')) return;
+            if (!confirm('¿Estás seguro de eliminar esta tarjeta? Esta acción no se puede deshacer.')) return;
 
             try {
+                // DELETE /api/tarjetas/:tarjetaId - Eliminar tarjeta de la tabla tarjetas_credito
                 const response = await fetch(`${API_BASE_URL}/api/tarjetas/${tarjetaId}`, {
                     method: 'DELETE'
                 });
                 if (response.ok) {
-                    showMessage('success', 'Tarjeta eliminada');
+                    showMessage('success', 'Tarjeta eliminada correctamente');
                     await cargarTarjetasCliente();
+                } else {
+                    const error = await response.json();
+                    showMessage('error', error.message || 'Error al eliminar tarjeta');
                 }
             } catch (error) {
-                showMessage('error', 'Error al eliminar');
+                showMessage('error', 'Error de conexión');
             }
         }
+
+        // ==================== FUNCIONES DE MONEDERO ====================
 
         async function cargarInfoMonedero() {
             const user = getCurrentUser();
@@ -608,9 +1028,9 @@
                         data.historial.forEach(trans => {
                             historialDiv.innerHTML += `
                                     <div style="padding:8px; border-bottom:1px solid #eee;">
-                                        <strong>${trans.tipo === 'recarga' ? '+' : '-'}$${trans.monto}</strong>
+                                        <strong>${trans.tipo === 'recarga' ? '+' : '-'}$${trans.monto.toFixed(2)}</strong>
                                         <small>${new Date(trans.fecha).toLocaleDateString()}</small>
-                                        <div style="font-size:0.85rem;">${trans.descripcion}</div>
+                                        <div style="font-size:0.85rem;">${escapeHtml(trans.descripcion)}</div>
                                     </div>
                                 `;
                         });
@@ -624,13 +1044,22 @@
         }
 
         async function recargarMonedero() {
-            const monto = parseFloat(document.getElementById('montoRecarga')?.value);
+            const montoInput = document.getElementById('montoRecarga');
+            const monto = parseFloat(montoInput?.value);
+
             if (!monto || monto < 10) {
                 showMessage('error', 'Monto mínimo $10');
                 return;
             }
 
+            if (monto > 5000) {
+                showMessage('error', 'Monto máximo $5000 por recarga');
+                return;
+            }
+
             const user = getCurrentUser();
+            if (!user) return;
+
             try {
                 const response = await fetch(`${API_BASE_URL}/api/recargar-monedero`, {
                     method: 'POST',
@@ -639,8 +1068,8 @@
                 });
 
                 if (response.ok) {
-                    showMessage('success', `✅ Recarga de $${monto} realizada`);
-                    document.getElementById('montoRecarga').value = '';
+                    showMessage('success', `✅ Recarga de $${monto.toFixed(2)} realizada`);
+                    montoInput.value = '';
                     await cargarInfoMonedero();
                 } else {
                     showMessage('error', 'Error en la recarga');
@@ -671,12 +1100,22 @@
             const cvvHelp = document.getElementById('cvvHelp');
             cvvInput.required = true;
             cvvInput.placeholder = '123';
+            cvvInput.value = '';
             if (cvvHelp) cvvHelp.textContent = 'No se almacena, solo para verificación';
+
+            document.getElementById('expiryMonth').value = '';
+            document.getElementById('expiryYear').value = '';
+            actualizarPreviewFecha();
+
+            document.querySelectorAll('.campo-error').forEach(el => el.textContent = '');
+            document.querySelectorAll('input, select').forEach(el => el.classList.remove('input-error'));
+
+            document.getElementById('formularioTarjeta').scrollIntoView({ behavior: 'smooth' });
         }
 
         function cancelarFormularioTarjeta() {
             document.getElementById('formularioTarjeta').style.display = 'none';
-
+            document.getElementById('formTarjeta').reset();
             tarjetaEditandoId = null;
             document.getElementById('tarjetaFormTitle').textContent = '➕ Agregar Nueva Tarjeta';
             document.getElementById('btnGuardarTarjeta').textContent = '💾 Guardar Tarjeta';
@@ -686,6 +1125,16 @@
             cvvInput.required = true;
             cvvInput.placeholder = '123';
             if (cvvHelp) cvvHelp.textContent = 'No se almacena, solo para verificación';
+
+            document.querySelectorAll('.campo-error').forEach(el => el.textContent = '');
+            document.querySelectorAll('input, select').forEach(el => el.classList.remove('input-error'));
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function cerrarSesion() {
@@ -707,11 +1156,97 @@
             return true;
         }
 
-        // Inicializar
+        // ==================== INICIALIZACIÓN ====================
+
         document.addEventListener('DOMContentLoaded', function () {
             if (verificarSesion()) {
                 mostrarSeccionTarjetas();
                 document.getElementById('formTarjeta').addEventListener('submit', guardarTarjeta);
+            }
+
+            generarOpcionesAños();
+
+            const monthSelect = document.getElementById('expiryMonth');
+            const yearSelect = document.getElementById('expiryYear');
+
+            if (monthSelect) {
+                monthSelect.addEventListener('change', actualizarPreviewFecha);
+                monthSelect.addEventListener('change', function () {
+                    this.classList.remove('input-error');
+                    document.getElementById('expiryYear')?.classList.remove('input-error');
+                });
+            }
+            if (yearSelect) {
+                yearSelect.addEventListener('change', actualizarPreviewFecha);
+                yearSelect.addEventListener('change', function () {
+                    this.classList.remove('input-error');
+                    document.getElementById('expiryMonth')?.classList.remove('input-error');
+                });
+            }
+
+            const numeroInput = document.getElementById('numero');
+            if (numeroInput) {
+                numeroInput.addEventListener('input', function (e) {
+                    let value = this.value.replace(/\D/g, '');
+                    if (value.length > 19) {
+                        value = value.slice(0, 19);
+                    }
+                    const formatted = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+                    this.value = formatted;
+
+                    const errorSpan = document.getElementById('numeroError');
+                    if (errorSpan) {
+                        errorSpan.textContent = '';
+                    }
+                    this.classList.remove('input-error');
+                });
+
+                numeroInput.addEventListener('paste', function (e) {
+                    e.preventDefault();
+                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                    const numbersOnly = pastedText.replace(/\D/g, '');
+                    if (numbersOnly) {
+                        let value = numbersOnly;
+                        if (value.length > 19) value = value.slice(0, 19);
+                        const formatted = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+                        this.value = formatted;
+                    }
+                });
+            }
+
+            const cvvInput = document.getElementById('cvv');
+            if (cvvInput) {
+                cvvInput.addEventListener('input', function (e) {
+                    let value = this.value.replace(/\D/g, '');
+                    const tipoTarjeta = document.getElementById('tipoTarjeta').value;
+                    const maxLength = tipoTarjeta === 'American Express' ? 4 : 3;
+                    if (value.length > maxLength) {
+                        value = value.slice(0, maxLength);
+                    }
+                    this.value = value;
+
+                    const errorSpan = document.getElementById('cvvError');
+                    if (errorSpan) {
+                        errorSpan.textContent = '';
+                    }
+                    this.classList.remove('input-error');
+                });
+            }
+
+            const tipoTarjetaSelect = document.getElementById('tipoTarjeta');
+            if (tipoTarjetaSelect) {
+                tipoTarjetaSelect.addEventListener('change', function () {
+                    const cvvField = document.getElementById('cvv');
+                    if (cvvField) {
+                        const maxLength = this.value === 'American Express' ? 4 : 3;
+                        cvvField.maxLength = maxLength;
+
+                        let currentValue = cvvField.value.replace(/\D/g, '');
+                        if (currentValue.length > maxLength) {
+                            cvvField.value = currentValue.slice(0, maxLength);
+                        }
+                    }
+                });
             }
         });
     </script>
